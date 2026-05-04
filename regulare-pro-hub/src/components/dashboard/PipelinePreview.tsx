@@ -1,3 +1,4 @@
+"use client";
 import { SectionHeader } from "./KpiGrid";
 import { ArrowRight, AlertCircle, Filter } from "lucide-react";
 import { motion } from "framer-motion";

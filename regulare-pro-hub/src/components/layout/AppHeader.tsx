@@ -1,5 +1,6 @@
+"use client";
 import { Search, Plus, Sparkles, Bell, Command, ChevronDown } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 interface AppHeaderProps {

@@ -1,0 +1,122 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("user") // admin, user
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Cliente {
+  id          String     @id @default(cuid())
+  nome        String
+  cpf_cnpj    String
+  telefone    String?
+  email       String?
+  endereco    String?
+  observacoes String?
+  processos   Processo[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Processo {
+  id                 String       @id @default(cuid())
+  clienteId          String
+  cliente            Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  tipo_regularizacao String
+  endereco           String
+  area_terreno       Float?
+  area_construida    Float?
+  num_pavimentos     Int?
+  status             String       @default("prospecção")
+  data_inicio        DateTime     @default(now())
+  data_previsao      DateTime?
+  responsavel        String?
+  observacoes        String?
+  
+  financeiro         Financeiro[]
+  tarefas            Tarefa[]
+  documentos         Documento[]
+  checklists         Checklist[]
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model Financeiro {
+  id              String    @id @default(cuid())
+  processoId      String
+  processo        Processo  @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  honorarios      Float
+  valor_pago      Float     @default(0)
+  valor_pendente  Float
+  data_pagamento  DateTime?
+  forma_pagamento String?   // pix, boleto, transferencia, dinheiro
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Tarefa {
+  id          String    @id @default(cuid())
+  titulo      String
+  descricao   String?
+  processoId  String?
+  processo    Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  data        DateTime
+  hora        String?
+  responsavel String?
+  status      String    @default("pendente") // pendente, concluída
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Documento {
+  id          String   @id @default(cuid())
+  processoId  String
+  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  nome        String
+  tipo        String
+  url         String
+  tamanho     Int?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Checklist {
+  id          String   @id @default(cuid())
+  processoId  String
+  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  item        String
+  concluido   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model EmpresaConfig {
+  id           String   @id @default(cuid())
+  nomeFantasia String
+  razaoSocial  String?
+  cnpj         String?
+  email        String?
+  telefone     String?
+  endereco     String?
+  logoUrl      String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
