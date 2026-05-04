@@ -13,7 +13,8 @@ import {
   MapPin,
   Bell,
   Building,
-  FolderOpen
+  FolderOpen,
+  ArrowRightLeft
 } from "lucide-react";
 
 const SIDEBAR_ITEMS = {
@@ -32,6 +33,7 @@ const SIDEBAR_ITEMS = {
   ],
   sistema: [
     { name: "Configurações", href: "/configuracoes", icon: Settings, id: "10" },
+    { name: "Migrar Sistema", href: "/migrar", icon: ArrowRightLeft, id: "11" },
   ]
 };
 

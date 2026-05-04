@@ -41,6 +41,7 @@ model Imovel {
   clienteId             String
   cliente               Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   endereco              String
+  tipo                  String?     // Residencial, Comercial, Não Informado...
   bairro                String?
   cidade                String?
   estado                String?
@@ -89,6 +90,7 @@ model Financeiro {
   clienteId       String?
   cliente         Cliente?  @relation(fields: [clienteId], references: [id])
   descricao       String
+  categoria       String?   // ex: Elaboração de Projeto, Comissão...
   valor           Float
   valor_pago      Float     @default(0)
   tipo            String    @default("receita") // receita, despesa
