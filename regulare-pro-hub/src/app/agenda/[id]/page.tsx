@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, Trash2 } from 'lucide-react'
 
-export default async function EditarTarefaPage({ params }: { params: { id: string } }) {
+export default async function EditarTarefaPage({ params }: { params: Promise<{ id: string }> }) {
   const tarefa = await prisma.tarefa.findUnique({
-    where: { id: params.id }
+    where: { id: (await params).id }
   })
   
   if (!tarefa) return redirect('/agenda')
@@ -18,7 +18,7 @@ export default async function EditarTarefaPage({ params }: { params: { id: strin
   async function updateTarefa(formData: FormData) {
     'use server'
     await prisma.tarefa.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         titulo: formData.get('titulo') as string,
         descricao: formData.get('descricao') as string,
@@ -34,7 +34,7 @@ export default async function EditarTarefaPage({ params }: { params: { id: strin
 
   async function deleteTarefa() {
     'use server'
-    await prisma.tarefa.delete({ where: { id: params.id } })
+    await prisma.tarefa.delete({ where: { id: (await params).id } })
     redirect('/agenda')
   }
 

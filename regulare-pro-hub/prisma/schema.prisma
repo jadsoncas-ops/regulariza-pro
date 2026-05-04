@@ -12,58 +12,89 @@ model User {
   name      String
   email     String   @unique
   password  String
-  role      String   @default("user") // admin, user
+  role      String   @default("user")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Cliente {
-  id          String     @id @default(cuid())
+  id          String       @id @default(cuid())
   nome        String
   cpf_cnpj    String
   telefone    String?
   email       String?
   endereco    String?
+  cidade      String?
+  estado      String?
+  cep         String?
+  status      String       @default("ativo")
   observacoes String?
   processos   Processo[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  imoveis     Imovel[]
+  financeiro  Financeiro[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Imovel {
+  id                    String      @id @default(cuid())
+  clienteId             String
+  cliente               Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  endereco              String
+  bairro                String?
+  cidade                String?
+  estado                String?
+  cep                   String?
+  area_terreno          Float?
+  area_construida       Float?
+  num_matricula         String?
+  cartorio              String?
+  inscricao_imobiliaria String?
+  zoneamento            String?
+  latitude              Float?
+  longitude             Float?
+  observacoes           String?
+  processos             Processo[]
+  documentos            Documento[]
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 }
 
 model Processo {
   id                 String       @id @default(cuid())
   clienteId          String
   cliente            Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  imovelId           String?
+  imovel             Imovel?      @relation(fields: [imovelId], references: [id])
   tipo_regularizacao String
-  endereco           String
-  area_terreno       Float?
-  area_construida    Float?
-  num_pavimentos     Int?
-  status             String       @default("prospecção")
+  etapa_atual        String?
+  status             String       @default("em_analise")
   data_inicio        DateTime     @default(now())
   data_previsao      DateTime?
   responsavel        String?
   observacoes        String?
-  
   financeiro         Financeiro[]
   tarefas            Tarefa[]
   documentos         Documento[]
   checklists         Checklist[]
-
+  eventos            Evento[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 }
 
 model Financeiro {
   id              String    @id @default(cuid())
-  processoId      String
-  processo        Processo  @relation(fields: [processoId], references: [id], onDelete: Cascade)
-  honorarios      Float
+  processoId      String?
+  processo        Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  clienteId       String?
+  cliente         Cliente?  @relation(fields: [clienteId], references: [id])
+  descricao       String
+  valor           Float
   valor_pago      Float     @default(0)
-  valor_pendente  Float
+  data_vencimento DateTime?
   data_pagamento  DateTime?
-  forma_pagamento String?   // pix, boleto, transferencia, dinheiro
-  
+  forma_pagamento String?
+  status          String    @default("pendente")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -77,23 +108,25 @@ model Tarefa {
   data        DateTime
   hora        String?
   responsavel String?
-  status      String    @default("pendente") // pendente, concluída
-  
+  status      String    @default("pendente")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 
 model Documento {
-  id          String   @id @default(cuid())
-  processoId  String
-  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  id          String    @id @default(cuid())
+  processoId  String?
+  processo    Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  imovelId    String?
+  imovel      Imovel?   @relation(fields: [imovelId], references: [id])
   nome        String
   tipo        String
   url         String
   tamanho     Int?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  responsavel String?
+  observacoes String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Checklist {
@@ -102,7 +135,34 @@ model Checklist {
   processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
   item        String
   concluido   Boolean  @default(false)
-  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Evento {
+  id          String    @id @default(cuid())
+  titulo      String
+  descricao   String?
+  tipo        String    @default("reuniao")
+  processoId  String?
+  processo    Processo? @relation(fields: [processoId], references: [id])
+  data_inicio DateTime
+  data_fim    DateTime?
+  local       String?
+  responsavel String?
+  status      String    @default("agendado")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Alerta {
+  id          String   @id @default(cuid())
+  titulo      String
+  mensagem    String
+  tipo        String   @default("info")
+  lido        Boolean  @default(false)
+  processoId  String?
+  clienteId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -115,8 +175,10 @@ model EmpresaConfig {
   email        String?
   telefone     String?
   endereco     String?
+  cidade       String?
+  estado       String?
+  crea         String?
   logoUrl      String?
-  
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

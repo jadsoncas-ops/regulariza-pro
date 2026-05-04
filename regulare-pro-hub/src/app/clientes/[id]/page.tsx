@@ -18,14 +18,15 @@ import {
 
 export const dynamic = 'force-dynamic'
 
-export default async function ClienteDetalhesPage({ params }: { params: { id: string } }) {
+export default async function ClienteDetalhesPage({ params }: { params: Promise<{ id: string }> }) {
   const cliente = await prisma.cliente.findUnique({
-    where: { id: params.id },
+    where: { id: (await params).id },
     include: {
       processos: {
         include: {
           financeiro: true,
-          documentos: true
+          documentos: true,
+          imovel: true
         },
         orderBy: { createdAt: 'desc' }
       }
@@ -42,7 +43,7 @@ export default async function ClienteDetalhesPage({ params }: { params: { id: st
   
   cliente.processos.forEach(p => {
     p.financeiro.forEach(f => {
-      totalFaturado += f.honorarios
+      totalFaturado += f.valor
       totalRecebido += f.valor_pago
     })
   })
@@ -186,9 +187,9 @@ export default async function ClienteDetalhesPage({ params }: { params: { id: st
                           {p.status}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-wider">
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mt-1">
                         <MapPin className="w-3 h-3" />
-                        {p.endereco}
+                        {p.imovel?.endereco || 'SEM IMÓVEL VINCULADO'}
                       </div>
                     </div>
                     

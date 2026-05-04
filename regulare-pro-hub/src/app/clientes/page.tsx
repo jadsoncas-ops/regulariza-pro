@@ -25,7 +25,7 @@ export default async function ClientesPage() {
   clientes.forEach(c => {
     c.processos.forEach(p => {
       p.financeiro.forEach(f => {
-        receitaTotal += f.honorarios
+        receitaTotal += f.valor
       })
     })
   })

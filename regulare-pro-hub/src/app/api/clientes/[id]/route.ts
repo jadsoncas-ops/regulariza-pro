@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server'
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cliente = await prisma.cliente.findUnique({
-      where: { id: params.id },
+      where: { id: (await params).id },
       include: { 
         processos: {
           include: {
@@ -30,12 +30,12 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const data = await req.json()
     const cliente = await prisma.cliente.update({
-      where: { id: params.id },
+      where: { id: (await params).id },
       data: {
         nome: data.nome,
         cpf_cnpj: data.cpf_cnpj,
@@ -53,11 +53,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await prisma.cliente.delete({
-      where: { id: params.id }
+      where: { id: (await params).id }
     })
     return NextResponse.json({ success: true })
   } catch (error) {
