@@ -1,4 +1,5 @@
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface AppHeaderProps {
   title: string;
@@ -29,6 +30,13 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
             SIS. ONLINE
           </span>
         </div>
+        <Link
+          to="/diagnostico"
+          className="flex items-center gap-2 h-9 px-3 border border-border bg-surface text-xs font-semibold font-display uppercase tracking-wider text-foreground hover:border-primary hover:text-primary transition-colors"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          Assistente IA
+        </Link>
         <button className="flex items-center gap-2 h-9 px-3 bg-foreground text-background text-xs font-semibold font-display uppercase tracking-wider hover:bg-primary transition-colors">
           <Plus className="h-3.5 w-3.5" />
           Novo Processo
