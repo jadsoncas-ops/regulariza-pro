@@ -1,36 +1,37 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard,
+  Home,
+  FolderOpen,
   Users,
-  Building2,
-  FolderKanban,
+  Calendar,
+  CheckSquare,
   FileText,
-  Wallet,
-  CalendarDays,
-  Map,
-  Bell,
+  DollarSign,
+  BarChart2,
+  Bot,
   Settings,
+  Building,
 } from "lucide-react";
 
-const operacao = [
-  { title: "Painel Central", url: "/", icon: LayoutDashboard, code: "01" },
-  { title: "Clientes", url: "/clientes", icon: Users, code: "02" },
-  { title: "Imóveis / Lotes", url: "/imoveis", icon: Building2, code: "03" },
-  { title: "Processos", url: "/processos", icon: FolderKanban, code: "04", badge: "42" },
-  { title: "Documentos", url: "/documentos", icon: FileText, code: "05" },
+const mainNav = [
+  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Processos", url: "/processos", icon: FolderOpen },
+  { title: "Clientes", url: "/clientes", icon: Users },
+  { title: "Agenda", url: "/agenda", icon: Calendar },
+  { title: "Tarefas", url: "/tarefas", icon: CheckSquare },
+  { title: "Documentos", url: "/documentos", icon: FileText },
 ];
 
-const gestao = [
-  { title: "Financeiro", url: "/financeiro", icon: Wallet, code: "06" },
-  { title: "Agenda & Prazos", url: "/agenda", icon: CalendarDays, code: "07" },
-  { title: "Mapa Zonal", url: "/mapa", icon: Map, code: "08" },
-  { title: "Alertas", url: "/alertas", icon: Bell, code: "09" },
+const managementNav = [
+  { title: "Financeiro", url: "/financeiro", icon: DollarSign },
+  { title: "Relatórios", url: "/relatorios", icon: BarChart2 },
+  { title: "IA Regularização", url: "/ia-regularizacao", icon: Bot },
 ];
 
 function NavItem({
   item,
 }: {
-  item: { title: string; url: string; icon: any; code: string; badge?: string };
+  item: { title: string; url: string; icon: any; badge?: string };
 }) {
   const Icon = item.icon;
   return (
@@ -39,22 +40,18 @@ function NavItem({
       end={item.url === "/"}
       className={({ isActive }) =>
         [
-          "group flex items-center gap-3 px-3 py-2 text-sm font-medium border-l-2 transition-colors",
+          "group flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium smooth-transition",
           isActive
-            ? "bg-surface text-primary border-primary shadow-block-sm"
-            : "text-muted-foreground border-transparent hover:bg-surface-mid hover:text-foreground",
+            ? "bg-primary/10 text-primary"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
         ].join(" ")
       }
     >
       <Icon className="h-4 w-4 shrink-0" />
       <span className="flex-1 truncate">{item.title}</span>
-      {item.badge ? (
-        <span className="font-mono text-[10px] tabular-nums bg-surface-dark text-foreground px-1.5 py-0.5">
+      {item.badge && (
+        <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">
           {item.badge}
-        </span>
-      ) : (
-        <span className="font-mono text-[10px] text-surface-dark group-hover:text-muted-foreground">
-          {item.code}
         </span>
       )}
     </NavLink>
@@ -64,44 +61,52 @@ function NavItem({
 export function AppSidebar() {
   useLocation();
   return (
-    <aside className="w-64 shrink-0 border-r border-border bg-background flex flex-col z-20 relative">
+    <aside className="w-64 shrink-0 border-r border-border bg-card flex flex-col z-20 relative">
       <div className="p-6">
         <div
-          className="font-display font-bold text-xl tracking-tighter flex items-baseline gap-2"
-          aria-label="EngArqGestão"
+          className="font-bold text-xl tracking-tight flex items-center gap-2 text-foreground"
+          aria-label="Regulare Pro Hub"
         >
-          <span className="size-2 bg-primary inline-block" />
-          ENGARQ<span className="text-muted-foreground">.GESTÃO</span>
+          <div className="bg-primary/10 p-1.5 rounded-lg">
+            <Building className="h-5 w-5 text-primary" />
+          </div>
+          REGULARE <span className="font-light">PRO</span>
         </div>
 
-        <nav className="mt-10 flex flex-col">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3 px-3 font-display">
-            Operação
+        <nav className="mt-8 flex flex-col gap-1">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-3">
+            Principal
           </div>
-          {operacao.map((i) => (
+          {mainNav.map((i) => (
             <NavItem key={i.url} item={i} />
           ))}
 
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3 mt-8 px-3 font-display">
-            Gestão
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-6 px-3">
+            Gestão & IA
           </div>
-          {gestao.map((i) => (
+          {managementNav.map((i) => (
             <NavItem key={i.url} item={i} />
           ))}
 
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3 mt-8 px-3 font-display">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-6 px-3">
             Sistema
           </div>
           <NavItem
-            item={{ title: "Configurações", url: "/configuracoes", icon: Settings, code: "10" }}
+            item={{ title: "Configurações", url: "/configuracoes", icon: Settings }}
           />
         </nav>
       </div>
 
-      <div className="mt-auto p-6 border-t border-border bg-surface">
-        <div className="font-mono text-[10px] text-muted-foreground mb-1">ID: MATR-882</div>
-        <div className="text-sm font-semibold tracking-tight">Arq. Helena Torres</div>
-        <div className="text-xs text-muted-foreground">Engenheira Responsável</div>
+      <div className="mt-auto p-4 m-4 border border-border rounded-xl bg-muted/50">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+            JD
+          </div>
+          <div>
+            <div className="text-sm font-semibold tracking-tight">João Silva</div>
+            <div className="text-xs text-muted-foreground">Engenheiro</div>
+          </div>
+        </div>
       </div>
     </aside>
   );

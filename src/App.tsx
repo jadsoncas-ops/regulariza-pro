@@ -14,6 +14,8 @@ import Mapa from "./pages/Mapa.tsx";
 import Alertas from "./pages/Alertas.tsx";
 import Configuracoes from "./pages/Configuracoes.tsx";
 import Diagnostico from "./pages/Diagnostico.tsx";
+import Tarefas from "./pages/Tarefas.tsx";
+import Relatorios from "./pages/Relatorios.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,10 +34,12 @@ const App = () => (
           <Route path="/documentos" element={<Documentos />} />
           <Route path="/financeiro" element={<Financeiro />} />
           <Route path="/agenda" element={<Agenda />} />
+          <Route path="/tarefas" element={<Tarefas />} />
+          <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/mapa" element={<Mapa />} />
           <Route path="/alertas" element={<Alertas />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/diagnostico" element={<Diagnostico />} />
+          <Route path="/ia-regularizacao" element={<Diagnostico />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

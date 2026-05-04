@@ -1,4 +1,5 @@
 import { SectionHeader } from "./KpiGrid";
+import { ArrowRight, AlertCircle } from "lucide-react";
 
 interface Card {
   ref: string;
@@ -24,7 +25,7 @@ const columns: Column[] = [
         ref: "REQ-8842",
         title: "Desmembramento Gleba B",
         address: "Av. das Américas, 3301",
-        badge: "Desmembr.",
+        badge: "Desmembramento",
       },
       {
         ref: "REQ-8849",
@@ -42,7 +43,7 @@ const columns: Column[] = [
         ref: "PRC-9105",
         title: "Habite-se Residencial",
         address: "Cond. Vale Verde, Q3",
-        alert: "Exigência: Laudo Bombeiros",
+        alert: "Laudo Bombeiros Pendente",
         highlight: true,
       },
       {
@@ -72,47 +73,47 @@ export function PipelinePreview() {
     <section>
       <SectionHeader
         title="Esteira de Tramitação"
-        code="FLW.002"
         action={
-          <button className="text-[10px] font-mono font-medium bg-surface border border-border px-2 py-1 hover:border-foreground transition-colors">
-            VER QUADRO COMPLETO →
+          <button className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 smooth-transition">
+            Ver Quadro Completo
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         }
       />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {columns.map((col) => (
-          <div key={col.title} className="flex flex-col gap-3">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex justify-between items-center font-display">
+          <div key={col.title} className="flex flex-col gap-3 bg-muted/20 p-4 rounded-xl border border-border">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex justify-between items-center mb-1">
               <span>{col.title}</span>
-              <span className="text-foreground bg-surface border border-border px-1.5 tabular-nums font-mono">
-                {String(col.count).padStart(2, "0")}
+              <span className="bg-background border border-border px-2 py-0.5 rounded-full text-[10px] font-bold text-foreground">
+                {col.count}
               </span>
             </div>
             {col.cards.map((c) => (
               <article
                 key={c.ref}
-                className={[
-                  "border bg-surface p-4 hover-lift cursor-pointer",
-                  c.highlight ? "border-l-4 border-l-alert border-y-border border-r-border" : "border-border",
-                ].join(" ")}
+                className={`bg-card border p-4 rounded-lg hover:-translate-y-0.5 hover:shadow-sm smooth-transition cursor-pointer flex flex-col gap-2 ${
+                  c.highlight ? "border-red-500/30 shadow-[0_0_0_1px_rgba(239,68,68,0.1)]" : "border-border"
+                }`}
               >
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-[10px] font-mono bg-background text-foreground border border-border px-1">
+                <div className="flex justify-between items-start">
+                  <span className="text-[10px] font-medium bg-muted text-muted-foreground px-2 py-0.5 rounded">
                     {c.ref}
                   </span>
-                  {c.alert ? (
-                    <span className="text-[9px] font-bold text-alert uppercase tracking-wider font-display">
-                      Exigência
+                  {c.badge && (
+                    <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded">
+                      {c.badge}
                     </span>
-                  ) : (
-                    <span className="size-2 bg-primary" />
                   )}
                 </div>
-                <div className="font-medium text-sm leading-tight">{c.title}</div>
-                <div className="text-xs text-muted-foreground mt-1">{c.address}</div>
+                <div>
+                  <h3 className="font-semibold text-sm leading-tight text-foreground">{c.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-1 truncate">{c.address}</p>
+                </div>
                 {c.alert && (
-                  <div className="mt-3 pt-2 border-t border-border text-[10px]">
-                    {c.alert}
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-500/10 px-2 py-1.5 rounded-md">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span className="font-medium truncate">{c.alert}</span>
                   </div>
                 )}
               </article>

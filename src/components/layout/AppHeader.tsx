@@ -1,4 +1,4 @@
-import { Search, Plus, Sparkles } from "lucide-react";
+import { Search, Plus, Sparkles, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface AppHeaderProps {
@@ -8,37 +8,37 @@ interface AppHeaderProps {
 
 export function AppHeader({ title, subtitle }: AppHeaderProps) {
   return (
-    <header className="h-16 border-b border-border bg-background/70 backdrop-blur-xl sticky top-0 flex items-center justify-between px-8 shrink-0 z-10">
-      <div className="flex items-baseline gap-3">
-        <h1 className="text-base font-medium font-display tracking-tight">{title}</h1>
+    <header className="h-16 border-b border-border bg-background/80 backdrop-blur-xl sticky top-0 flex items-center justify-between px-8 shrink-0 z-10">
+      <div className="flex flex-col justify-center">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
         {subtitle && (
-          <span className="font-mono text-xs text-muted-foreground">// {subtitle}</span>
+          <span className="text-sm text-muted-foreground">{subtitle}</span>
         )}
       </div>
-      <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2 px-3 h-9 border border-border bg-surface text-xs text-muted-foreground w-72">
-          <Search className="h-3.5 w-3.5" />
+      <div className="flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2 px-3 h-10 border border-border bg-muted/30 rounded-lg text-sm text-muted-foreground w-80 transition-all focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary">
+          <Search className="h-4 w-4" />
           <input
-            placeholder="Buscar processo, cliente, matrícula…"
+            placeholder="Buscar processos, clientes, matrículas..."
             className="bg-transparent outline-none flex-1 text-foreground placeholder:text-muted-foreground"
           />
-          <span className="font-mono text-[10px] border border-border px-1">⌘K</span>
+          <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded border border-border">⌘K</span>
         </div>
-        <div className="flex items-center gap-4 text-[10px] font-mono text-muted-foreground border-l border-border pl-4">
-          <span className="flex items-center gap-2">
-            <span className="size-1.5 bg-success rounded-full animate-pulse" />
-            SIS. ONLINE
-          </span>
-        </div>
+        
+        <button className="h-10 w-10 flex items-center justify-center border border-border rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground smooth-transition relative">
+          <Bell className="h-4 w-4" />
+          <span className="absolute top-2.5 right-2.5 h-2 w-2 bg-destructive rounded-full border-2 border-background" />
+        </button>
+
         <Link
-          to="/diagnostico"
-          className="flex items-center gap-2 h-9 px-3 border border-border bg-surface text-xs font-semibold font-display uppercase tracking-wider text-foreground hover:border-primary hover:text-primary transition-colors"
+          to="/ia-regularizacao"
+          className="flex items-center gap-2 h-10 px-4 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted smooth-transition"
         >
-          <Sparkles className="h-3.5 w-3.5" />
+          <Sparkles className="h-4 w-4 text-primary" />
           Assistente IA
         </Link>
-        <button className="flex items-center gap-2 h-9 px-3 bg-foreground text-background text-xs font-semibold font-display uppercase tracking-wider hover:bg-primary transition-colors">
-          <Plus className="h-3.5 w-3.5" />
+        <button className="flex items-center gap-2 h-10 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 smooth-transition shadow-sm">
+          <Plus className="h-4 w-4" />
           Novo Processo
         </button>
       </div>

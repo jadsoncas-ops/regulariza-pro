@@ -13,45 +13,42 @@ const max = Math.max(...data.map((d) => d.v));
 
 export function RevenueChart() {
   return (
-    <div>
-      <SectionHeader title="Receita Faturada" code="FIN.003" />
-      <div className="bg-surface border border-border p-5 shadow-block-sm">
-        <div className="flex items-baseline justify-between mb-6">
+    <div className="h-full flex flex-col">
+      <SectionHeader title="Evolução Financeira" />
+      <div className="bg-card border border-border p-6 rounded-xl flex-1 flex flex-col shadow-sm">
+        <div className="flex items-start justify-between mb-8">
           <div>
-            <div className="text-3xl font-display tracking-tighter tabular-nums">R$ 84k</div>
-            <div className="text-[10px] font-mono text-muted-foreground mt-1">
-              SEMESTRE · +24% vs ANT.
+            <div className="text-3xl font-bold tracking-tight text-foreground">R$ 84k</div>
+            <div className="text-sm text-emerald-500 font-medium mt-1 flex items-center gap-1">
+              <span>+24%</span>
+              <span className="text-muted-foreground font-normal">vs último semestre</span>
             </div>
           </div>
-          <div className="flex gap-2 text-[10px] font-mono">
-            <button className="px-2 py-1 border border-border text-muted-foreground hover:text-foreground">6M</button>
-            <button className="px-2 py-1 border border-foreground bg-foreground text-background">1A</button>
+          <div className="flex gap-1 bg-muted/50 p-1 rounded-lg">
+            <button className="px-3 py-1 rounded-md text-xs font-medium bg-background text-foreground shadow-sm">6M</button>
+            <button className="px-3 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground smooth-transition">1A</button>
           </div>
         </div>
-        <div className="flex items-end justify-between gap-2 h-40 border-b border-l border-border pl-2 pb-1 relative">
-          <div className="absolute inset-0 pointer-events-none flex flex-col justify-between">
-            <div className="border-t border-dashed border-border/60" />
-            <div className="border-t border-dashed border-border/60" />
-            <div className="border-t border-dashed border-border/60" />
-          </div>
+        
+        <div className="flex-1 flex items-end justify-between gap-4 border-b border-border/50 pb-2 relative mt-4 min-h-[160px]">
           {data.map((d, i) => (
             <div
               key={d.m}
-              className="flex-1 flex flex-col items-center gap-1 group relative"
+              className="flex-1 flex flex-col items-center gap-2 group relative h-full justify-end"
             >
               <div
-                className={[
-                  "w-full transition-colors",
-                  i === data.length - 2 ? "bg-primary" : "bg-foreground/15 group-hover:bg-foreground/40",
-                ].join(" ")}
+                className={`w-full max-w-[40px] rounded-t-sm transition-all duration-500 ${
+                  i === data.length - 2 ? "bg-primary" : "bg-primary/20 group-hover:bg-primary/40"
+                }`}
                 style={{ height: `${(d.v / max) * 100}%` }}
               />
             </div>
           ))}
         </div>
-        <div className="flex justify-between gap-2 pl-2 pt-2">
+        
+        <div className="flex justify-between gap-4 pt-3">
           {data.map((d) => (
-            <div key={d.m} className="flex-1 text-center text-[10px] font-mono text-muted-foreground">
+            <div key={d.m} className="flex-1 text-center text-xs font-medium text-muted-foreground">
               {d.m}
             </div>
           ))}

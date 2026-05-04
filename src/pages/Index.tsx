@@ -8,20 +8,24 @@ import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 const Index = () => {
   return (
     <AppLayout
-      title="Painel Central — Regularização Imobiliária"
-      subtitle="EMP.GRID-001 / NOV·2026"
+      title="Dashboard"
+      subtitle="Visão geral do seu negócio"
     >
-      <KpiGrid />
-      <PipelinePreview />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <RevenueChart />
-        <AlertsPanel />
+      <div className="flex flex-col gap-6">
+        <KpiGrid />
+        
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div className="xl:col-span-2">
+            <RevenueChart />
+          </div>
+          <div>
+            <AlertsPanel />
+          </div>
+        </div>
+
+        <PipelinePreview />
+        <MovementsTable />
       </div>
-      <MovementsTable />
-      <footer className="pt-6 border-t border-border flex items-center justify-between text-[10px] font-mono text-muted-foreground">
-        <span>ENGARQ.GESTÃO · v0.1 · MVP visual</span>
-        <span>VIEW: DASHBOARD · LAT -23.5505 / LON -46.6333</span>
-      </footer>
     </AppLayout>
   );
 };
