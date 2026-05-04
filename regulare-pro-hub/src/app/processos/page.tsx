@@ -21,7 +21,7 @@ export default async function ProcessosPage() {
 
   return (
     <div className="p-8 max-w-[1600px] mx-auto w-full min-h-screen relative font-mono overflow-x-hidden">
-      {/* HEADER TOP - ENGARQ STYLE */}
+      {/* HEADER TOP - REGULARIZA PRO STYLE */}
       <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
         <h1 className="text-sm font-semibold tracking-wider text-foreground uppercase">
           Processos de Regularização <span className="text-muted-foreground font-normal ml-2">// MOD.PRC / 04</span>
@@ -34,14 +34,14 @@ export default async function ProcessosPage() {
               className="bg-transparent outline-none flex-1 text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest border border-border px-2 py-1.5 rounded-sm">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest border border-border px-2 py-1.5 rounded-sm bg-card">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
             Sis. Online
           </div>
           <button className="flex items-center gap-2 bg-background border border-border px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition">
             + Assistente IA
           </button>
-          <Link href="/processos/novo" className="flex items-center gap-2 bg-foreground text-background px-4 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition">
+          <Link href="/processos/novo" className="flex items-center gap-2 bg-foreground text-background px-4 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition shadow-sm">
             + Novo Processo
           </Link>
         </div>
@@ -96,7 +96,7 @@ export default async function ProcessosPage() {
                         <div className="absolute top-4 right-8 text-[9px] font-bold text-rose-500 uppercase tracking-widest">EXIGÊNCIA</div>
                       )}
                       <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">
-                        {p.status === 'exigência' ? 'PRC-9105' : `PRC-${p.id.slice(0,4)}`}
+                        {`PRC-${p.id.slice(0,8)}`}
                       </div>
                       <div className="font-bold text-sm text-foreground mb-1">{p.tipo_regularizacao}</div>
                       <div className="text-xs text-muted-foreground truncate">{p.cliente.nome}</div>

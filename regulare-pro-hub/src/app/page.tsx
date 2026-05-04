@@ -26,10 +26,10 @@ export default async function DashboardPage() {
   return (
     <div className="p-8 max-w-[1400px] mx-auto w-full min-h-screen relative font-mono">
       
-      {/* HEADER TOP - ENGARQ STYLE */}
+      {/* HEADER TOP - REGULARIZA PRO STYLE */}
       <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
         <h1 className="text-sm font-semibold tracking-wider text-foreground uppercase">
-          Painel Central — Regularização Imobiliária <span className="text-muted-foreground font-normal ml-2">// EMP.GRID-881 / NOV-2026</span>
+          Painel Central — Regularização Imobiliária <span className="text-muted-foreground font-normal ml-2">// MOD.DASH / 01</span>
         </h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-background border border-border rounded-sm text-xs w-64 shadow-sm">
@@ -110,13 +110,13 @@ export default async function DashboardPage() {
             <div className="border-r border-border min-h-[300px]">
               <div className="p-3 border-b border-border bg-muted/30 flex justify-between items-center">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Análise Documental</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-background border border-border rounded-sm">12</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-background border border-border rounded-sm">{pipeline.filter(p => p.status === 'ANÁLISE').length}</span>
               </div>
               <div className="p-4 space-y-4 bg-muted/10">
-                {pipeline.slice(0,2).map(p => (
+                {pipeline.filter(p => p.status === 'ANÁLISE').map(p => (
                   <div key={p.id} className="bg-card border border-border p-4 shadow-sm rounded-sm relative group cursor-pointer hover:border-blue-600 smooth-transition">
                     <div className="absolute top-4 right-4 w-1.5 h-1.5 bg-blue-600"></div>
-                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">{p.id.slice(-6)}</div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">{p.id.substring(0, 8)}</div>
                     <div className="font-bold text-sm text-foreground mb-1">{p.tipo_regularizacao}</div>
                     <div className="text-xs text-muted-foreground truncate">{p.endereco}</div>
                   </div>
@@ -128,26 +128,17 @@ export default async function DashboardPage() {
             <div className="border-r border-border min-h-[300px]">
               <div className="p-3 border-b border-border bg-muted/30 flex justify-between items-center">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Prefeitura / SMU</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-background border border-border rounded-sm">17</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-background border border-border rounded-sm">{pipeline.filter(p => p.status === 'PREFEITURA').length}</span>
               </div>
               <div className="p-4 space-y-4 bg-muted/10">
-                <div className="bg-card border border-rose-500 p-4 shadow-[0_0_10px_rgba(244,63,94,0.1)] rounded-sm relative group cursor-pointer smooth-transition">
-                  <div className="absolute top-4 right-4 text-[10px] font-bold text-rose-500 uppercase">Exigência</div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">PRC-9105</div>
-                  <div className="font-bold text-sm text-foreground mb-1">Habite-se Residencial</div>
-                  <div className="text-xs text-muted-foreground truncate mb-3">Cond. Vale Verde, Q3</div>
-                  <div className="text-xs text-rose-500 flex items-center gap-1 border-t border-border pt-2">
-                    <span className="w-1 h-4 bg-rose-500 inline-block mr-1"></span>
-                    Exigência: Laudo Bombeiros
+                {pipeline.filter(p => p.status === 'PREFEITURA').map(p => (
+                  <div key={p.id} className="bg-card border border-rose-500 p-4 shadow-[0_0_10px_rgba(244,63,94,0.1)] rounded-sm relative group cursor-pointer smooth-transition">
+                    <div className="absolute top-4 right-4 text-[10px] font-bold text-rose-500 uppercase">Atenção</div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">{p.id.substring(0, 8)}</div>
+                    <div className="font-bold text-sm text-foreground mb-1">{p.tipo_regularizacao}</div>
+                    <div className="text-xs text-muted-foreground truncate mb-3">{p.endereco}</div>
                   </div>
-                </div>
-
-                <div className="bg-card border border-border p-4 shadow-sm rounded-sm relative group cursor-pointer hover:border-blue-600 smooth-transition">
-                  <div className="absolute top-4 right-4 w-1.5 h-1.5 bg-blue-600"></div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">PRC-9201</div>
-                  <div className="font-bold text-sm text-foreground mb-1">Alvará de Execução</div>
-                  <div className="text-xs text-muted-foreground truncate">Galpão Logístico Centro</div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -155,15 +146,17 @@ export default async function DashboardPage() {
             <div className="min-h-[300px]">
               <div className="p-3 border-b border-border bg-muted/30 flex justify-between items-center">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Cartório / RGI</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-background border border-border rounded-sm">04</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-background border border-border rounded-sm">{pipeline.filter(p => p.status === 'CARTÓRIO').length}</span>
               </div>
               <div className="p-4 space-y-4 bg-muted/10">
-                <div className="bg-card border border-border p-4 shadow-sm rounded-sm relative group cursor-pointer hover:border-blue-600 smooth-transition">
-                  <div className="absolute top-4 right-4 w-1.5 h-1.5 bg-blue-600"></div>
-                  <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">REG-7721</div>
-                  <div className="font-bold text-sm text-foreground mb-1">Averbação de Construção</div>
-                  <div className="text-xs text-muted-foreground truncate">Estrada do Mendanha, Lt 5</div>
-                </div>
+                {pipeline.filter(p => p.status === 'CARTÓRIO').map(p => (
+                  <div key={p.id} className="bg-card border border-border p-4 shadow-sm rounded-sm relative group cursor-pointer hover:border-blue-600 smooth-transition">
+                    <div className="absolute top-4 right-4 w-1.5 h-1.5 bg-blue-600"></div>
+                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 border border-border w-fit px-1.5 py-0.5 rounded-sm bg-muted/30">{p.id.substring(0, 8)}</div>
+                    <div className="font-bold text-sm text-foreground mb-1">{p.tipo_regularizacao}</div>
+                    <div className="text-xs text-muted-foreground truncate">{p.endereco}</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -210,33 +203,8 @@ export default async function DashboardPage() {
             <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
               Alertas Ativos <span className="opacity-50">ALR.005</span>
             </h2>
-            <div className="flex flex-col gap-3">
-              <div className="border border-rose-500/50 bg-rose-500/5 p-4 rounded-sm flex items-start gap-3 relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500"></div>
-                <div className="text-rose-500 mt-0.5">⚠️</div>
-                <div>
-                  <div className="font-bold text-sm text-foreground">Prazo da Prefeitura</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Processo PRC-9105 vence em 3 dias</div>
-                </div>
-              </div>
-              
-              <div className="border border-border bg-card shadow-sm p-4 rounded-sm flex items-start gap-3 relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-foreground"></div>
-                <div className="text-foreground mt-0.5">📄</div>
-                <div>
-                  <div className="font-bold text-sm text-foreground">Documento pendente</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Matrícula atualizada — Cliente A. Ribeiro</div>
-                </div>
-              </div>
-
-              <div className="border border-border bg-card shadow-sm p-4 rounded-sm flex items-start gap-3 relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-muted-foreground"></div>
-                <div className="text-muted-foreground mt-0.5">🕒</div>
-                <div>
-                  <div className="font-bold text-sm text-foreground">Processo parado</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">REG-7721 há 12 dias sem movimentação</div>
-                </div>
-              </div>
+            <div className="flex flex-col gap-3 text-muted-foreground text-sm p-4 text-center">
+              Nenhum alerta ativo.
             </div>
           </section>
 

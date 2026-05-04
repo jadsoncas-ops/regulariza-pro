@@ -22,10 +22,10 @@ export default async function ClientesPage() {
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto w-full min-h-screen relative font-mono">
-      {/* HEADER TOP - ENGARQ STYLE */}
+      {/* HEADER TOP - REGULARIZA PRO STYLE */}
       <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
         <h1 className="text-sm font-semibold tracking-wider text-foreground uppercase">
-          Clientes — CRM <span className="text-muted-foreground font-normal ml-2">// MOD.CLI / 02</span>
+          Gestão de Clientes <span className="text-muted-foreground font-normal ml-2">// MOD.CLI / 02</span>
         </h1>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-background border border-border rounded-sm text-xs w-64 shadow-sm">
@@ -70,32 +70,16 @@ export default async function ClientesPage() {
         {/* PIPELINE COMERCIAL */}
         <section>
           <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            Pipeline Comercial <span className="opacity-50">CRM.001</span>
+            Indicadores <span className="opacity-50">CRM.001</span>
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-0 border border-border bg-card shadow-sm rounded-sm overflow-hidden">
+          <div className="grid grid-cols-2 gap-0 border border-border bg-card shadow-sm rounded-sm overflow-hidden">
             <div className="p-4 border-r border-border flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Lead</div>
-              <div className="text-3xl font-bold text-foreground">01</div>
-            </div>
-            <div className="p-4 border-r border-border flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Contato</div>
-              <div className="text-3xl font-bold text-foreground">01</div>
-            </div>
-            <div className="p-4 border-r border-border flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Proposta</div>
-              <div className="text-3xl font-bold text-foreground">01</div>
-            </div>
-            <div className="p-4 border-r border-border flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Contrato</div>
-              <div className="text-3xl font-bold text-foreground">01</div>
-            </div>
-            <div className="p-4 border-r border-border flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Execução</div>
-              <div className="text-3xl font-bold text-foreground">04</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Total de Clientes</div>
+              <div className="text-3xl font-bold text-foreground">{clientes.length}</div>
             </div>
             <div className="p-4 flex flex-col">
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Finalizado</div>
-              <div className="text-3xl font-bold text-foreground opacity-50">00</div>
+              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Processos Vinculados</div>
+              <div className="text-3xl font-bold text-foreground">{clientes.reduce((acc, c) => acc + c.processos.length, 0)}</div>
             </div>
           </div>
         </section>
