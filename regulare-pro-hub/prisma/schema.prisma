@@ -91,6 +91,8 @@ model Financeiro {
   descricao       String
   valor           Float
   valor_pago      Float     @default(0)
+  tipo            String    @default("receita") // receita, despesa
+  is_repasse      Boolean   @default(false)
   data_vencimento DateTime?
   data_pagamento  DateTime?
   forma_pagamento String?

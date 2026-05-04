@@ -7,7 +7,8 @@ export default async function ProcessosPage() {
   const processos = await prisma.processo.findMany({
     include: { 
       cliente: { select: { nome: true } },
-      imovel: { select: { endereco: true } }
+      imovel: { select: { endereco: true } },
+      financeiro: true
     },
     orderBy: { createdAt: 'desc' }
   })

@@ -40,15 +40,25 @@ export default async function ClienteDetalhesPage({ params }: { params: Promise<
   // Cálculos financeiros
   let totalFaturado = 0
   let totalRecebido = 0
+  let totalDespesas = 0
+  let totalDespesasPagas = 0
   
   cliente.processos.forEach(p => {
     p.financeiro.forEach(f => {
-      totalFaturado += f.valor
-      totalRecebido += f.valor_pago
+      if (f.tipo === 'receita') {
+        totalFaturado += f.valor
+        totalRecebido += f.valor_pago
+      } else if (f.tipo === 'despesa') {
+        totalDespesas += f.valor
+        totalDespesasPagas += f.valor_pago
+      }
     })
   })
 
-  const totalPendente = totalFaturado - totalRecebido
+  const receitaPendente = totalFaturado - totalRecebido
+  const despesaPendente = totalDespesas - totalDespesasPagas
+  const lucroEsperado = totalFaturado - totalDespesas
+  const lucroRealizado = totalRecebido - totalDespesasPagas
 
   return (
     <div className="p-8 max-w-7xl mx-auto w-full font-mono">
@@ -133,25 +143,58 @@ export default async function ClienteDetalhesPage({ params }: { params: Promise<
               <h2 className="text-[10px] font-bold uppercase tracking-widest">Resumo Financeiro</h2>
             </div>
             <div className="p-6 space-y-6">
-              <div className="flex justify-between items-end border-b border-border pb-4">
+              <div className="grid grid-cols-2 gap-4 border-b border-border pb-4">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Total Faturado</span>
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Valor do Contrato</span>
                   <span className="text-lg font-bold">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalFaturado)}
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Recebido</span>
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Já Recebido</span>
                   <span className="text-sm font-bold text-emerald-500">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRecebido)}
                   </span>
                 </div>
+                
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Custo / Repasses</span>
+                  <span className="text-sm font-bold text-red-500">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDespesas)}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Custo Pago</span>
+                  <span className="text-sm font-bold text-red-500/70">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDespesasPagas)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center bg-muted/20 p-3 rounded-sm">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Saldo Pendente</span>
-                <span className={`text-sm font-bold ${totalPendente > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPendente)}
-                </span>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Receita Pendente</span>
+                  <span className="font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(receitaPendente)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Despesa Pendente</span>
+                  <span className="font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(despesaPendente)}</span>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center bg-muted/20 p-3 rounded-sm border-t border-border">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Lucro Esperado</span>
+                  <span className="text-sm font-bold text-emerald-500">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lucroEsperado)}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1 text-right">
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Caixa Atual</span>
+                  <span className="text-sm font-bold text-blue-500">
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lucroRealizado)}
+                  </span>
+                </div>
               </div>
             </div>
           </section>
