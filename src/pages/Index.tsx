@@ -1,16 +1,29 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { AppLayout } from "@/components/layout/AppLayout";
+import { KpiGrid } from "@/components/dashboard/KpiGrid";
+import { PipelinePreview } from "@/components/dashboard/PipelinePreview";
+import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { MovementsTable } from "@/components/dashboard/MovementsTable";
+import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <AppLayout
+      title="Painel Central — Regularização Imobiliária"
+      subtitle="EMP.GRID-001 / NOV·2026"
+    >
+      <KpiGrid />
+      <PipelinePreview />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <RevenueChart />
+        <AlertsPanel />
+      </div>
+      <MovementsTable />
+      <footer className="pt-6 border-t border-border flex items-center justify-between text-[10px] font-mono text-muted-foreground">
+        <span>ENGARQ.GESTÃO · v0.1 · MVP visual</span>
+        <span>VIEW: DASHBOARD · LAT -23.5505 / LON -46.6333</span>
+      </footer>
+    </AppLayout>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
