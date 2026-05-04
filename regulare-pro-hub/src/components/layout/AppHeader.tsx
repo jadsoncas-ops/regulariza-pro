@@ -45,7 +45,7 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
 
         {/* AI Assistant */}
         <Link
-          to="/ia-regularizacao"
+          href="/ia-regularizacao"
           className="flex items-center gap-2 h-9 px-4 border border-border/60 rounded-lg text-sm font-medium text-foreground hover:bg-primary/5 hover:border-primary/30 hover:text-primary smooth-transition shadow-sm group"
         >
           <Sparkles className="h-4 w-4 text-primary group-hover:animate-pulse" />
@@ -53,11 +53,14 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
         </Link>
         
         {/* Primary Action */}
-        <button className="flex items-center gap-2 h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 smooth-transition shadow-[0_2px_10px_rgba(37,99,235,0.2)] active:scale-95">
+        <Link 
+          href="/processos/novo"
+          className="flex items-center gap-2 h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 smooth-transition shadow-[0_2px_10px_rgba(37,99,235,0.2)] active:scale-95"
+        >
           <Plus className="h-4 w-4" />
           Novo Processo
           <ChevronDown className="h-3 w-3 ml-1 opacity-70" />
-        </button>
+        </Link>
       </div>
     </motion.header>
   );
