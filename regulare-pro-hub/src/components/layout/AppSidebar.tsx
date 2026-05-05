@@ -14,7 +14,8 @@ import {
   Bell,
   Building,
   FolderOpen,
-  ArrowRightLeft
+  ArrowRightLeft,
+  PlusCircle
 } from "lucide-react";
 
 const SIDEBAR_ITEMS = {
