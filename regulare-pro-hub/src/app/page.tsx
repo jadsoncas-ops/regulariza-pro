@@ -42,7 +42,7 @@ export default async function DashboardPage() {
     prisma.tarefa.findMany({
       take: 4,
       where: { status: 'pendente' },
-      orderBy: { data_vencimento: 'asc' },
+      orderBy: { data: 'asc' },
       include: { processo: { select: { tipo_regularizacao: true } } }
     })
   ])
