@@ -60,7 +60,7 @@ export default async function ClientesPage() {
         </div>
       </div>
 
-      <ClientList initialClientes={clientes} stats={stats} />
+      <ClientList initialClientes={clientes} />
     </div>
   )
 }

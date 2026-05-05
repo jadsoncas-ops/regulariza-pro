@@ -1,349 +1,242 @@
-import { prisma } from '@/lib/prisma'
-import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
-  Save, 
-  Trash2, 
-  CheckSquare, 
+  Home, 
   FileText, 
   DollarSign, 
-  Calendar,
-  User,
-  Home,
+  ListTodo, 
+  History, 
+  Info,
+  MapPin,
+  CheckCircle2,
   Clock,
-  AlertTriangle,
-  Download
+  User,
+  AlertCircle
 } from 'lucide-react'
+import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
+export default function ProcessoDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const [activeTab, setActiveTab] = useState('geral')
+  const [processo, setProcesso] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-export default async function DetalhesProcessoPage({ params }: { params: Promise<{ id: string }> }) {
-  const processo = await prisma.processo.findUnique({
-    where: { id: (await params).id },
-    include: { 
-      cliente: true, 
-      imovel: true,
-      financeiro: true, 
-      tarefas: true, 
-      documentos: true, 
-      checklists: true,
-      eventos: true
-    }
-  })
-  
-  if (!processo) return notFound()
-
-  const clientes = await prisma.cliente.findMany({ orderBy: { nome: 'asc' } })
-  const imoveis = await prisma.imovel.findMany({ 
-    where: { clienteId: processo.clienteId }, // Show only properties of this client
-    orderBy: { endereco: 'asc' } 
-  })
-
-  async function updateProcesso(formData: FormData) {
-    'use server'
-    const id = (await params).id
-    const clienteId = formData.get('clienteId') as string
-    const imovelId = formData.get('imovelId') as string
-    const novoEndereco = formData.get('endereco_imovel') as string
-    
-    let finalImovelId = imovelId || null
-
-    // Se tiver um novo endereço e não tiver imovelId, ou se o endereço for diferente do atual
-    if (novoEndereco && novoEndereco.trim() !== '') {
-      if (!finalImovelId) {
-        // Criar novo imóvel automaticamente
-        const novoImovel = await prisma.imovel.create({
-          data: {
-            endereco: novoEndereco.toUpperCase(),
-            clienteId: clienteId,
-            cidade: 'NÃO INFORMADO',
-            estado: 'BA' // Default para a sua região, pode ser alterado depois
-          }
-        })
-        finalImovelId = novoImovel.id
-      } else {
-        // Atualizar endereço do imóvel vinculado
-        await prisma.imovel.update({
-          where: { id: finalImovelId },
-          data: { endereco: novoEndereco.toUpperCase() }
-        })
+  useEffect(() => {
+    async function fetchProcesso() {
+      try {
+        const response = await fetch(`/api/processos/${params.id}`)
+        const data = await response.json()
+        setProcesso(data)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setLoading(false)
       }
     }
+    fetchProcesso()
+  }, [params.id])
 
-    await prisma.processo.update({
-      where: { id },
-      data: {
-        clienteId,
-        imovelId: finalImovelId,
-        tipo_regularizacao: formData.get('tipo_regularizacao') as string,
-        etapa_atual: formData.get('etapa_atual') as string,
-        status: formData.get('status') as string,
-        responsavel: formData.get('responsavel') as string,
-        observacoes: formData.get('observacoes') as string,
-        data_previsao: formData.get('data_previsao') ? new Date(formData.get('data_previsao') as string) : null,
-      }
-    })
-    redirect(`/processos/${id}`)
-  }
+  if (loading) return <div className="p-8 font-mono animate-pulse uppercase text-[10px] font-bold">Carregando processo...</div>
+  if (!processo) return <div className="p-8 font-mono uppercase text-[10px] font-bold text-rose-500">Processo não encontrado.</div>
 
-  async function deleteProcesso() {
-    'use server'
-    await prisma.processo.delete({ where: { id: (await params).id } })
-    redirect('/processos')
-  }
-
-  const financeiroPendente = processo.financeiro.reduce((acc, f) => acc + (f.valor - f.valor_pago), 0)
+  const tabs = [
+    { id: 'geral', name: 'Visão Geral', icon: Info },
+    { id: 'imovel', name: 'Imóvel / Obra', icon: Home },
+    { id: 'documentos', name: 'Documentos', icon: FileText },
+    { id: 'financeiro', name: 'Financeiro', icon: DollarSign },
+    { id: 'tarefas', name: 'Tarefas', icon: ListTodo },
+    { id: 'historico', name: 'Histórico', icon: History },
+  ]
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full mb-16 font-mono">
-      <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div className="p-8 max-w-[1400px] mx-auto w-full font-mono mb-20">
+      
+      {/* HEADER SIMPLIFICADO */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10 pb-6 border-b border-border">
         <div className="flex items-center gap-4">
-          <Link href="/processos" className="p-2 border border-border hover:bg-muted rounded-sm smooth-transition">
+          <Link href="/processos" className="p-2 border border-border hover:bg-muted rounded-sm transition-all">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </Link>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold tracking-tight text-foreground uppercase">
-                Processo <span className="text-primary">PRC-{processo.id.substring(0,8)}</span>
-              </h1>
-              <span className="px-2 py-0.5 bg-muted/50 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest">
-                {processo.status.replace(/_/g, ' ')}
-              </span>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2 py-0.5 bg-primary/10 text-primary text-[9px] font-black uppercase rounded-sm border border-primary/20">PRC-{processo.id.substring(0,8)}</span>
+              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{processo.status.replace(/_/g, ' ')}</span>
             </div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-              INICIADO EM {new Date(processo.data_inicio).toLocaleDateString('pt-BR')}
-            </p>
+            <h1 className="text-xl font-black text-foreground uppercase tracking-tight">{processo.tipo_regularizacao}</h1>
           </div>
         </div>
-        
-        <form action={deleteProcesso}>
-          <button type="submit" className="flex items-center gap-2 border border-rose-500/30 bg-rose-500/5 text-rose-500 px-4 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500 hover:text-white smooth-transition shadow-sm">
-            <Trash2 className="w-3.5 h-3.5" />
-            Excluir Processo
-          </button>
-        </form>
+
+        <div className="flex items-center gap-3">
+           <button className="px-5 py-2 border border-border text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all rounded-sm">Editar</button>
+           <button className="px-5 py-2 bg-foreground text-background text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all rounded-sm">Ações do Processo</button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+      {/* SISTEMA DE ABAS - UX SaaS MODERNO */}
+      <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-sm mb-8 overflow-x-auto whitespace-nowrap">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-sm text-[10px] font-black uppercase tracking-widest transition-all ${
+              activeTab === tab.id 
+                ? "bg-background text-foreground shadow-sm" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <tab.icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? "text-primary" : ""}`} />
+            {tab.name}
+          </button>
+        ))}
+      </div>
+
+      {/* CONTEÚDO DAS ABAS */}
+      <div className="bg-background min-h-[500px]">
         
-        {/* Formulário Principal */}
-        <form action={updateProcesso} className="xl:col-span-2 bg-card border border-border rounded-sm shadow-sm p-8 flex flex-col gap-6">
-          <div className="flex justify-between items-center border-b border-border pb-4">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Configurações do Processo</h2>
-            <button type="submit" className="flex items-center gap-2 bg-foreground text-background px-6 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition shadow-sm">
-              <Save className="w-3.5 h-3.5" />
-              Salvar Alterações
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cliente *</label>
-              <select required defaultValue={processo.clienteId} name="clienteId" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30">
-                {clientes.map(c => (
-                  <option key={c.id} value={c.id}>{c.nome} ({c.cpf_cnpj})</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Imóvel Vinculado</label>
-              <select defaultValue={processo.imovelId || ''} name="imovelId" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30">
-                <option value="">+ CADASTRAR NOVO ENDEREÇO ABAIXO</option>
-                {imoveis.map(i => (
-                  <option key={i.id} value={i.id}>{i.endereco}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2 md:col-span-2 bg-muted/20 p-4 border border-dashed border-border rounded-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <Home className="w-3.5 h-3.5 text-primary" />
-                <label className="text-[10px] font-black uppercase tracking-widest text-foreground">Endereço do Imóvel (Sincronizado)</label>
-              </div>
-              <input 
-                name="endereco_imovel" 
-                defaultValue={processo.imovel?.endereco || ''} 
-                className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase font-bold" 
-                placeholder="DIGITE O ENDEREÇO PARA VINCULAR OU CRIAR UM IMÓVEL..."
-              />
-              <p className="text-[8px] text-muted-foreground font-bold uppercase mt-1 tracking-tighter">
-                * SE VOCÊ ALTERAR ESTE CAMPO, O ENDEREÇO SERÁ ATUALIZADO TAMBÉM NA ABA "IMÓVEIS".
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tipo de Regularização *</label>
-              <select required defaultValue={processo.tipo_regularizacao} name="tipo_regularizacao" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase">
-                <option value="Regularização de Obra">Regularização de Obra</option>
-                <option value="Averbação">Averbação</option>
-                <option value="Habite-se">Habite-se</option>
-                <option value="Desmembramento">Desmembramento</option>
-                <option value="Unificação">Unificação</option>
-                <option value="Retificação de Área">Retificação de Área</option>
-                <option value="Usucapião">Usucapião</option>
-                <option value="Alvará de Construção">Alvará de Construção</option>
-                <option value="Licenciamento">Licenciamento</option>
-                <option value="Outro">Outro</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status do Processo *</label>
-              <select required defaultValue={processo.status} name="status" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase">
-                <option value="em_analise">Em Análise</option>
-                <option value="documentacao_pendente">Documentação Pendente</option>
-                <option value="protocolo_prefeitura">Protocolado na Prefeitura</option>
-                <option value="em_aprovacao">Em Aprovação</option>
-                <option value="exigencia_tecnica">Exigência Técnica</option>
-                <option value="aprovado">Aprovado</option>
-                <option value="finalizado">Finalizado</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Etapa Atual</label>
-              <input defaultValue={processo.etapa_atual || ''} type="text" name="etapa_atual" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" placeholder="Ex: Análise da Planta Baixa" />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Data Previsão (Fim)</label>
-              <input 
-                defaultValue={processo.data_previsao ? processo.data_previsao.toISOString().split('T')[0] : ''} 
-                type="date" 
-                name="data_previsao" 
-                className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" 
-              />
-            </div>
-
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Técnico / Eng. Responsável</label>
-              <input defaultValue={processo.responsavel || ''} type="text" name="responsavel" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
-            </div>
-
-            <div className="flex flex-col gap-2 md:col-span-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Observações / Andamento</label>
-              <textarea defaultValue={processo.observacoes || ''} name="observacoes" rows={4} className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 resize-none"></textarea>
-            </div>
-          </div>
-        </form>
-
-        {/* Módulos Relacionados */}
-        <div className="flex flex-col gap-6">
-          
-          {/* FINANCEIRO */}
-          <div className="bg-card border border-border rounded-sm shadow-sm p-6 flex flex-col gap-4">
-            <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-                Financeiro
-              </h3>
-              <Link href="/financeiro" className="text-[9px] font-bold text-primary hover:underline uppercase">Gerenciar</Link>
-            </div>
-            
-            {processo.financeiro.length > 0 ? (
-              <div className="space-y-3">
-                {processo.financeiro.map(f => (
-                  <div key={f.id} className="text-xs bg-muted/20 p-3 rounded-sm border border-border">
-                    <div className="font-bold mb-2 line-clamp-1">{f.descricao}</div>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-muted-foreground">Valor:</span>
-                      <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(f.valor)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Pago:</span>
-                      <span className="text-emerald-500 font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(f.valor_pago)}</span>
-                    </div>
+        {activeTab === 'geral' && (
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="xl:col-span-2 space-y-8">
+               <div className="bg-card border border-border p-8 rounded-sm">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-muted-foreground">Status Operacional</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase">Etapa Atual</span>
+                        <div className="text-sm font-black mt-1 uppercase text-primary">{processo.etapa_atual || 'INICIAL'}</div>
+                     </div>
+                     <div>
+                        <span className="text-[9px] font-bold text-muted-foreground uppercase">Data de Início</span>
+                        <div className="text-sm font-black mt-1 uppercase">{new Date(processo.createdAt).toLocaleDateString('pt-BR')}</div>
+                     </div>
                   </div>
-                ))}
-                {financeiroPendente > 0 && (
-                  <div className="pt-2 mt-2 border-t border-border flex justify-between items-center text-rose-500 font-bold text-xs">
-                    <span>Pendente Total:</span>
-                    <span>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(financeiroPendente)}</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center py-4">Nenhuma cobrança registrada.</p>
-            )}
-          </div>
-
-          {/* DOCUMENTOS */}
-          <div className="bg-card border border-border rounded-sm shadow-sm p-6 flex flex-col gap-4">
-            <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-blue-500" />
-                Documentos
-              </h3>
-              <Link href="/documentos" className="text-[9px] font-bold text-primary hover:underline uppercase">Central</Link>
+               </div>
+               
+               <div className="bg-card border border-border p-8 rounded-sm">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-muted-foreground">Observações</h3>
+                  <p className="text-xs leading-relaxed text-foreground/80 font-bold uppercase">{processo.observacoes || 'NÃO HÁ OBSERVAÇÕES PARA ESTE PROCESSO.'}</p>
+               </div>
             </div>
-            
-            {processo.documentos.length > 0 ? (
-              <div className="space-y-2">
-                {processo.documentos.map(doc => (
-                  <div key={doc.id} className="flex justify-between items-center bg-muted/20 p-2 rounded-sm border border-border">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <FileText className="w-3 h-3 text-muted-foreground shrink-0" />
-                      <span className="text-[10px] font-bold truncate">{doc.nome}</span>
-                    </div>
-                    <button className="p-1 hover:bg-muted rounded-sm text-primary"><Download className="w-3 h-3" /></button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center py-4">Nenhum documento.</p>
-            )}
-          </div>
 
-          {/* TAREFAS / EVENTOS */}
-          <div className="bg-card border border-border rounded-sm shadow-sm p-6 flex flex-col gap-4">
-            <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                Agenda & Tarefas
-              </h3>
-              <Link href="/agenda" className="text-[9px] font-bold text-primary hover:underline uppercase">Agenda</Link>
+            <div className="space-y-6">
+               <div className="bg-muted/30 border border-border p-6 rounded-sm">
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] mb-4">Cliente / Requerente</h3>
+                  <div className="flex items-center gap-3 mb-4">
+                     <div className="w-8 h-8 bg-foreground rounded-sm flex items-center justify-center text-background text-[10px] font-black">
+                        {processo.cliente.nome.substring(0,2).toUpperCase()}
+                     </div>
+                     <div>
+                        <div className="text-xs font-black uppercase">{processo.cliente.nome}</div>
+                        <div className="text-[9px] text-muted-foreground font-bold">{processo.cliente.cpf_cnpj}</div>
+                     </div>
+                  </div>
+                  <Link href={`/clientes/${processo.cliente.id}`} className="text-[9px] font-black text-primary uppercase hover:underline">Ver ficha do cliente</Link>
+               </div>
             </div>
-            
-            <div className="space-y-4">
-              {processo.eventos.length > 0 && (
-                <div>
-                  <div className="text-[9px] font-bold text-muted-foreground uppercase mb-2">Próximos Eventos</div>
-                  {processo.eventos.map(ev => (
-                    <div key={ev.id} className="flex items-start gap-2 mb-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1 shrink-0"></div>
-                      <div>
-                        <div className="text-[10px] font-bold">{ev.titulo}</div>
-                        <div className="text-[9px] text-muted-foreground uppercase">{new Date(ev.data_inicio).toLocaleDateString('pt-BR')} • {ev.tipo}</div>
-                      </div>
-                    </div>
-                  ))}
+          </div>
+        )}
+
+        {activeTab === 'imovel' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="bg-card border border-border p-8 rounded-sm">
+               <div className="flex items-center gap-3 mb-8 text-primary">
+                  <MapPin className="w-5 h-5" />
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em]">Localização e Dados Técnicos</h3>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                  <div>
+                     <span className="text-[9px] font-bold text-muted-foreground uppercase">Endereço da Obra</span>
+                     <div className="text-sm font-black mt-1 uppercase">{processo.imovel?.endereco || 'NÃO CADASTRADO'}</div>
+                  </div>
+                  <div>
+                     <span className="text-[9px] font-bold text-muted-foreground uppercase">Matrícula / RGI</span>
+                     <div className="text-sm font-black mt-1 uppercase">{processo.imovel?.num_matricula || '---'}</div>
+                  </div>
+                  <div>
+                     <span className="text-[9px] font-bold text-muted-foreground uppercase">Inscrição Imob.</span>
+                     <div className="text-sm font-black mt-1 uppercase">{processo.imovel?.inscricao_imobiliaria || '---'}</div>
+                  </div>
+                  <div>
+                     <span className="text-[9px] font-bold text-muted-foreground uppercase">Área do Terreno</span>
+                     <div className="text-sm font-black mt-1 uppercase">{processo.imovel?.area_terreno ? `${processo.imovel.area_terreno} m²` : '---'}</div>
+                  </div>
+                  <div>
+                     <span className="text-[9px] font-bold text-muted-foreground uppercase">Área Construída</span>
+                     <div className="text-sm font-black mt-1 uppercase">{processo.imovel?.area_construida ? `${processo.imovel.area_construida} m²` : '---'}</div>
+                  </div>
+                  <div>
+                     <span className="text-[9px] font-bold text-muted-foreground uppercase">Zoneamento</span>
+                     <div className="text-sm font-black mt-1 uppercase">{processo.imovel?.zoneamento || '---'}</div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'documentos' && (
+          <div className="bg-card border border-border rounded-sm overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest">Repositório de Arquivos</span>
+              <button className="text-[9px] font-black bg-foreground text-background px-3 py-1.5 rounded-sm uppercase">+ Upload</button>
+            </div>
+            <div className="p-12 text-center">
+              <FileText className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Nenhum documento anexado a este processo.</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'financeiro' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-card border border-border p-6 rounded-sm">
+                   <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Total do Contrato</span>
+                   <div className="text-xl font-black mt-1">R$ 0,00</div>
                 </div>
-              )}
-
-              {processo.tarefas.length > 0 && (
-                <div>
-                  <div className="text-[9px] font-bold text-muted-foreground uppercase mb-2 mt-4">Tarefas Pendentes</div>
-                  {processo.tarefas.map(t => (
-                    <div key={t.id} className="flex items-start gap-2 mb-2">
-                      <CheckSquare className="w-3 h-3 text-muted-foreground mt-0.5 shrink-0" />
-                      <div>
-                        <div className="text-[10px] font-bold">{t.titulo}</div>
-                        <div className="text-[9px] text-muted-foreground uppercase">{t.responsavel || 'Sem responsável'}</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="bg-card border border-border p-6 rounded-sm">
+                   <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest text-emerald-600">Recebido</span>
+                   <div className="text-xl font-black mt-1 text-emerald-600">R$ 0,00</div>
                 </div>
-              )}
+                <div className="bg-card border border-border p-6 rounded-sm">
+                   <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest text-amber-600">Pendente</span>
+                   <div className="text-xl font-black mt-1 text-amber-600">R$ 0,00</div>
+                </div>
+             </div>
+             <div className="bg-card border border-border rounded-sm p-8 text-center py-20 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Sem lançamentos financeiros detalhados.
+             </div>
+          </div>
+        )}
 
-              {processo.eventos.length === 0 && processo.tarefas.length === 0 && (
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest text-center py-4">Agenda limpa.</p>
-              )}
+        {activeTab === 'tarefas' && (
+          <div className="bg-card border border-border rounded-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+             <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest">Checklist de Operação</span>
+              <button className="text-[9px] font-black bg-foreground text-background px-3 py-1.5 rounded-sm uppercase">+ Nova Tarefa</button>
+            </div>
+            <div className="p-12 text-center">
+               <ListTodo className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
+               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Tudo em dia! Nenhuma tarefa pendente.</p>
             </div>
           </div>
+        )}
 
-        </div>
+        {activeTab === 'historico' && (
+          <div className="bg-card border border-border rounded-sm animate-in fade-in slide-in-from-bottom-2 duration-300 p-8">
+             <div className="space-y-6">
+                <div className="flex gap-4">
+                   <div className="w-2 bg-emerald-500 rounded-full h-auto"></div>
+                   <div>
+                      <div className="text-[10px] font-black uppercase tracking-widest">Processo Criado</div>
+                      <div className="text-[9px] text-muted-foreground font-bold uppercase">Hoje • Sistema Automático</div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
