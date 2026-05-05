@@ -58,6 +58,10 @@ model Imovel {
   latitude              Float?
   longitude             Float?
   observacoes           String?
+  proprietario_nome     String?
+  proprietario_doc      String?
+  proprietario_tel      String?
+  proprietario_email    String?
   processos             Processo[]
   documentos            Documento[]
   createdAt             DateTime    @default(now())
