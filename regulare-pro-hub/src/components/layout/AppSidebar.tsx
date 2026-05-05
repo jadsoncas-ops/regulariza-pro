@@ -42,35 +42,43 @@ export default function AppSidebar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <aside className="w-64 border-r border-border bg-background flex flex-col h-screen font-mono text-sm shadow-[2px_0_10px_rgba(0,0,0,0.02)] relative z-10">
-      <div className="p-6 border-b border-border flex items-center gap-3">
-        <Image src="/logo.png" width={24} height={24} alt="Regulariza Pro" className="rounded-sm" />
-        <span className="font-bold text-foreground tracking-tight text-lg">Regulariza <span className="font-normal text-muted-foreground">Pro</span></span>
+    <aside className="w-64 border-r border-border bg-card flex flex-col h-screen font-mono text-[11px] shadow-sm relative z-10 uppercase tracking-wider">
+      <div className="p-8 border-b border-border flex flex-col gap-4 bg-muted/20">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 bg-foreground rounded-sm flex items-center justify-center">
+             <Image src="/logo.png" width={16} height={16} alt="Pro" className="invert dark:invert-0" />
+          </div>
+          <span className="font-black text-foreground tracking-tighter text-base italic">Regulariza <span className="text-primary">Pro</span></span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="text-[8px] font-bold text-muted-foreground tracking-[0.2em]">SISTEMA OPERACIONAL // v2.4</span>
+        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-8">
+      <nav className="flex-1 overflow-y-auto py-8 px-4 space-y-10">
         
         {/* OPERAÇÃO */}
         <div>
-          <h3 className="px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Operação</h3>
-          <ul className="space-y-1">
+          <h3 className="px-3 text-[9px] font-black text-muted-foreground/50 tracking-[0.3em] mb-4">OPERAÇÃO</h3>
+          <ul className="space-y-1.5">
             {SIDEBAR_ITEMS.operacao.map((item) => {
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-sm smooth-transition ${
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-sm transition-all duration-200 group ${
                       isActive 
-                        ? "bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-semibold border-l-2 border-blue-600 shadow-sm" 
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "bg-foreground text-background font-black shadow-md translate-x-1" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <item.icon className={`w-4 h-4 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`} />
-                      <span>{item.name}</span>
+                      <item.icon className={`w-3.5 h-3.5 ${isActive ? "" : "group-hover:scale-110 transition-transform"}`} />
+                      <span className="tracking-[0.1em]">{item.name}</span>
                     </div>
-                    <span className="text-[10px] opacity-40">{item.id}</span>
+                    <span className={`text-[8px] ${isActive ? "opacity-40" : "opacity-20"}`}>{item.id}</span>
                   </Link>
                 </li>
               );
@@ -80,25 +88,25 @@ export default function AppSidebar() {
 
         {/* GESTÃO */}
         <div>
-          <h3 className="px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Gestão</h3>
-          <ul className="space-y-1">
+          <h3 className="px-3 text-[9px] font-black text-muted-foreground/50 tracking-[0.3em] mb-4">GESTÃO</h3>
+          <ul className="space-y-1.5">
             {SIDEBAR_ITEMS.gestao.map((item) => {
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-sm smooth-transition ${
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-sm transition-all duration-200 group ${
                       isActive 
-                        ? "bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-semibold border-l-2 border-blue-600 shadow-sm" 
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "bg-foreground text-background font-black shadow-md translate-x-1" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <item.icon className={`w-4 h-4 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`} />
-                      <span>{item.name}</span>
+                      <item.icon className={`w-3.5 h-3.5 ${isActive ? "" : "group-hover:scale-110 transition-transform"}`} />
+                      <span className="tracking-[0.1em]">{item.name}</span>
                     </div>
-                    <span className="text-[10px] opacity-40">{item.id}</span>
+                    <span className={`text-[8px] ${isActive ? "opacity-40" : "opacity-20"}`}>{item.id}</span>
                   </Link>
                 </li>
               );
@@ -108,25 +116,25 @@ export default function AppSidebar() {
 
         {/* SISTEMA */}
         <div>
-          <h3 className="px-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">Sistema</h3>
-          <ul className="space-y-1">
+          <h3 className="px-3 text-[9px] font-black text-muted-foreground/50 tracking-[0.3em] mb-4">SISTEMA</h3>
+          <ul className="space-y-1.5">
             {SIDEBAR_ITEMS.sistema.map((item) => {
               const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center justify-between px-3 py-2.5 rounded-sm smooth-transition ${
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-sm transition-all duration-200 group ${
                       isActive 
-                        ? "bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-semibold border-l-2 border-blue-600 shadow-sm" 
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                        ? "bg-foreground text-background font-black shadow-md translate-x-1" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <item.icon className={`w-4 h-4 ${isActive ? "text-blue-600 dark:text-blue-400" : ""}`} />
-                      <span>{item.name}</span>
+                      <item.icon className={`w-3.5 h-3.5 ${isActive ? "" : "group-hover:scale-110 transition-transform"}`} />
+                      <span className="tracking-[0.1em]">{item.name}</span>
                     </div>
-                    <span className="text-[10px] opacity-40">{item.id}</span>
+                    <span className={`text-[8px] ${isActive ? "opacity-40" : "opacity-20"}`}>{item.id}</span>
                   </Link>
                 </li>
               );
@@ -136,42 +144,43 @@ export default function AppSidebar() {
 
       </nav>
 
-      <div className="p-6 border-t border-border relative">
-        {/* Profile Button */}
+      <div className="p-8 border-t border-border bg-muted/10">
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="w-full text-left flex flex-col gap-1 hover:bg-muted/50 p-2 -ml-2 rounded-sm smooth-transition"
+          className="w-full text-left flex flex-col gap-2 hover:bg-muted p-3 -ml-3 rounded-sm transition-all group"
         >
-          <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-widest">ID: MATR-882</p>
-          <p className="text-xs font-bold text-foreground flex items-center justify-between">
-            Arq. Helena Torres
-            <Settings className="w-3 h-3 text-muted-foreground" />
-          </p>
-          <p className="text-[10px] text-muted-foreground">Engenheira Responsável</p>
+          <div className="flex justify-between items-center">
+            <p className="text-[8px] text-muted-foreground font-black tracking-widest">USER_SESSION: 0882</p>
+            <div className="w-1 h-1 rounded-full bg-primary animate-pulse"></div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="font-black text-[10px] text-foreground italic group-hover:text-primary transition-colors">HELENA TORRES</span>
+            <Settings className="w-3 h-3 text-muted-foreground group-hover:rotate-90 transition-transform duration-500" />
+          </div>
         </button>
 
-        {/* Preferences Popover */}
         {isMenuOpen && (
-          <div className="absolute bottom-full left-6 mb-2 w-56 bg-card border border-border shadow-lg rounded-sm py-2 z-50 animate-in fade-in slide-in-from-bottom-2">
-            <div className="px-4 py-2 border-b border-border mb-2">
-              <p className="text-xs font-bold">Minha Conta</p>
+          <div className="absolute bottom-full left-4 right-4 mb-4 bg-card border border-border shadow-2xl rounded-sm py-2 z-50 animate-in fade-in slide-in-from-bottom-4">
+            <div className="px-4 py-3 border-b border-border mb-2">
+              <p className="text-[9px] font-black uppercase tracking-widest">Terminal Settings</p>
             </div>
-            <Link href="/configuracoes" className="block px-4 py-2 text-xs text-foreground hover:bg-muted smooth-transition">
-              Preferências
+            <Link href="/configuracoes" className="block px-4 py-2 text-[10px] font-bold text-foreground hover:bg-muted transition-colors">
+              PREFERÊNCIAS
             </Link>
-            <button className="w-full text-left px-4 py-2 text-xs text-foreground hover:bg-muted smooth-transition flex justify-between items-center">
-              Modo Escuro
-              <div className="w-6 h-3 bg-muted rounded-full relative border border-border">
-                <div className="absolute left-0 top-0 bottom-0 w-3 rounded-full bg-background border border-border"></div>
+            <button className="w-full text-left px-4 py-2 text-[10px] font-bold text-foreground hover:bg-muted transition-colors flex justify-between items-center">
+              MODO ESCURO
+              <div className="w-8 h-4 bg-foreground rounded-sm relative p-0.5">
+                <div className="w-3 h-3 bg-background rounded-sm"></div>
               </div>
             </button>
-            <div className="h-[1px] bg-border my-2"></div>
-            <button className="w-full text-left px-4 py-2 text-xs text-rose-500 hover:bg-rose-500/10 smooth-transition font-bold">
-              Sair do Sistema
+            <div className="h-[1px] bg-border my-2 mx-2"></div>
+            <button className="w-full text-left px-4 py-2 text-[10px] font-bold text-rose-500 hover:bg-rose-500/10 transition-colors">
+              LOGOUT_SESSION
             </button>
           </div>
         )}
       </div>
     </aside>
+
   );
 }

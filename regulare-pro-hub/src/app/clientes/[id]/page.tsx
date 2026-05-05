@@ -218,40 +218,53 @@ export default async function ClienteDetalhesPage({ params }: { params: Promise<
                 </div>
               ) : (
                 cliente.processos.map((p) => (
-                  <div key={p.id} className="p-6 hover:bg-muted/10 smooth-transition flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div className="space-y-1">
+                  <div key={p.id} className="p-6 hover:bg-muted/10 smooth-transition flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="space-y-2 flex-1">
                       <div className="flex items-center gap-3">
-                        <Link href={`/processos/${p.id}`} className="font-bold text-sm hover:text-primary hover:underline">
+                        <Link href={`/processos/${p.id}`} className="font-black text-sm hover:text-primary transition-colors">
                           {p.tipo_regularizacao.toUpperCase()}
                         </Link>
-                        <span className={`px-2 py-0.5 rounded-sm text-[8px] font-bold uppercase tracking-tighter border ${
+                        <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-tighter border ${
                           p.status === 'concluído' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5' : 'border-blue-500/30 text-blue-500 bg-blue-500/5'
                         }`}>
                           {p.status}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase mt-1">
-                        <MapPin className="w-3 h-3" />
-                        {p.imovel?.endereco || 'SEM IMÓVEL VINCULADO'}
+                      <div className="bg-muted/30 border border-border p-3 rounded-sm space-y-1">
+                        <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">
+                          <MapPin className="w-3 h-3" /> LOCALIZAÇÃO DO IMÓVEL / LOTE
+                        </div>
+                        <div className="text-xs font-bold text-foreground">
+                          {p.imovel?.endereco?.toUpperCase() || 'ENDEREÇO NÃO VINCULADO'}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {p.imovel?.bairro?.toUpperCase()} {p.imovel?.cidade ? `• ${p.imovel.cidade.toUpperCase()}` : ''}
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-6 w-full md:w-auto">
+                    <div className="flex items-center gap-8 w-full md:w-auto">
                       <div className="text-right">
-                        <div className="text-[9px] font-bold text-muted-foreground uppercase">Início</div>
+                        <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Abertura</div>
                         <div className="text-xs font-bold">{new Date(p.data_inicio).toLocaleDateString('pt-BR')}</div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-[9px] font-bold text-muted-foreground uppercase">Docs</div>
-                        <div className="text-xs font-bold">{p.documentos.length.toString().padStart(2, '0')}</div>
+                      <div className="h-10 w-px bg-border hidden md:block"></div>
+                      <div className="flex flex-col gap-2">
+                        <Link 
+                          href={`/processos/${p.id}`}
+                          className="px-4 py-2 bg-foreground text-background rounded-sm text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all text-center"
+                        >
+                          GERENCIAR PROCESSO
+                        </Link>
+                        {p.imovelId && (
+                          <Link 
+                            href={`/imoveis?edit=${p.imovelId}`}
+                            className="px-4 py-2 border border-border rounded-sm text-[9px] font-black uppercase tracking-widest hover:bg-muted transition-all text-center"
+                          >
+                            EDITAR IMÓVEL
+                          </Link>
+                        )}
                       </div>
-                      <div className="h-8 w-px bg-border hidden md:block"></div>
-                      <Link 
-                        href={`/processos/${p.id}`}
-                        className="px-4 py-2 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition"
-                      >
-                        VER DETALHES
-                      </Link>
                     </div>
                   </div>
                 ))
