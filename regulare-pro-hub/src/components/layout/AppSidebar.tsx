@@ -1,149 +1,137 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Users, 
-  FileText, 
-  CalendarDays, 
-  Settings,
+import {
+  LayoutDashboard,
+  Users,
+  Building2,
+  FolderKanban,
+  FileText,
+  CalendarDays,
   DollarSign,
-  Building,
-  FolderOpen,
-  ArrowRightLeft
+  BarChart3,
+  Settings,
+  PlusCircle,
+  ChevronRight
 } from "lucide-react";
 
-const SIDEBAR_ITEMS = {
-  crm: [
-    { name: "Clientes", href: "/clientes", icon: Users },
-    { name: "Imóveis", href: "/imoveis", icon: Building },
-  ],
-  operacao: [
-    { name: "Processos", href: "/processos", icon: FolderOpen },
-    { name: "Documentos", href: "/documentos", icon: FileText },
-    { name: "Agenda", href: "/agenda", icon: CalendarDays },
-  ],
-  gestao: [
-    { name: "Financeiro", href: "/financeiro", icon: DollarSign },
-    { name: "Relatórios", href: "/relatorios", icon: ArrowRightLeft },
-  ]
-};
+const NAV = [
+  {
+    section: null,
+    items: [
+      { name: "Dashboard", href: "/", icon: LayoutDashboard },
+    ]
+  },
+  {
+    section: "CRM",
+    items: [
+      { name: "Clientes", href: "/clientes", icon: Users },
+      { name: "Imóveis", href: "/imoveis", icon: Building2 },
+    ]
+  },
+  {
+    section: "Operação",
+    items: [
+      { name: "Processos", href: "/processos", icon: FolderKanban },
+      { name: "Documentos", href: "/documentos", icon: FileText },
+      { name: "Agenda", href: "/agenda", icon: CalendarDays },
+    ]
+  },
+  {
+    section: "Gestão",
+    items: [
+      { name: "Financeiro", href: "/financeiro", icon: DollarSign },
+      { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
+    ]
+  },
+  {
+    section: "Sistema",
+    items: [
+      { name: "Configurações", href: "/configuracoes", icon: Settings },
+    ]
+  }
+];
 
 export default function AppSidebar() {
   const pathname = usePathname();
 
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
   return (
-    <aside className="w-64 h-screen bg-background border-r border-border flex flex-col font-mono sticky top-0 overflow-hidden z-50">
+    <aside className="w-[220px] flex-shrink-0 h-screen flex flex-col bg-[hsl(var(--sidebar))] border-r border-[hsl(var(--sidebar-border))] overflow-hidden">
+      
       {/* LOGO */}
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-foreground rounded-sm flex items-center justify-center">
-            <span className="text-background font-black text-xs">RP</span>
+      <div className="px-5 py-5 border-b border-[hsl(var(--sidebar-border))]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-xs">R</span>
           </div>
           <div>
-            <h1 className="text-sm font-black tracking-tighter uppercase leading-none text-foreground">Regulariza Pro</h1>
-            <span className="text-[8px] text-muted-foreground font-bold tracking-[0.2em] uppercase">SaaS de Engenharia</span>
+            <span className="text-white font-semibold text-sm leading-none">Regulariza Pro</span>
+            <p className="text-[10px] text-slate-400 mt-0.5 leading-none">Engenharia & Gestão</p>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto py-6 space-y-8">
-        
-        {/* DASHBOARD */}
-        <div className="px-3">
-          <Link 
-            href="/" 
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-sm transition-all ${
-              pathname === "/" ? "bg-foreground text-background font-black shadow-md" : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-            <span className="text-[10px] uppercase tracking-widest">Dashboard</span>
-          </Link>
-        </div>
-
-        {/* CRM */}
-        <div>
-          <h3 className="px-6 text-[9px] font-black text-muted-foreground/40 tracking-[0.3em] mb-3 uppercase">CRM</h3>
-          <ul className="px-3 space-y-1">
-            {SIDEBAR_ITEMS.crm.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-sm text-[10px] uppercase tracking-widest transition-all ${
-                      isActive ? "bg-muted text-foreground font-bold" : "text-muted-foreground hover:bg-muted/50 text-muted-foreground/80"
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        {/* OPERAÇÃO */}
-        <div>
-          <h3 className="px-6 text-[9px] font-black text-muted-foreground/40 tracking-[0.3em] mb-3 uppercase">Operação</h3>
-          <ul className="px-3 space-y-1">
-            {SIDEBAR_ITEMS.operacao.map((item) => {
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-sm text-[10px] uppercase tracking-widest transition-all ${
-                      isActive ? "bg-muted text-foreground font-bold" : "text-muted-foreground hover:bg-muted/50 text-muted-foreground/80"
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        {/* GESTÃO */}
-        <div>
-          <h3 className="px-6 text-[9px] font-black text-muted-foreground/40 tracking-[0.3em] mb-3 uppercase">Gestão</h3>
-          <ul className="px-3 space-y-1">
-            {SIDEBAR_ITEMS.gestao.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-sm text-[10px] uppercase tracking-widest transition-all ${
-                      isActive ? "bg-muted text-foreground font-bold" : "text-muted-foreground hover:bg-muted/50 text-muted-foreground/80"
-                    }`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
+      {/* CTA - NOVO PROJETO */}
+      <div className="px-3 pt-4 pb-2">
+        <Link
+          href="/processos/novo"
+          className="flex items-center gap-2 w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-xs font-medium transition-colors"
+        >
+          <PlusCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          Novo Projeto
+        </Link>
       </div>
 
-      {/* FOOTER - CONFIGURAÇÕES */}
-      <div className="p-4 border-t border-border">
-        <Link 
-          href="/configuracoes" 
-          className={`flex items-center gap-3 px-3 py-2 rounded-sm text-[10px] uppercase tracking-widest transition-all ${
-            pathname === "/configuracoes" ? "bg-muted text-foreground font-bold" : "text-muted-foreground hover:bg-muted/50"
-          }`}
-        >
-          <Settings className="w-4 h-4" />
-          <span>Configurações</span>
-        </Link>
+      {/* NAVIGATION */}
+      <nav className="flex-1 overflow-y-auto scrollbar-thin px-3 py-2 space-y-5">
+        {NAV.map((group, gi) => (
+          <div key={gi}>
+            {group.section && (
+              <p className="px-2 mb-1 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                {group.section}
+              </p>
+            )}
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item.href);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={`flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors ${
+                        active
+                          ? "bg-[hsl(var(--sidebar-muted))] text-white font-medium"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-[hsl(var(--sidebar-muted))]"
+                      }`}
+                    >
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-blue-400" : ""}`} />
+                      <span>{item.name}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </nav>
+
+      {/* USER FOOTER */}
+      <div className="px-3 pb-4 pt-3 border-t border-[hsl(var(--sidebar-border))]">
+        <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-[hsl(var(--sidebar-muted))] cursor-pointer transition-colors">
+          <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+            <span className="text-[10px] font-bold text-white">JC</span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-slate-200 truncate">Jadson Castro</p>
+            <p className="text-[10px] text-slate-500 truncate">Administrador</p>
+          </div>
+          <ChevronRight className="w-3 h-3 text-slate-500 flex-shrink-0" />
+        </div>
       </div>
     </aside>
   );

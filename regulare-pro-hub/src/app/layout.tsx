@@ -3,26 +3,26 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import AppSidebar from '@/components/layout/AppSidebar'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+const inter = Inter({ 
+  subsets: ['latin'], 
+  variable: '--font-sans',
+  display: 'swap'
+})
 
 export const metadata: Metadata = {
-  title: 'Regulariza Pro',
-  description: 'SaaS para Gestão de Regularização Imobiliária',
+  title: 'Regulariza Pro | Gestão de Regularização Imobiliária',
+  description: 'SaaS profissional para gestão de processos de regularização imobiliária, engenharia e arquitetura.',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="light">
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground overflow-hidden`}>
-        <div className="flex h-screen bg-background relative selection:bg-primary/30 selection:text-primary-foreground">
+    <html lang="pt-BR">
+      <body className={`${inter.variable} font-sans antialiased bg-[hsl(var(--background))] text-slate-900 overflow-hidden`}>
+        <div className="flex h-screen">
           <AppSidebar />
-          <div className="flex-1 flex flex-col h-screen overflow-y-auto relative z-0 smooth-transition">
+          <main className="flex-1 overflow-y-auto scrollbar-thin">
             {children}
-          </div>
+          </main>
         </div>
       </body>
     </html>

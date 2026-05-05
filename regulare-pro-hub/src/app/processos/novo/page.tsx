@@ -2,288 +2,316 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Save, 
-  User, 
-  Home, 
-  FileText, 
-  CheckCircle2, 
-  MapPin, 
-  AlertCircle,
-  PlusCircle,
-  DollarSign
-} from 'lucide-react'
 import Link from 'next/link'
+import { ArrowLeft, User, Building2, FolderKanban, ChevronRight, Check } from 'lucide-react'
+
+const TIPOS_PROCESSO = [
+  "Regularização de Obra",
+  "Averbação",
+  "Levantamento Topográfico",
+  "Desmembramento",
+  "Habite-se",
+  "Usucapião",
+  "REURB",
+  "Alvará de Construção",
+]
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <label className="block text-xs font-medium text-slate-600 mb-1.5">{children}</label>
+}
+
+function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+    />
+  )
+}
+
+function TextArea({ ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none bg-white"
+    />
+  )
+}
+
+function SectionHeader({ icon: Icon, step, title, desc }: { icon: any; step: number; title: string; desc: string }) {
+  return (
+    <div className="flex items-start gap-3 mb-6">
+      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+        <span className="text-white text-xs font-bold">{step}</span>
+      </div>
+      <div>
+        <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+          <Icon className="w-4 h-4 text-blue-500" /> {title}
+        </h2>
+        <p className="text-xs text-slate-500 mt-0.5">{desc}</p>
+      </div>
+    </div>
+  )
+}
 
 export default function NovoProjetoPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [sameAddress, setSameAddress] = useState(false)
-
-  // ESTADO DO FORMULÁRIO ÚNICO
   const [formData, setFormData] = useState({
-    // CLIENTE
-    cliente_nome: '',
-    cliente_cpf_cnpj: '',
-    cliente_telefone: '',
-    cliente_email: '',
-    cliente_endereco: '',
-    
-    // IMÓVEL
-    imovel_endereco: '',
-    imovel_bairro: '',
-    imovel_cidade: '',
-    imovel_cep: '',
-    imovel_area_terreno: '',
-    imovel_area_construida: '',
-    imovel_matricula: '',
-    imovel_cartorio: '',
-    imovel_inscricao: '',
-    imovel_zoneamento: '',
-    imovel_obs: '',
-    
-    // PROCESSO
-    processo_tipo: 'REGULARIZAÇÃO',
-    processo_valor: '0',
+    cliente_nome: '', cliente_cpf_cnpj: '', cliente_telefone: '', cliente_email: '', cliente_endereco: '',
+    imovel_endereco: '', imovel_bairro: '', imovel_cidade: '', imovel_cep: '',
+    imovel_area_terreno: '', imovel_area_construida: '',
+    imovel_matricula: '', imovel_cartorio: '', imovel_inscricao: '', imovel_zoneamento: '', imovel_obs: '',
+    processo_tipo: 'Regularização de Obra', processo_valor: '0',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    const upperValue = value.toUpperCase()
-    
     setFormData(prev => {
-      const newState = { ...prev, [name]: upperValue }
-      
-      // Lógica de espelhamento de endereço
-      if (sameAddress && name === 'cliente_endereco') {
-        newState.imovel_endereco = upperValue
-      }
-      
-      return newState
+      const next = { ...prev, [name]: value }
+      if (sameAddress && name === 'cliente_endereco') next.imovel_endereco = value
+      return next
     })
   }
 
   const toggleSameAddress = () => {
     setSameAddress(!sameAddress)
-    if (!sameAddress) {
-      setFormData(prev => ({
-        ...prev,
-        imovel_endereco: prev.cliente_endereco
-      }))
-    }
+    if (!sameAddress) setFormData(prev => ({ ...prev, imovel_endereco: prev.cliente_endereco }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     try {
-      const response = await fetch('/api/processos/novo', {
+      const r = await fetch('/api/processos/novo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
-
-      if (response.ok) {
-        const data = await response.json()
+      if (r.ok) {
+        const data = await r.json()
         router.push(`/processos/${data.id}`)
       } else {
-        alert('Erro ao criar projeto. Verifique os dados.')
+        alert('Erro ao criar projeto.')
       }
-    } catch (error) {
-      console.error(error)
-      alert('Erro crítico de conexão.')
+    } catch {
+      alert('Erro de conexão.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto w-full mb-20 font-mono">
-      {/* HEADER */}
-      <div className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/processos" className="p-2 border border-border hover:bg-muted rounded-sm smooth-transition">
-            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-black tracking-tighter text-foreground uppercase flex items-center gap-2">
-              <PlusCircle className="w-6 h-6 text-primary" /> Novo Projeto <span className="text-primary/50">Full Stack</span>
-            </h1>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] mt-1 font-bold">
-              CADASTRO UNIFICADO: CLIENTE + IMÓVEL + PROCESSO + FINANCEIRO
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[hsl(var(--background))]">
 
-        <button 
-          onClick={handleSubmit}
-          disabled={loading}
-          className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-sm text-xs font-black uppercase tracking-widest hover:brightness-110 smooth-transition shadow-lg disabled:opacity-50"
-        >
-          {loading ? 'PROCESSANDO...' : (
-            <>
-              <Save className="w-4 h-4" /> Criar Projeto Automaticamente
-            </>
-          )}
-        </button>
+      {/* HEADER */}
+      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
+        <div className="flex items-center justify-between max-w-screen-lg mx-auto">
+          <div className="flex items-center gap-3">
+            <Link href="/processos" className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+            <div>
+              <nav className="flex items-center gap-1 text-xs text-slate-400 mb-0.5">
+                <Link href="/processos" className="hover:text-slate-600 transition-colors">Processos</Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-slate-600">Novo Projeto</span>
+              </nav>
+              <h1 className="text-lg font-semibold text-slate-900">Cadastro Unificado</h1>
+            </div>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
+          >
+            {loading ? (
+              <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+            ) : (
+              <Check className="w-4 h-4" />
+            )}
+            {loading ? 'Salvando...' : 'Criar Projeto'}
+          </button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        
-        {/* 1. DADOS DO CLIENTE */}
-        <div className="bg-card border border-border rounded-sm shadow-sm overflow-hidden flex flex-col">
-          <div className="bg-muted/30 p-4 border-b border-border flex items-center gap-2 text-primary">
-            <User className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">01. Dados do Cliente</span>
-          </div>
-          <div className="p-6 space-y-4 flex-1">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome Completo / Razão Social *</label>
-              <input required name="cliente_nome" value={formData.cliente_nome} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 font-bold" placeholder="EX: HAMILTON BANDEIRA CORRETOR" />
+      {/* FORM */}
+      <form onSubmit={handleSubmit} className="max-w-screen-lg mx-auto px-8 py-8 space-y-8">
+
+        {/* CLIENTE */}
+        <div className="bg-white border border-[hsl(var(--border))] rounded-xl p-7 shadow-sm">
+          <SectionHeader icon={User} step={1} title="Dados do Cliente" desc="Informações do requerente ou parceiro responsável" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="md:col-span-2">
+              <Label>Nome completo / Razão Social *</Label>
+              <Input required name="cliente_nome" value={formData.cliente_nome} onChange={handleChange} placeholder="Ex: Maria da Silva Santos" />
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CPF / CNPJ *</label>
-              <input required name="cliente_cpf_cnpj" value={formData.cliente_cpf_cnpj} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 font-bold" placeholder="000.000.000-00" />
+            <div>
+              <Label>CPF / CNPJ *</Label>
+              <Input required name="cliente_cpf_cnpj" value={formData.cliente_cpf_cnpj} onChange={handleChange} placeholder="000.000.000-00" />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Telefone</label>
-                <input name="cliente_telefone" value={formData.cliente_telefone} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 font-bold" placeholder="(00) 00000-0000" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email</label>
-                <input type="email" name="cliente_email" value={formData.cliente_email} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 font-bold" placeholder="EXEMPLO@EMAIL.COM" />
-              </div>
+            <div>
+              <Label>Telefone</Label>
+              <Input name="cliente_telefone" value={formData.cliente_telefone} onChange={handleChange} placeholder="(00) 90000-0000" />
             </div>
-            <div className="space-y-1.5 pt-2 border-t border-border/50">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Endereço de Correspondência</label>
-              <textarea rows={2} name="cliente_endereco" value={formData.cliente_endereco} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 font-bold resize-none" placeholder="RUA, NÚMERO, BAIRRO..." />
+            <div>
+              <Label>E-mail</Label>
+              <Input type="email" name="cliente_email" value={formData.cliente_email} onChange={handleChange} placeholder="email@exemplo.com" />
+            </div>
+            <div>
+              <Label>Endereço de correspondência</Label>
+              <Input name="cliente_endereco" value={formData.cliente_endereco} onChange={handleChange} placeholder="Rua, número, bairro" />
             </div>
           </div>
         </div>
 
-        {/* 2. DADOS DO IMÓVEL */}
-        <div className="bg-card border border-border rounded-sm shadow-sm overflow-hidden flex flex-col xl:col-span-1">
-          <div className="bg-muted/30 p-4 border-b border-border flex items-center justify-between text-emerald-500">
-            <div className="flex items-center gap-2">
-              <Home className="w-4 h-4" />
-              <span className="text-[10px] font-black uppercase tracking-widest">02. Dados do Imóvel / Obra</span>
+        {/* IMÓVEL */}
+        <div className="bg-white border border-[hsl(var(--border))] rounded-xl p-7 shadow-sm">
+          <div className="flex items-start justify-between mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-white text-xs font-bold">2</span>
+              </div>
+              <div>
+                <h2 className="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-blue-500" /> Dados do Imóvel / Obra
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">Localização e informações técnicas do imóvel</p>
+              </div>
             </div>
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <input type="checkbox" checked={sameAddress} onChange={toggleSameAddress} className="w-3 h-3 rounded-sm border-border text-primary focus:ring-0" />
-              <span className="text-[8px] font-black uppercase tracking-tighter text-muted-foreground group-hover:text-emerald-500 transition-colors">Mesmo do Cliente</span>
+            <label className="flex items-center gap-2 cursor-pointer mt-1">
+              <div
+                onClick={toggleSameAddress}
+                className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 ${sameAddress ? 'bg-blue-600' : 'bg-slate-200'} relative cursor-pointer`}
+              >
+                <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${sameAddress ? 'translate-x-4' : ''}`} />
+              </div>
+              <span className="text-xs font-medium text-slate-600 whitespace-nowrap">Mesmo endereço do cliente</span>
             </label>
           </div>
-          <div className="p-6 space-y-4 flex-1 overflow-y-auto max-h-[600px]">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Endereço da Obra *</label>
-              <input required name="imovel_endereco" value={formData.imovel_endereco} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="AV. AMÉLIA AMADO, 582" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bairro</label>
-                <input name="imovel_bairro" value={formData.imovel_bairro} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="CENTRO" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CEP</label>
-                <input name="imovel_cep" value={formData.imovel_cep} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="45600-000" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Área Terreno (m²)</label>
-                <input type="number" name="imovel_area_terreno" value={formData.imovel_area_terreno} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="0.00" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Área Const. (m²)</label>
-                <input type="number" name="imovel_area_construida" value={formData.imovel_area_construida} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="0.00" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nº Matrícula</label>
-                <input name="imovel_matricula" value={formData.imovel_matricula} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="12.345" />
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Inscrição Imob.</label>
-                <input name="imovel_inscricao" value={formData.imovel_inscricao} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="00.00.000.000" />
+
+          <div className="space-y-6">
+            {/* LOCALIZAÇÃO */}
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Localização</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="md:col-span-2">
+                  <Label>Endereço da obra *</Label>
+                  <Input required name="imovel_endereco" value={formData.imovel_endereco} onChange={handleChange} placeholder="Av. Principal, 123" />
+                </div>
+                <div>
+                  <Label>Bairro</Label>
+                  <Input name="imovel_bairro" value={formData.imovel_bairro} onChange={handleChange} placeholder="Centro" />
+                </div>
+                <div>
+                  <Label>Cidade</Label>
+                  <Input name="imovel_cidade" value={formData.imovel_cidade} onChange={handleChange} placeholder="Salvador" />
+                </div>
+                <div>
+                  <Label>CEP</Label>
+                  <Input name="imovel_cep" value={formData.imovel_cep} onChange={handleChange} placeholder="00000-000" />
+                </div>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cartório / RGI</label>
-              <input name="imovel_cartorio" value={formData.imovel_cartorio} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold" placeholder="EX: 1º OFÍCIO DE REGISTRO DE IMÓVEIS" />
+
+            <div className="border-t border-slate-100 pt-6">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Dados Técnicos</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                <div>
+                  <Label>Área do terreno (m²)</Label>
+                  <Input type="number" name="imovel_area_terreno" value={formData.imovel_area_terreno} onChange={handleChange} placeholder="0,00" />
+                </div>
+                <div>
+                  <Label>Área construída (m²)</Label>
+                  <Input type="number" name="imovel_area_construida" value={formData.imovel_area_construida} onChange={handleChange} placeholder="0,00" />
+                </div>
+                <div>
+                  <Label>Zoneamento</Label>
+                  <Input name="imovel_zoneamento" value={formData.imovel_zoneamento} onChange={handleChange} placeholder="ZR-1" />
+                </div>
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Zoneamento / Observações Técnicas</label>
-              <textarea rows={3} name="imovel_obs" value={formData.imovel_obs} onChange={handleChange} className="w-full bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-emerald-500/30 font-bold resize-none" placeholder="ZONEAMENTO URBANO, LIMITAÇÕES, ACESSOS..." />
+
+            <div className="border-t border-slate-100 pt-6">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Registro Imobiliário</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <Label>Nº Matrícula</Label>
+                  <Input name="imovel_matricula" value={formData.imovel_matricula} onChange={handleChange} placeholder="00.000" />
+                </div>
+                <div>
+                  <Label>Inscrição Imobiliária</Label>
+                  <Input name="imovel_inscricao" value={formData.imovel_inscricao} onChange={handleChange} placeholder="00.00.000.0000-0" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Cartório / RGI</Label>
+                  <Input name="imovel_cartorio" value={formData.imovel_cartorio} onChange={handleChange} placeholder="Ex: 1º Ofício de Registro de Imóveis" />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-slate-100 pt-6">
+              <Label>Observações técnicas</Label>
+              <TextArea rows={3} name="imovel_obs" value={formData.imovel_obs} onChange={handleChange} placeholder="Informações adicionais sobre o imóvel, restrições, notas técnicas..." />
             </div>
           </div>
         </div>
 
-        {/* 3. CONFIGURAÇÃO DO PROCESSO */}
-        <div className="bg-card border border-border rounded-sm shadow-sm overflow-hidden flex flex-col">
-          <div className="bg-muted/30 p-4 border-b border-border flex items-center gap-2 text-blue-500">
-            <FileText className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">03. Configuração do Processo</span>
-          </div>
-          <div className="p-6 space-y-6 flex-1">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tipo de Serviço Principal *</label>
-              <select required name="processo_tipo" value={formData.processo_tipo} onChange={handleChange} className="w-full bg-background border border-border px-3 py-3 rounded-sm text-xs outline-none focus:ring-1 focus:ring-blue-500/30 font-black uppercase">
-                <option value="REGULARIZAÇÃO">REGULARIZAÇÃO DE OBRA</option>
-                <option value="AVERBAÇÃO">AVERBAÇÃO</option>
-                <option value="LEVANTAMENTO">LEVANTAMENTO TOPOGRÁFICO</option>
-                <option value="DESMEMBRAMENTO">DESMEMBRAMENTO</option>
-                <option value="HABITE-SE">HABITE-SE</option>
-                <option value="USUCAPIÃO">USUCAPIÃO</option>
-                <option value="REURB">REURB</option>
-                <option value="ALVARÁ">ALVARÁ DE CONSTRUÇÃO</option>
+        {/* PROCESSO */}
+        <div className="bg-white border border-[hsl(var(--border))] rounded-xl p-7 shadow-sm">
+          <SectionHeader icon={FolderKanban} step={3} title="Configuração do Processo" desc="Tipo de serviço e valor do contrato" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <Label>Tipo de serviço *</Label>
+              <select
+                required
+                name="processo_tipo"
+                value={formData.processo_tipo}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+              >
+                {TIPOS_PROCESSO.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-
-            <div className="space-y-2 pt-4 border-t border-border">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                <DollarSign className="w-3 h-3 text-emerald-500" /> Valor Inicial do Contrato
-              </label>
+            <div>
+              <Label>Valor do contrato (R$)</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-muted-foreground">R$</span>
-                <input type="number" name="processo_valor" value={formData.processo_valor} onChange={handleChange} className="w-full bg-background border border-border pl-10 pr-3 py-3 rounded-sm text-sm outline-none focus:ring-1 focus:ring-emerald-500/30 font-black" />
-              </div>
-              <p className="text-[8px] text-muted-foreground font-bold uppercase italic mt-1">
-                * O REGISTRO FINANCEIRO SERÁ CRIADO AUTOMATICAMENTE COMO PENDENTE.
-              </p>
-            </div>
-
-            <div className="mt-8 p-6 border border-primary/20 bg-primary/5 rounded-sm flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-primary/10 rounded-sm">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="text-[10px] font-black uppercase tracking-tight">Criação Instantânea</h4>
-                  <p className="text-[9px] text-muted-foreground uppercase leading-relaxed mt-1">
-                    ESTE PROCESSO SERÁ ADICIONADO AO KANBAN E A PASTA DE DOCUMENTOS SERÁ INICIALIZADA AGORA.
-                  </p>
-                </div>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400 font-medium">R$</span>
+                <Input type="number" name="processo_valor" value={formData.processo_valor} onChange={handleChange} className="pl-8" placeholder="0,00" />
               </div>
             </div>
           </div>
+
+          {/* SUMMARY BOX */}
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+            <p className="text-xs font-medium text-blue-700 mb-2">O que será criado automaticamente:</p>
+            <ul className="space-y-1">
+              {['Cadastro do cliente', 'Cadastro do imóvel vinculado', 'Processo com card no Kanban', 'Registro financeiro inicial'].map(item => (
+                <li key={item} className="flex items-center gap-2 text-xs text-blue-600">
+                  <Check className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" /> {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* SUBMIT BUTTON BOTTOM */}
+        <div className="flex items-center justify-end gap-3 pb-8">
+          <Link href="/processos" className="px-5 py-2 border border-[hsl(var(--border))] text-sm font-medium text-slate-600 rounded-md hover:bg-slate-50 transition-colors">
+            Cancelar
+          </Link>
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
+          >
+            {loading ? <span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" /> : <Check className="w-4 h-4" />}
+            {loading ? 'Criando projeto...' : 'Criar Projeto Automaticamente'}
+          </button>
         </div>
 
       </form>
-
-      {/* FOOTER MOBILE / FLOATING BAR */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border xl:hidden flex justify-end z-50">
-        <button 
-          onClick={handleSubmit}
-          disabled={loading}
-          className="bg-primary text-primary-foreground px-6 py-3 rounded-sm text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
-        >
-          {loading ? 'SALVANDO...' : 'CRIAR PROCESSO'}
-        </button>
-      </div>
     </div>
   )
 }

@@ -1,12 +1,12 @@
 import { prisma } from '@/lib/prisma'
 import { 
+  FolderKanban, 
   CheckCircle2, 
-  Clock, 
   DollarSign, 
-  ListTodo, 
+  CalendarClock,
   ArrowUpRight,
   TrendingUp,
-  FolderOpen,
+  Clock,
   PlusCircle
 } from 'lucide-react'
 import Link from 'next/link'
@@ -14,98 +14,189 @@ import Link from 'next/link'
 export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
-  // BUSCA DE DADOS SIMPLIFICADA
   const [
     processosAtivos,
     processosFinalizados,
     financeiroMes,
-    tarefasHoje
+    tarefasPendentes,
+    processosRecentes
   ] = await Promise.all([
     prisma.processo.count({ where: { status: { not: 'finalizado' } } }),
     prisma.processo.count({ where: { status: 'finalizado' } }),
     prisma.financeiro.aggregate({
-      where: { 
-        tipo: 'receita',
-        status: 'pago' 
-      },
+      where: { tipo: 'receita', status: 'pago' },
       _sum: { valor: true }
     }),
-    prisma.tarefa.count({
-      where: {
-        status: 'pendente'
-      }
+    prisma.tarefa.count({ where: { status: 'pendente' } }),
+    prisma.processo.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: { cliente: { select: { nome: true } } }
     })
   ])
 
-  const stats = [
-    { name: 'Processos Ativos', value: processosAtivos, icon: FolderOpen, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-    { name: 'Finalizados', value: processosFinalizados, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
-    { name: 'Receita do Mês', value: `R$ ${(financeiroMes._sum.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, icon: DollarSign, color: 'text-amber-600', bg: 'bg-amber-500/10' },
-    { name: 'Tarefas de Hoje', value: tarefasHoje, icon: ListTodo, color: 'text-rose-600', bg: 'bg-rose-500/10' },
+  const kpis = [
+    {
+      label: "Processos Ativos",
+      value: processosAtivos,
+      icon: FolderKanban,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      border: "border-blue-100",
+      trend: "+2 esse mês"
+    },
+    {
+      label: "Finalizados",
+      value: processosFinalizados,
+      icon: CheckCircle2,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      border: "border-emerald-100",
+      trend: "Total geral"
+    },
+    {
+      label: "Receita do Mês",
+      value: `R$ ${(financeiroMes._sum.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      color: "text-violet-600",
+      bg: "bg-violet-50",
+      border: "border-violet-100",
+      trend: "Recebido / mês"
+    },
+    {
+      label: "Tarefas de Hoje",
+      value: tarefasPendentes,
+      icon: CalendarClock,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-100",
+      trend: "Pendentes"
+    },
   ]
 
+  const statusLabel: Record<string, { label: string; color: string }> = {
+    em_analise: { label: "Análise", color: "badge-blue" },
+    documentacao_pendente: { label: "Documentação", color: "badge-amber" },
+    exigencia_tecnica: { label: "Exigência", color: "badge-red" },
+    aprovado: { label: "Aprovado", color: "badge-green" },
+    finalizado: { label: "Finalizado", color: "badge-green" },
+    protocolo_prefeitura: { label: "Protocolo", color: "badge-gray" },
+    em_aprovacao: { label: "Em aprovação", color: "badge-blue" },
+  }
+
   return (
-    <div className="p-8 max-w-[1400px] mx-auto w-full font-mono">
-      {/* HEADER SIMPLES */}
-      <div className="flex justify-between items-center mb-10">
-        <div>
-          <h1 className="text-2xl font-black tracking-tighter uppercase text-foreground">Visão Geral</h1>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1">Status operacional em tempo real</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link href="/processos/novo" className="bg-foreground text-background px-6 py-2.5 rounded-sm text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2">
-            <PlusCircle className="w-3.5 h-3.5" /> Novo Projeto
+    <div className="min-h-screen bg-[hsl(var(--background))]">
+      
+      {/* PAGE HEADER */}
+      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
+        <div className="flex items-center justify-between max-w-screen-xl mx-auto">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Dashboard</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Visão geral do negócio em tempo real</p>
+          </div>
+          <Link
+            href="/processos/novo"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
+          >
+            <PlusCircle className="w-4 h-4" />
+            Novo Projeto
           </Link>
         </div>
       </div>
 
-      {/* MÉTRICAS PRINCIPAIS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
-        {stats.map((stat, i) => (
-          <div key={i} className="bg-card border border-border p-6 rounded-sm shadow-sm flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-4">
-              <div className={`p-2 ${stat.bg} rounded-sm`}>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+      <div className="px-8 py-8 max-w-screen-xl mx-auto space-y-8">
+
+        {/* KPI CARDS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {kpis.map((kpi, i) => (
+            <div key={i} className={`bg-white border ${kpi.border} rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow`}>
+              <div className="flex items-start justify-between mb-4">
+                <div className={`p-2 ${kpi.bg} rounded-lg`}>
+                  <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
+                </div>
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <TrendingUp className="w-3 h-3" /> {kpi.trend}
+                </span>
               </div>
-              <ArrowUpRight className="w-4 h-4 text-muted-foreground opacity-20" />
+              <div className="text-2xl font-bold text-slate-900 tracking-tight">{kpi.value}</div>
+              <div className="text-xs font-medium text-slate-500 mt-1">{kpi.label}</div>
             </div>
-            <div>
-              <div className="text-2xl font-black tracking-tighter text-foreground">{stat.value}</div>
-              <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{stat.name}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* AÇÕES RÁPIDAS E ATIVIDADE RECENTE */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        
-        {/* PROCESSOS RECENTES */}
-        <div className="bg-card border border-border rounded-sm overflow-hidden">
-          <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest">Processos em Aberto</span>
-            <Link href="/processos" className="text-[9px] font-bold text-primary hover:underline uppercase">Ver Todos</Link>
-          </div>
-          <div className="p-4">
-            <div className="space-y-3">
-              {/* Espaço para lista de processos simplificada */}
-              <p className="text-[10px] text-muted-foreground uppercase text-center py-8 italic">Acesse a aba de Processos para gestão completa via Kanban.</p>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* FINANCEIRO RÁPIDO */}
-        <div className="bg-card border border-border rounded-sm overflow-hidden">
-          <div className="p-4 border-b border-border bg-muted/30 flex justify-between items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Pendente de Recebimento</span>
-            <TrendingUp className="w-4 h-4 text-amber-500" />
+        {/* SECOND ROW */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          
+          {/* RECENT PROCESSES */}
+          <div className="xl:col-span-2 bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-[hsl(var(--border))] flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-900">Processos Recentes</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Últimos projetos abertos</p>
+              </div>
+              <Link href="/processos" className="text-xs font-medium text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 transition-colors">
+                Ver todos <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+            <div className="divide-y divide-[hsl(var(--border))]">
+              {processosRecentes.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <FolderKanban className="w-10 h-10 text-slate-200 mx-auto mb-3" />
+                  <p className="text-sm text-slate-400">Nenhum processo encontrado</p>
+                  <Link href="/processos/novo" className="text-xs text-blue-600 hover:underline mt-1 inline-block">Criar o primeiro projeto</Link>
+                </div>
+              ) : processosRecentes.map(p => {
+                const status = statusLabel[p.status] || { label: p.status, color: "badge-gray" }
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/processos/${p.id}`}
+                    className="flex items-center gap-4 px-6 py-3.5 hover:bg-slate-50 transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-slate-800 truncate">{p.tipo_regularizacao}</span>
+                        <span className={`badge ${status.color} flex-shrink-0`}>{status.label}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate">{p.cliente.nome}</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-400">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="text-xs">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0" />
+                  </Link>
+                )
+              })}
+            </div>
           </div>
-          <div className="p-4 flex flex-col items-center justify-center py-12">
-             <div className="text-4xl font-black tracking-tighter text-foreground mb-2">R$ 0,00</div>
-             <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest">Total a receber em contratos ativos</p>
-          </div>
-        </div>
 
+          {/* QUICK ACTIONS */}
+          <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-[hsl(var(--border))]">
+              <h2 className="text-sm font-semibold text-slate-900">Ações Rápidas</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Acesso direto às funções principais</p>
+            </div>
+            <div className="p-4 space-y-2">
+              {[
+                { label: "Novo Projeto Completo", href: "/processos/novo", desc: "Cliente + Imóvel + Processo", color: "bg-blue-600 hover:bg-blue-700", text: "text-white" },
+                { label: "Cadastrar Cliente", href: "/clientes/novo", desc: "Novo requerente ou parceiro", color: "bg-slate-100 hover:bg-slate-200", text: "text-slate-700" },
+                { label: "Financeiro", href: "/financeiro", desc: "Lançamentos e contratos", color: "bg-slate-100 hover:bg-slate-200", text: "text-slate-700" },
+                { label: "Agenda", href: "/agenda", desc: "Reuniões e prazos", color: "bg-slate-100 hover:bg-slate-200", text: "text-slate-700" },
+              ].map((action, i) => (
+                <Link
+                  key={i}
+                  href={action.href}
+                  className={`flex flex-col px-4 py-3 ${action.color} ${action.text} rounded-lg transition-colors`}
+                >
+                  <span className="text-sm font-medium">{action.label}</span>
+                  <span className={`text-xs mt-0.5 ${i === 0 ? 'text-blue-100' : 'text-slate-500'}`}>{action.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   )

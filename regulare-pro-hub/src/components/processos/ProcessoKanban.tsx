@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from 'react'
-import { 
-  Search, 
-  PlusCircle, 
-  LayoutGrid, 
-  List, 
-  ArrowRight,
-  Clock,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react'
+import { Search, PlusCircle, ArrowUpRight, LayoutGrid, List } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -28,119 +19,182 @@ interface ProcessoKanbanProps {
   initialProcessos: Processo[]
 }
 
+const STATUS_CONFIG: Record<string, { label: string; badgeClass: string; colLabel: string }> = {
+  em_analise:             { label: "Análise Inicial",  badgeClass: "badge-blue",  colLabel: "Análise" },
+  documentacao_pendente:  { label: "Documentação",     badgeClass: "badge-amber", colLabel: "Documentação" },
+  protocolo_prefeitura:   { label: "Protocolo",        badgeClass: "badge-gray",  colLabel: "Em Andamento" },
+  em_aprovacao:           { label: "Em Aprovação",     badgeClass: "badge-blue",  colLabel: "Em Andamento" },
+  exigencia_tecnica:      { label: "Exigência",        badgeClass: "badge-red",   colLabel: "Exigência" },
+  aprovado:               { label: "Aprovado",         badgeClass: "badge-green", colLabel: "Concluído" },
+  finalizado:             { label: "Finalizado",       badgeClass: "badge-green", colLabel: "Concluído" },
+}
+
+const COLUMNS = [
+  { id: "analise",    label: "Análise",       statuses: ["em_analise"] },
+  { id: "andamento",  label: "Em Andamento",  statuses: ["documentacao_pendente", "protocolo_prefeitura", "em_aprovacao"] },
+  { id: "exigencia",  label: "Exigência",     statuses: ["exigencia_tecnica"] },
+  { id: "concluido",  label: "Concluído",     statuses: ["aprovado", "finalizado"] },
+]
+
+const COL_COLORS: Record<string, string> = {
+  analise:   "border-t-blue-500",
+  andamento: "border-t-amber-500",
+  exigencia: "border-t-red-500",
+  concluido: "border-t-emerald-500",
+}
+
 export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps) {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
+  const [search, setSearch] = useState('')
+  const [view, setView] = useState<'kanban' | 'list'>('kanban')
 
-  const filteredProcessos = initialProcessos.filter(p => 
-    p.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.tipo_regularizacao.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = initialProcessos.filter(p =>
+    p.cliente.nome.toLowerCase().includes(search.toLowerCase()) ||
+    p.tipo_regularizacao.toLowerCase().includes(search.toLowerCase())
   )
 
-  const columns = {
-    'ANÁLISE': filteredProcessos.filter(p => p.status === 'em_analise'),
-    'EM ANDAMENTO': filteredProcessos.filter(p => ['documentacao_pendente', 'protocolo_prefeitura', 'em_aprovacao'].includes(p.status)),
-    'EXIGÊNCIA': filteredProcessos.filter(p => p.status === 'exigencia_tecnica'),
-    'FINALIZADO': filteredProcessos.filter(p => ['aprovado', 'finalizado'].includes(p.status)),
-  }
-
   return (
-    <div className="p-8 max-w-[1400px] mx-auto w-full font-mono space-y-10">
-      
-      {/* HEADER SaaS - REGRA DE 3 AÇÕES */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h1 className="text-2xl font-black tracking-tighter uppercase text-foreground">Processos</h1>
-          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.2em] mt-1">Gestão de Fluxo Operacional</p>
-        </div>
-        
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input 
-              type="text"
-              placeholder="BUSCAR PROCESSO OU CLIENTE..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-background border border-border pl-10 pr-4 py-2.5 rounded-sm text-[10px] font-black uppercase outline-none focus:ring-1 focus:ring-primary/30"
-            />
+    <div className="min-h-screen bg-[hsl(var(--background))]">
+
+      {/* PAGE HEADER */}
+      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Processos</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Fluxo operacional de regularizações</p>
           </div>
-          <div className="flex border border-border rounded-sm overflow-hidden bg-card">
-             <button onClick={() => setViewMode('kanban')} className={`p-2.5 ${viewMode === 'kanban' ? 'bg-muted' : 'hover:bg-muted'}`}><LayoutGrid className="w-4 h-4" /></button>
-             <button onClick={() => setViewMode('list')} className={`p-2.5 ${viewMode === 'list' ? 'bg-muted' : 'hover:bg-muted'}`}><List className="w-4 h-4" /></button>
+          <div className="flex items-center gap-3">
+            {/* SEARCH */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar processo..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64 bg-white"
+              />
+            </div>
+            {/* VIEW TOGGLE */}
+            <div className="flex items-center border border-[hsl(var(--border))] rounded-md overflow-hidden bg-white">
+              <button
+                onClick={() => setView('kanban')}
+                className={`p-2 transition-colors ${view === 'kanban' ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setView('list')}
+                className={`p-2 transition-colors ${view === 'list' ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            {/* CTA */}
+            <Link
+              href="/processos/novo"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Novo Processo
+            </Link>
           </div>
-          <Link href="/processos/novo" className="bg-foreground text-background px-6 py-2.5 rounded-sm text-[10px] font-black uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2">
-            <PlusCircle className="w-3.5 h-3.5" /> Novo Processo
-          </Link>
         </div>
       </div>
 
-      {viewMode === 'kanban' ? (
-        /* KANBAN MINIMALISTA */
-        <div className="flex gap-6 overflow-x-auto pb-6 items-start">
-          {Object.entries(columns).map(([colName, items]) => (
-            <div key={colName} className="min-w-[300px] w-[300px] flex-shrink-0">
-               <div className="flex items-center justify-between mb-6 pb-2 border-b border-border">
-                  <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{colName}</h3>
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-muted rounded-full">{items.length}</span>
-               </div>
-               
-               <div className="space-y-4">
-                  {items.map(p => (
-                    <div 
+      <div className="p-8">
+        {view === 'kanban' ? (
+          /* KANBAN BOARD */
+          <div className="flex gap-5 overflow-x-auto pb-6 scrollbar-thin items-start">
+            {COLUMNS.map(col => {
+              const items = filtered.filter(p => col.statuses.includes(p.status))
+              return (
+                <div key={col.id} className="min-w-[280px] w-[280px] flex-shrink-0">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{col.label}</span>
+                    <span className="text-xs font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">{items.length}</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {items.length === 0 ? (
+                      <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center">
+                        <p className="text-xs text-slate-400">Nenhum processo</p>
+                      </div>
+                    ) : items.map(p => {
+                      const s = STATUS_CONFIG[p.status] || { label: p.status, badgeClass: "badge-gray" }
+                      return (
+                        <div
+                          key={p.id}
+                          onClick={() => router.push(`/processos/${p.id}`)}
+                          className={`bg-white border border-[hsl(var(--border))] border-t-2 ${COL_COLORS[col.id]} rounded-xl p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all group`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <span className={`badge ${s.badgeClass}`}>{s.label}</span>
+                            <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 mt-0.5" />
+                          </div>
+                          <h3 className="text-sm font-medium text-slate-800 leading-snug mb-1">{p.tipo_regularizacao}</h3>
+                          <p className="text-xs text-slate-500 truncate">{p.cliente.nome}</p>
+                          {p.imovel?.endereco && (
+                            <p className="text-[11px] text-slate-400 mt-2 truncate">{p.imovel.endereco}</p>
+                          )}
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                            <span className="text-[10px] text-slate-400 font-mono">#{p.id.substring(0, 6).toUpperCase()}</span>
+                            <span className="text-[10px] text-slate-400">{p.etapa_atual || 'Iniciado'}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          /* LIST VIEW */
+          <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full text-sm text-left">
+              <thead className="border-b border-[hsl(var(--border))] bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Processo</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Cliente</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
+                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Etapa</th>
+                  <th className="px-6 py-3"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[hsl(var(--border))]">
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-16 text-center text-sm text-slate-400">
+                      Nenhum processo encontrado para "{search}"
+                    </td>
+                  </tr>
+                ) : filtered.map(p => {
+                  const s = STATUS_CONFIG[p.status] || { label: p.status, badgeClass: "badge-gray" }
+                  return (
+                    <tr
                       key={p.id}
                       onClick={() => router.push(`/processos/${p.id}`)}
-                      className="bg-card border border-border p-4 rounded-sm hover:border-primary/50 transition-all cursor-pointer group shadow-sm"
+                      className="hover:bg-slate-50 cursor-pointer transition-colors group"
                     >
-                       <div className="flex justify-between items-start mb-3">
-                          <span className="text-[10px] font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{p.cliente.nome}</span>
-                          <span className="text-[8px] font-bold text-muted-foreground uppercase">PRC-{p.id.substring(0,4)}</span>
-                       </div>
-                       <h4 className="text-[9px] font-bold text-muted-foreground uppercase mb-4 leading-tight">{p.tipo_regularizacao}</h4>
-                       
-                       <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                          <div className="flex items-center gap-1.5">
-                             <Clock className="w-3 h-3 text-muted-foreground" />
-                             <span className="text-[8px] font-black uppercase text-muted-foreground">{p.etapa_atual || 'INICIADO'}</span>
-                          </div>
-                          <ArrowRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all" />
-                       </div>
-                    </div>
-                  ))}
-               </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        /* LISTA SIMPLIFICADA */
-        <div className="bg-card border border-border rounded-sm overflow-hidden">
-           <table className="w-full text-left">
-              <thead className="bg-muted/30 border-b border-border text-[9px] font-black text-muted-foreground uppercase tracking-widest">
-                 <tr>
-                    <th className="px-6 py-4">PROCESSO</th>
-                    <th className="px-6 py-4">CLIENTE</th>
-                    <th className="px-6 py-4">ETAPA</th>
-                    <th className="px-6 py-4 text-right">AÇÕES</th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border text-[11px]">
-                 {filteredProcessos.map(p => (
-                   <tr key={p.id} className="hover:bg-muted/10 smooth-transition group cursor-pointer" onClick={() => router.push(`/processos/${p.id}`)}>
-                      <td className="px-6 py-4 font-black uppercase text-foreground">{p.tipo_regularizacao}</td>
-                      <td className="px-6 py-4 font-bold uppercase text-muted-foreground">{p.cliente.nome}</td>
                       <td className="px-6 py-4">
-                         <span className="px-2 py-0.5 bg-muted rounded-full text-[9px] font-black uppercase">{p.etapa_atual || 'INICIAL'}</span>
+                        <div className="font-medium text-slate-800">{p.tipo_regularizacao}</div>
+                        <div className="text-xs text-slate-400 font-mono mt-0.5">#{p.id.substring(0, 8).toUpperCase()}</div>
                       </td>
+                      <td className="px-6 py-4 text-slate-600">{p.cliente.nome}</td>
+                      <td className="px-6 py-4"><span className={`badge ${s.badgeClass}`}>{s.label}</span></td>
+                      <td className="px-6 py-4 text-xs text-slate-500">{p.etapa_atual || '—'}</td>
                       <td className="px-6 py-4 text-right">
-                         <ArrowRight className="w-4 h-4 text-muted-foreground inline" />
+                        <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors inline" />
                       </td>
-                   </tr>
-                 ))}
+                    </tr>
+                  )
+                })}
               </tbody>
-           </table>
-        </div>
-      )}
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
