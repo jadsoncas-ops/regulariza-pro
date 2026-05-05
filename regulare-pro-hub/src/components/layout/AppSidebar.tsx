@@ -86,6 +86,20 @@ export default function AppSidebar() {
           </ul>
         </div>
 
+        {/* AÇÃO RÁPIDA */}
+        <div className="px-3 mb-6">
+          <Link 
+            href="/processos/novo" 
+            className="flex items-center gap-3 px-4 py-3 rounded-sm bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 smooth-transition group shadow-sm"
+          >
+            <PlusCircle className="w-4 h-4 shrink-0 group-hover:scale-110 transition-transform" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Novo Projeto</span>
+              <span className="text-[8px] opacity-70 font-bold uppercase tracking-tighter mt-1">Cadastro Unificado</span>
+            </div>
+          </Link>
+        </div>
+
         {/* GESTÃO */}
         <div>
           <h3 className="px-3 text-[9px] font-black text-muted-foreground/50 tracking-[0.3em] mb-4">GESTÃO</h3>
