@@ -7,7 +7,7 @@ import {
   ArrowLeft, Info, Building2, FileText,
   DollarSign, ListTodo, History,
   MapPin, User, Calendar, Edit, X, Check,
-  Loader2
+  Loader2, ChevronRight
 } from 'lucide-react'
 
 const TABS = [
@@ -43,7 +43,6 @@ export default function ProcessoDetailPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
-  // Estados controlados para o formulário (para permitir preenchimento automático pelo CEP)
   const [formData, setFormData] = useState<any>({})
   const [isSearchingCep, setIsSearchingCep] = useState(false)
 
@@ -54,13 +53,13 @@ export default function ProcessoDetailPage() {
       .then(d => { 
         setProcesso(d)
         setLoading(false)
-        // Inicializa o formData com os dados atuais
         setFormData({
           tipo_regularizacao: d.tipo_regularizacao,
           status: d.status,
           responsavel: d.responsavel || '',
           observacoes: d.observacoes || '',
           endereco: d.imovel?.endereco || '',
+          numero: d.imovel?.numero || '',
           bairro: d.imovel?.bairro || '',
           cidade: d.imovel?.cidade || '',
           cep: d.imovel?.cep || '',
@@ -101,6 +100,9 @@ export default function ProcessoDetailPage() {
             bairro: data.bairro || prev.bairro,
             cidade: data.localidade || prev.cidade,
           }))
+          // Foca no campo número após buscar o CEP
+          const numeroInput = document.getElementsByName('numero')[0] as HTMLInputElement
+          if (numeroInput) numeroInput.focus()
         }
       } catch (error) {
         console.error('Erro ao buscar CEP:', error)
@@ -121,6 +123,7 @@ export default function ProcessoDetailPage() {
       observacoes: formData.observacoes,
       imovel: {
         endereco: formData.endereco,
+        numero: formData.numero,
         bairro: formData.bairro,
         cidade: formData.cidade,
         cep: formData.cep,
@@ -265,7 +268,9 @@ export default function ProcessoDetailPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm text-slate-700 font-medium leading-relaxed">{processo.imovel.endereco}</p>
+                      <p className="text-sm text-slate-700 font-medium leading-relaxed">
+                        {processo.imovel.endereco}{processo.imovel.numero ? `, nº ${processo.imovel.numero}` : ''}
+                      </p>
                       <p className="text-xs text-slate-400 mt-1">{processo.imovel.bairro} • {processo.imovel.cidade}</p>
                     </div>
                   </div>
@@ -280,7 +285,14 @@ export default function ProcessoDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <SectionCard title="Dados de Localização">
                 <div className="grid grid-cols-1 gap-5">
-                  <InfoField label="Endereço da Obra" value={processo.imovel?.endereco} />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="col-span-2">
+                       <InfoField label="Endereço da Obra" value={processo.imovel?.endereco} />
+                    </div>
+                    <div>
+                       <InfoField label="Número" value={processo.imovel?.numero} />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <InfoField label="Bairro" value={processo.imovel?.bairro} />
                     <InfoField label="CEP" value={processo.imovel?.cep} />
@@ -372,9 +384,15 @@ export default function ProcessoDetailPage() {
                       </div>
                     </div>
                   </div>
-                  <div>
-                    <Label>Endereço Completo</Label>
-                    <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-3">
+                      <Label>Logradouro / Endereço</Label>
+                      <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                    </div>
+                    <div>
+                      <Label>Número</Label>
+                      <input name="numero" value={formData.numero} onChange={handleInputChange} className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="Ex: 123" />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex-1">
@@ -433,14 +451,6 @@ export default function ProcessoDetailPage() {
         </div>
       )}
     </div>
-  )
-}
-
-function ChevronRight(props: any) {
-  return (
-    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m9 18 6-6-6-6" />
-    </svg>
   )
 }
 

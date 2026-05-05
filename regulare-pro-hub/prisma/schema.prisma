@@ -42,6 +42,7 @@ model Imovel {
   clienteId             String
   cliente               Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   endereco              String
+  numero                String?
   tipo                  String?     // Residencial, Comercial, Não Informado...
   bairro                String?
   cidade                String?
