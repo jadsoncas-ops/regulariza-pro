@@ -263,10 +263,26 @@ export default function ClientList({ initialClientes, stats }: ClientListProps) 
       </div>
 
       {/* EDIT MODAL */}
-      {isEditModalOpen && selectedCliente && (
+      {isEditModalOpen && selectedCliente && (() => {
+        // Parsear telefone existente: "(73) 98842-7977" → ddd=73, numero=98842-7977
+        const telRaw = selectedCliente.telefone || ''
+        const telMatch = telRaw.match(/\(?\s*(\d{2})\s*\)?\s*(.+)/)
+        const telDdd = telMatch ? telMatch[1] : ''
+        const telNumero = telMatch ? telMatch[2].trim() : telRaw
+
+        // Parsear endereço existente: "Rua X, 143, Bairro, Cidade/UF" → campos
+        const endParts = (selectedCliente.endereco || '').split(',').map(s => s.trim())
+        const endRua = endParts[0] || ''
+        const endNumero = endParts[1] || ''
+        const endBairro = endParts[2] || ''
+        const endCidadeUF = endParts[3] || ''
+        const endCidade = endCidadeUF.split('/')[0]?.trim() || ''
+        const endEstado = endCidadeUF.split('/')[1]?.trim() || ''
+
+        return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30">
+          <div className="bg-card border border-border w-full max-w-2xl rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30 shrink-0">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-widest">Editar Cliente</h2>
                 <p className="text-[10px] text-muted-foreground uppercase mt-1 tracking-wider">ID: {selectedCliente.id}</p>
@@ -275,81 +291,166 @@ export default function ClientList({ initialClientes, stats }: ClientListProps) 
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={saveEdit} className="p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome Completo</label>
-                  <input 
-                    name="nome"
-                    defaultValue={selectedCliente.nome}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CPF / CNPJ</label>
-                  <input 
-                    name="cpf_cnpj"
-                    defaultValue={selectedCliente.cpf_cnpj}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    required
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email</label>
-                  <input 
-                    name="email"
-                    type="email"
-                    defaultValue={selectedCliente.email || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Telefone</label>
-                  <input 
-                    name="telefone"
-                    defaultValue={selectedCliente.telefone || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Endereço</label>
-                  <input 
-                    name="endereco"
-                    defaultValue={selectedCliente.endereco || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Observações</label>
-                  <textarea 
-                    name="observacoes"
-                    defaultValue={selectedCliente.observacoes || ''}
-                    rows={3}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 resize-none"
-                  />
+
+            <form onSubmit={(e) => {
+              e.preventDefault()
+              const fd = new FormData(e.currentTarget)
+              // Montar telefone composto
+              const ddd = (fd.get('tel_ddd') as string || '').replace(/\D/g, '')
+              const num = (fd.get('tel_numero') as string || '').trim()
+              const telFinal = ddd && num ? `(${ddd}) ${num}` : (ddd || num || '')
+              // Montar endereço composto
+              const rua = fd.get('end_rua') as string || ''
+              const numero = fd.get('end_numero') as string || ''
+              const bairro = fd.get('end_bairro') as string || ''
+              const cidade = fd.get('end_cidade') as string || ''
+              const estado = fd.get('end_estado') as string || ''
+              const cep = fd.get('end_cep') as string || ''
+              const endFinal = [rua, numero, bairro, cidade && estado ? `${cidade}/${estado}` : cidade].filter(Boolean).join(', ')
+
+              // Criar FormData limpo para o saveEdit
+              const cleanForm = new FormData()
+              cleanForm.set('nome', fd.get('nome') as string)
+              cleanForm.set('cpf_cnpj', fd.get('cpf_cnpj') as string)
+              cleanForm.set('email', fd.get('email') as string)
+              cleanForm.set('telefone', telFinal)
+              cleanForm.set('endereco', endFinal)
+              cleanForm.set('cidade', cidade)
+              cleanForm.set('estado', estado)
+              cleanForm.set('cep', cep)
+              cleanForm.set('observacoes', fd.get('observacoes') as string)
+
+              // Chamar saveEdit diretamente com o evento modificado
+              if (!selectedCliente) return
+              setIsLoading(true)
+              const payload = Object.fromEntries(cleanForm.entries())
+              fetch(`/api/clientes/${selectedCliente.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              }).then(res => res.json()).then(updated => {
+                setClientes(prev => prev.map(c => c.id === updated.id ? { ...c, ...updated } : c))
+                setIsEditModalOpen(false)
+                router.refresh()
+              }).catch(console.error).finally(() => setIsLoading(false))
+            }} className="p-6 space-y-5 overflow-y-auto flex-1">
+
+              {/* IDENTIFICAÇÃO */}
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3 pb-1 border-b border-border">Identificação</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome Completo *</label>
+                    <input name="nome" defaultValue={selectedCliente.nome} required
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CPF / CNPJ *</label>
+                    <input name="cpf_cnpj" defaultValue={selectedCliente.cpf_cnpj} required
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
                 </div>
               </div>
+
+              {/* CONTATO */}
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3 pb-1 border-b border-border">Contato</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email</label>
+                    <input name="email" type="email" defaultValue={selectedCliente.email || ''}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Telefone</label>
+                    <div className="flex gap-2">
+                      {/* País fixo Brasil */}
+                      <div className="flex items-center gap-1.5 px-2.5 py-2 bg-muted/40 border border-border rounded-sm text-xs font-bold text-muted-foreground shrink-0 whitespace-nowrap">
+                        🇧🇷 +55
+                      </div>
+                      <input
+                        name="tel_ddd"
+                        defaultValue={telDdd}
+                        placeholder="DDD"
+                        maxLength={2}
+                        className="w-16 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 text-center font-bold"
+                      />
+                      <input
+                        name="tel_numero"
+                        defaultValue={telNumero}
+                        placeholder="9 9999-9999"
+                        className="flex-1 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* ENDEREÇO */}
+              <div>
+                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mb-3 pb-1 border-b border-border">Endereço</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex flex-col gap-1.5 md:col-span-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Logradouro (Rua / Av.)</label>
+                    <input name="end_rua" defaultValue={endRua} placeholder="Ex: Rua das Flores"
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Número</label>
+                    <input name="end_numero" defaultValue={endNumero} placeholder="143"
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bairro</label>
+                    <input name="end_bairro" defaultValue={endBairro} placeholder="Centro"
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cidade</label>
+                    <input name="end_cidade" defaultValue={endCidade} placeholder="São Paulo"
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado (UF)</label>
+                    <select name="end_estado" defaultValue={endEstado}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30">
+                      <option value="">Selecione...</option>
+                      {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CEP</label>
+                    <input name="end_cep" defaultValue={selectedCliente.endereco?.match(/\d{5}-?\d{3}/)?.[0] || ''} placeholder="00000-000"
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                  </div>
+                </div>
+              </div>
+
+              {/* OBSERVAÇÕES */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Observações</label>
+                <textarea name="observacoes" defaultValue={selectedCliente.observacoes || ''} rows={3}
+                  className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 resize-none" />
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                <button 
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="px-6 py-2 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition"
-                >
+                <button type="button" onClick={() => setIsEditModalOpen(false)}
+                  className="px-6 py-2 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition">
                   Cancelar
                 </button>
-                <button 
-                  type="submit"
-                  disabled={isLoading}
-                  className="px-8 py-2 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center gap-2 disabled:opacity-50"
-                >
+                <button type="submit" disabled={isLoading}
+                  className="px-8 py-2 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center gap-2 disabled:opacity-50">
                   {isLoading ? 'SALVANDO...' : <><Save className="w-3.5 h-3.5" /> SALVAR ALTERAÇÕES</>}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
+        )
+      })()}
+
 
       {/* DELETE CONFIRMATION */}
       {isDeleteModalOpen && selectedCliente && (

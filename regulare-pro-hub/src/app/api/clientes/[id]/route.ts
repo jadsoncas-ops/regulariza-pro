@@ -39,10 +39,13 @@ export async function PATCH(
       data: {
         nome: data.nome,
         cpf_cnpj: data.cpf_cnpj,
-        telefone: data.telefone,
-        email: data.email,
-        endereco: data.endereco,
-        observacoes: data.observacoes,
+        telefone: data.telefone || null,
+        email: data.email || null,
+        endereco: data.endereco || null,
+        cidade: data.cidade || null,
+        estado: data.estado || null,
+        cep: data.cep || null,
+        observacoes: data.observacoes || null,
       }
     })
     return NextResponse.json(cliente)
@@ -50,6 +53,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'Erro ao atualizar cliente' }, { status: 500 })
   }
 }
+
 
 export async function DELETE(
   req: Request,
