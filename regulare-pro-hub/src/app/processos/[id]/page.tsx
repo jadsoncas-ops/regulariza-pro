@@ -42,11 +42,40 @@ export default async function DetalhesProcessoPage({ params }: { params: Promise
 
   async function updateProcesso(formData: FormData) {
     'use server'
+    const id = (await params).id
+    const clienteId = formData.get('clienteId') as string
+    const imovelId = formData.get('imovelId') as string
+    const novoEndereco = formData.get('endereco_imovel') as string
+    
+    let finalImovelId = imovelId || null
+
+    // Se tiver um novo endereço e não tiver imovelId, ou se o endereço for diferente do atual
+    if (novoEndereco && novoEndereco.trim() !== '') {
+      if (!finalImovelId) {
+        // Criar novo imóvel automaticamente
+        const novoImovel = await prisma.imovel.create({
+          data: {
+            endereco: novoEndereco.toUpperCase(),
+            clienteId: clienteId,
+            cidade: 'NÃO INFORMADO',
+            estado: 'BA' // Default para a sua região, pode ser alterado depois
+          }
+        })
+        finalImovelId = novoImovel.id
+      } else {
+        // Atualizar endereço do imóvel vinculado
+        await prisma.imovel.update({
+          where: { id: finalImovelId },
+          data: { endereco: novoEndereco.toUpperCase() }
+        })
+      }
+    }
+
     await prisma.processo.update({
-      where: { id: (await params).id },
+      where: { id },
       data: {
-        clienteId: formData.get('clienteId') as string,
-        imovelId: (formData.get('imovelId') as string) || null,
+        clienteId,
+        imovelId: finalImovelId,
         tipo_regularizacao: formData.get('tipo_regularizacao') as string,
         etapa_atual: formData.get('etapa_atual') as string,
         status: formData.get('status') as string,
@@ -55,7 +84,7 @@ export default async function DetalhesProcessoPage({ params }: { params: Promise
         data_previsao: formData.get('data_previsao') ? new Date(formData.get('data_previsao') as string) : null,
       }
     })
-    redirect(`/processos/${(await params).id}`)
+    redirect(`/processos/${id}`)
   }
 
   async function deleteProcesso() {
@@ -121,11 +150,27 @@ export default async function DetalhesProcessoPage({ params }: { params: Promise
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Imóvel Vinculado</label>
               <select defaultValue={processo.imovelId || ''} name="imovelId" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30">
-                <option value="">Selecione um imóvel...</option>
+                <option value="">+ CADASTRAR NOVO ENDEREÇO ABAIXO</option>
                 {imoveis.map(i => (
                   <option key={i.id} value={i.id}>{i.endereco}</option>
                 ))}
               </select>
+            </div>
+
+            <div className="flex flex-col gap-2 md:col-span-2 bg-muted/20 p-4 border border-dashed border-border rounded-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <Home className="w-3.5 h-3.5 text-primary" />
+                <label className="text-[10px] font-black uppercase tracking-widest text-foreground">Endereço do Imóvel (Sincronizado)</label>
+              </div>
+              <input 
+                name="endereco_imovel" 
+                defaultValue={processo.imovel?.endereco || ''} 
+                className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase font-bold" 
+                placeholder="DIGITE O ENDEREÇO PARA VINCULAR OU CRIAR UM IMÓVEL..."
+              />
+              <p className="text-[8px] text-muted-foreground font-bold uppercase mt-1 tracking-tighter">
+                * SE VOCÊ ALTERAR ESTE CAMPO, O ENDEREÇO SERÁ ATUALIZADO TAMBÉM NA ABA "IMÓVEIS".
+              </p>
             </div>
 
             <div className="flex flex-col gap-2">

@@ -53,6 +53,8 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   const [createFormData, setCreateFormData] = useState({
     endereco: '', bairro: '', cidade: '', estado: '', cep: ''
   })
+  const [tempCli, setTempCli] = useState<any>(null)
+  const [tempImoveis, setTempImoveis] = useState<Imovel[]>([])
   const router = useRouter()
 
   const filteredImoveis = imoveis.filter(i => 
@@ -289,22 +291,14 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                     className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
                     required
                     onChange={(e) => {
-                      const cli = clientes.find(c => c.id === e.target.value)
-                      if (cli && (cli.endereco || cli.cidade)) {
-                        // Parsear endereço composto se necessário
-                        const endParts = (cli.endereco || '').split(',').map(s => s.trim())
-                        const ruaNum = endParts.slice(0, 2).join(', ') || cli.endereco || ''
-                        setCreateFormData({
-                          endereco: ruaNum.toUpperCase(),
-                          bairro: (cli.bairro || endParts[2] || '').toUpperCase(),
-                          cidade: (cli.cidade || '').toUpperCase(),
-                          estado: (cli.estado || '').toUpperCase(),
-                          cep: (cli.cep || '').toUpperCase()
-                        })
-                        setAutoFilled(true)
-                      } else {
-                        setAutoFilled(false)
-                      }
+                      const cliId = e.target.value
+                      const cli = clientes.find(c => c.id === cliId)
+                      const existing = imoveis.filter(i => i.clienteId === cliId)
+                      
+                      setCreateFormData({ endereco: '', bairro: '', cidade: '', estado: '', cep: '' })
+                      setAutoFilled(false)
+                      setTempCli(cli || null)
+                      setTempImoveis(existing)
                     }}
                   >
                     <option value="">Selecione um cliente...</option>
@@ -314,10 +308,97 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   </select>
                 </div>
 
-                {autoFilled && (
-                  <div className="md:col-span-2 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 px-3 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                    Endereço importado do cadastro do cliente — você pode editar abaixo se o imóvel for diferente
+                {/* SELETOR DE ENDEREÇOS EXISTENTES */}
+                {tempCli && (
+                  <div className="md:col-span-2 space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em]">Endereços vinculados encontrados:</span>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setTempCli(null);
+                          setTempImoveis([]);
+                          setCreateFormData({ endereco: '', bairro: '', cidade: '', estado: '', cep: '' });
+                          setAutoFilled(false);
+                        }}
+                        className="text-[8px] font-bold text-muted-foreground hover:text-foreground uppercase underline"
+                      >
+                        Limpar seleção
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2">
+                      {/* Opção 1: Endereço do Cadastro do Cliente */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const endParts = (tempCli.endereco || '').split(',').map((s: string) => s.trim())
+                          setCreateFormData({
+                            endereco: (endParts.slice(0, 2).join(', ') || tempCli.endereco || '').toUpperCase(),
+                            bairro: (tempCli.bairro || endParts[2] || '').toUpperCase(),
+                            cidade: (tempCli.cidade || '').toUpperCase(),
+                            estado: (tempCli.estado || '').toUpperCase(),
+                            cep: (tempCli.cep || '').toUpperCase()
+                          })
+                          setAutoFilled(true)
+                        }}
+                        className="flex items-center gap-3 p-3 border border-border bg-muted/20 hover:border-primary/50 hover:bg-primary/5 rounded-sm transition-all text-left group"
+                      >
+                        <div className="p-2 bg-background border border-border rounded-sm group-hover:border-primary/30">
+                          <MapPin className="w-3.5 h-3.5 text-muted-foreground group-hover:text-primary" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-tight">Endereço Principal (Cadastro)</div>
+                          <div className="text-[9px] text-muted-foreground uppercase">{tempCli.endereco || 'SEM ENDEREÇO NO CADASTRO'}</div>
+                        </div>
+                      </button>
+
+                      {/* Outras opções: Imóveis já cadastrados */}
+                      {tempImoveis.map((imovel) => (
+                        <button
+                          key={imovel.id}
+                          type="button"
+                          onClick={() => {
+                            setCreateFormData({
+                              endereco: (imovel.endereco || '').toUpperCase(),
+                              bairro: (imovel.bairro || '').toUpperCase(),
+                              cidade: (imovel.cidade || '').toUpperCase(),
+                              estado: (imovel.estado || '').toUpperCase(),
+                              cep: (imovel.cep || '').toUpperCase()
+                            })
+                            setAutoFilled(true)
+                          }}
+                          className="flex items-center gap-3 p-3 border border-border bg-muted/20 hover:border-emerald-500/50 hover:bg-emerald-500/5 rounded-sm transition-all text-left group"
+                        >
+                          <div className="p-2 bg-background border border-border rounded-sm group-hover:border-emerald-500/30">
+                            <Home className="w-3.5 h-3.5 text-muted-foreground group-hover:text-emerald-500" />
+                          </div>
+                          <div>
+                            <div className="text-[10px] font-black uppercase tracking-tight">Imóvel/Lote já cadastrado</div>
+                            <div className="text-[9px] text-muted-foreground uppercase">{imovel.endereco} • {imovel.bairro}</div>
+                          </div>
+                        </button>
+                      ))}
+
+                      {/* Opção Nova: Digitar do Zero */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCreateFormData({ endereco: '', bairro: '', cidade: '', estado: '', cep: '' });
+                          setAutoFilled(false);
+                          document.getElementsByName('endereco')[0]?.focus();
+                        }}
+                        className="flex items-center gap-3 p-3 border border-dashed border-border hover:border-foreground/30 hover:bg-muted/50 rounded-sm transition-all text-left group"
+                      >
+                        <div className="p-2 bg-background border border-border rounded-sm group-hover:border-foreground/30">
+                          <PlusCircle className="w-3.5 h-3.5 text-muted-foreground group-hover:text-foreground" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-tight italic">Cadastrar Novo Endereço</div>
+                          <div className="text-[9px] text-muted-foreground uppercase">Inserir dados manualmente abaixo</div>
+                        </div>
+                      </button>
+                    </div>
                   </div>
                 )}
 
