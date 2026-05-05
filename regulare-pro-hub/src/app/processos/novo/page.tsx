@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { 
   ArrowLeft, User, Building2, FolderKanban, 
   DollarSign, Check, ChevronRight, ChevronLeft, 
-  Loader2, MapPin, Calculator, Info, Search
+  Loader2, MapPin, Calculator, Info, Search,
+  Copy
 } from 'lucide-react'
 
 // --- CONSTANTES E TIPOS ---
@@ -56,7 +57,11 @@ export default function NovoProjetoWizard() {
 
   // ESTADO GLOBAL DO WIZARD
   const [formData, setFormData] = useState({
-    cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', endereco: '', cidade: '', observacoes: '' },
+    cliente: { 
+      nome: '', cpf_cnpj: '', telefone: '', email: '', 
+      cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
+      observacoes: '' 
+    },
     imovel: { 
       cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
       area_terreno: '', area_construida: '', num_matricula: '', cartorio: '', inscricao_imobiliaria: '', zoneamento: '', observacoes: '',
@@ -80,8 +85,13 @@ export default function NovoProjetoWizard() {
   }
 
   // BUSCA DE CEP
-  const handleCepSearch = async (cep: string) => {
+  const handleCepSearch = async (cep: string, target: 'cliente' | 'imovel') => {
     const cleanCep = cep.replace(/\D/g, '')
+    setFormData(prev => ({
+      ...prev,
+      [target]: { ...prev[target as keyof typeof prev], cep: cep }
+    }))
+
     if (cleanCep.length === 8) {
       setIsSearchingCep(true)
       try {
@@ -90,19 +100,37 @@ export default function NovoProjetoWizard() {
         if (!data.erro) {
           setFormData(prev => ({
             ...prev,
-            imovel: {
-              ...prev.imovel,
+            [target]: {
+              ...prev[target as keyof typeof prev],
               endereco: data.logradouro,
               bairro: data.bairro,
               cidade: data.localidade,
               estado: data.uf,
-              cep: cep
             }
           }))
+          // Foco no campo número
+          const numInput = document.getElementsByName(`${target}_numero`)[0] as HTMLInputElement
+          if (numInput) numInput.focus()
         }
       } catch (e) { console.error(e) }
       finally { setIsSearchingCep(false) }
     }
+  }
+
+  const copyAddressFromCliente = () => {
+    setFormData(prev => ({
+      ...prev,
+      imovel: {
+        ...prev.imovel,
+        cep: prev.cliente.cep,
+        endereco: prev.cliente.endereco,
+        numero: prev.cliente.numero,
+        complemento: prev.cliente.complemento,
+        bairro: prev.cliente.bairro,
+        cidade: prev.cliente.cidade,
+        estado: prev.cliente.estado,
+      }
+    }))
   }
 
   // CÁLCULOS FINANCEIROS
@@ -222,35 +250,74 @@ export default function NovoProjetoWizard() {
                   </div>
                </div>
                
-               <div className="bg-slate-100/50 p-8 rounded-3xl border border-dashed border-slate-300">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Informações Opcionais</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <Label>Endereço Residencial / Comercial</Label>
+               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Endereço de Cobrança / Correspondência</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <Label>CEP</Label>
+                      <div className="relative">
+                        <Input 
+                          placeholder="00000-000"
+                          value={formData.cliente.cep}
+                          onChange={e => handleCepSearch(e.target.value, 'cliente')}
+                        />
+                        {isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2 flex gap-4">
+                       <div className="flex-1">
+                          <Label>Logradouro / Endereço</Label>
+                          <Input 
+                            placeholder="Rua, Av..."
+                            value={formData.cliente.endereco}
+                            onChange={e => setFormData({...formData, cliente: {...formData.cliente, endereco: e.target.value}})}
+                          />
+                       </div>
+                       <div className="w-24">
+                          <Label>Número</Label>
+                          <Input 
+                            name="cliente_numero"
+                            placeholder="123"
+                            value={formData.cliente.numero}
+                            onChange={e => setFormData({...formData, cliente: {...formData.cliente, numero: e.target.value}})}
+                          />
+                       </div>
+                    </div>
+                    <div>
+                      <Label>Bairro</Label>
                       <Input 
-                        placeholder="Rua, Número, Complemento"
-                        value={formData.cliente.endereco}
-                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, endereco: e.target.value}})}
+                        placeholder="Bairro"
+                        value={formData.cliente.bairro}
+                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, bairro: e.target.value}})}
                       />
                     </div>
                     <div>
                       <Label>Cidade</Label>
                       <Input 
-                        placeholder="Ex: Itabuna"
+                        placeholder="Cidade"
                         value={formData.cliente.cidade}
                         onChange={e => setFormData({...formData, cliente: {...formData.cliente, cidade: e.target.value}})}
                       />
                     </div>
-                    <div className="md:col-span-2">
-                      <Label>Observações Gerais</Label>
-                      <textarea 
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[100px]"
-                        placeholder="Alguma nota importante sobre este cliente?"
-                        value={formData.cliente.observacoes}
-                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, observacoes: e.target.value}})}
+                    <div>
+                      <Label>Estado</Label>
+                      <Input 
+                        placeholder="UF"
+                        value={formData.cliente.estado}
+                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, estado: e.target.value}})}
                       />
                     </div>
                   </div>
+               </div>
+
+               <div className="bg-slate-100/50 p-8 rounded-3xl border border-dashed border-slate-300">
+                  <Label>Observações Gerais do Cliente</Label>
+                  <textarea 
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[80px]"
+                    placeholder="Alguma nota importante sobre este cliente?"
+                    value={formData.cliente.observacoes}
+                    onChange={e => setFormData({...formData, cliente: {...formData.cliente, observacoes: e.target.value}})}
+                  />
                </div>
             </div>
           )}
@@ -259,6 +326,16 @@ export default function NovoProjetoWizard() {
           {step === 2 && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Localização da Obra</h3>
+                     <button 
+                       onClick={copyAddressFromCliente}
+                       className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
+                     >
+                       <Copy className="w-3 h-3" /> Usar mesmo endereço do cliente
+                     </button>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                       <Label>CEP do Imóvel</Label>
@@ -266,26 +343,29 @@ export default function NovoProjetoWizard() {
                         <Input 
                           placeholder="00000-000"
                           value={formData.imovel.cep}
-                          onChange={e => handleCepSearch(e.target.value)}
+                          onChange={e => handleCepSearch(e.target.value, 'imovel')}
                         />
                         {isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}
                       </div>
                     </div>
-                    <div className="md:col-span-2">
-                      <Label>Endereço / Logradouro</Label>
-                      <Input 
-                        placeholder="Rua, Avenida, Travessa..."
-                        value={formData.imovel.endereco}
-                        onChange={e => setFormData({...formData, imovel: {...formData.imovel, endereco: e.target.value}})}
-                      />
-                    </div>
-                    <div>
-                      <Label>Número</Label>
-                      <Input 
-                        placeholder="Ex: 123"
-                        value={formData.imovel.numero}
-                        onChange={e => setFormData({...formData, imovel: {...formData.imovel, numero: e.target.value}})}
-                      />
+                    <div className="md:col-span-2 flex gap-4">
+                       <div className="flex-1">
+                          <Label>Endereço / Logradouro</Label>
+                          <Input 
+                            placeholder="Rua, Avenida, Travessa..."
+                            value={formData.imovel.endereco}
+                            onChange={e => setFormData({...formData, imovel: {...formData.imovel, endereco: e.target.value}})}
+                          />
+                       </div>
+                       <div className="w-24">
+                          <Label>Número</Label>
+                          <Input 
+                            name="imovel_numero"
+                            placeholder="Ex: 123"
+                            value={formData.imovel.numero}
+                            onChange={e => setFormData({...formData, imovel: {...formData.imovel, numero: e.target.value}})}
+                          />
+                       </div>
                     </div>
                     <div>
                       <Label>Complemento</Label>
@@ -303,7 +383,7 @@ export default function NovoProjetoWizard() {
                         onChange={e => setFormData({...formData, imovel: {...formData.imovel, bairro: e.target.value}})}
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <Label>Cidade</Label>
                       <Input 
                         placeholder="Cidade"
