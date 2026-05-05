@@ -17,7 +17,8 @@ import {
   DollarSign,
   ArrowRight,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  FolderClosed
 } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 
@@ -350,18 +351,18 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
                     <div className="pt-3 border-t border-border space-y-2">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3 text-red-500"/> Custos Totais</span>
-                        <span className="font-bold text-red-500">R$ {fin.despesaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-red-500">R$ {calculateFinances(activeProcess).despesaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">A Pagar</span>
-                        <span className="font-bold text-amber-500">R$ {fin.despesaPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-amber-500">R$ {calculateFinances(activeProcess).despesaPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
                     <div className="pt-3 border-t border-border bg-muted/30 p-3 -mx-4 -mb-4 mt-2">
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] font-bold uppercase tracking-widest">Caixa Real (Líquido)</span>
-                        <span className="text-sm font-bold text-primary">R$ {fin.caixaReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="text-sm font-bold text-primary">R$ {calculateFinances(activeProcess).caixaReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
