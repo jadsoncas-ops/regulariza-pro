@@ -13,7 +13,7 @@ export default async function ImoveisPage() {
   })
 
   const clientes = await prisma.cliente.findMany({
-    select: { id: true, nome: true },
+    select: { id: true, nome: true, endereco: true, bairro: true, cidade: true, estado: true, cep: true },
     orderBy: { nome: 'asc' }
   })
 

@@ -38,7 +38,7 @@ interface Imovel {
 
 interface ImovelListProps {
   initialImoveis: Imovel[]
-  clientes: { id: string, nome: string }[]
+  clientes: { id: string; nome: string; endereco: string | null; bairro: string | null; cidade: string | null; estado: string | null; cep: string | null }[]
 }
 
 export default function ImovelList({ initialImoveis, clientes }: ImovelListProps) {
@@ -49,6 +49,10 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [selectedImovel, setSelectedImovel] = useState<Imovel | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [autoFilled, setAutoFilled] = useState(false)
+  const [createFormData, setCreateFormData] = useState({
+    endereco: '', bairro: '', cidade: '', estado: '', cep: ''
+  })
   const router = useRouter()
 
   const filteredImoveis = imoveis.filter(i => 
@@ -162,7 +166,11 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
         </div>
         <div className="flex items-center gap-2 w-full md:w-auto">
           <button 
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setIsCreateModalOpen(true)
+              setAutoFilled(false)
+              setCreateFormData({ endereco: '', bairro: '', cidade: '', estado: '', cep: '' })
+            }}
             className="flex-1 md:flex-none px-6 py-2.5 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center justify-center gap-2"
           >
             <PlusCircle className="w-3.5 h-3.5" /> NOVO IMÓVEL
@@ -280,6 +288,24 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                     name="clienteId"
                     className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
                     required
+                    onChange={(e) => {
+                      const cli = clientes.find(c => c.id === e.target.value)
+                      if (cli && (cli.endereco || cli.cidade)) {
+                        // Parsear endereço composto se necessário
+                        const endParts = (cli.endereco || '').split(',').map(s => s.trim())
+                        const ruaNum = endParts.slice(0, 2).join(', ') || cli.endereco || ''
+                        setCreateFormData({
+                          endereco: ruaNum,
+                          bairro: cli.bairro || endParts[2] || '',
+                          cidade: cli.cidade || '',
+                          estado: cli.estado || '',
+                          cep: cli.cep || ''
+                        })
+                        setAutoFilled(true)
+                      } else {
+                        setAutoFilled(false)
+                      }
+                    }}
                   >
                     <option value="">Selecione um cliente...</option>
                     {clientes.map(c => (
@@ -287,6 +313,13 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                     ))}
                   </select>
                 </div>
+
+                {autoFilled && (
+                  <div className="md:col-span-2 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 px-3 py-2 rounded-sm text-[10px] font-bold uppercase tracking-widest">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                    Endereço importado do cadastro do cliente — você pode editar abaixo se o imóvel for diferente
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-2 md:col-span-2 pt-4 border-t border-border">
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-foreground">Localização</h3>
@@ -296,6 +329,8 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Endereço Principal *</label>
                   <input 
                     name="endereco"
+                    value={createFormData.endereco}
+                    onChange={e => setCreateFormData(p => ({ ...p, endereco: e.target.value }))}
                     className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
                     placeholder="Rua, Número, Complemento"
                     required
@@ -305,6 +340,8 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bairro</label>
                   <input 
                     name="bairro"
+                    value={createFormData.bairro}
+                    onChange={e => setCreateFormData(p => ({ ...p, bairro: e.target.value }))}
                     className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
                   />
                 </div>
@@ -313,16 +350,33 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   <div className="flex gap-2">
                     <input 
                       name="cidade"
+                      value={createFormData.cidade}
+                      onChange={e => setCreateFormData(p => ({ ...p, cidade: e.target.value }))}
                       className="flex-1 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
                       placeholder="Cidade"
                     />
-                    <input 
+                    <select
                       name="estado"
-                      className="w-16 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 text-center uppercase"
-                      placeholder="UF"
-                      maxLength={2}
-                    />
+                      value={createFormData.estado}
+                      onChange={e => setCreateFormData(p => ({ ...p, estado: e.target.value }))}
+                      className="w-20 bg-background border border-border px-2 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
+                    >
+                      <option value="">UF</option>
+                      {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(uf => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CEP</label>
+                  <input 
+                    name="cep"
+                    value={createFormData.cep}
+                    onChange={e => setCreateFormData(p => ({ ...p, cep: e.target.value }))}
+                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
+                    placeholder="00000-000"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-2 md:col-span-2 pt-4 border-t border-border">
