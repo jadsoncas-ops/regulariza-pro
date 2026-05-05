@@ -84,12 +84,21 @@ export default function NovoProjetoWizard() {
     return v.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
   }
 
-  // BUSCA DE CEP
-  const handleCepSearch = async (cep: string, target: 'cliente' | 'imovel') => {
-    const cleanCep = cep.replace(/\D/g, '')
+  const maskCep = (v: string) => {
+    v = v.replace(/\D/g, "")
+    return v.replace(/(\d{5})(\d{3})/, "$1-$2")
+  }
+
+  // BUSCA DE CEP MELHORADA
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'cliente' | 'imovel') => {
+    const rawValue = e.target.value
+    const cleanCep = rawValue.replace(/\D/g, '')
+    const maskedValue = maskCep(rawValue)
+
+    // Atualiza o estado imediatamente para não travar a digitação
     setFormData(prev => ({
       ...prev,
-      [target]: { ...prev[target as keyof typeof prev], cep: cep }
+      [target]: { ...prev[target as keyof typeof prev], cep: maskedValue }
     }))
 
     if (cleanCep.length === 8) {
@@ -109,8 +118,10 @@ export default function NovoProjetoWizard() {
             }
           }))
           // Foco no campo número
-          const numInput = document.getElementsByName(`${target}_numero`)[0] as HTMLInputElement
-          if (numInput) numInput.focus()
+          setTimeout(() => {
+            const numInput = document.getElementsByName(`${target}_numero`)[0] as HTMLInputElement
+            if (numInput) numInput.focus()
+          }, 100)
         }
       } catch (e) { console.error(e) }
       finally { setIsSearchingCep(false) }
@@ -220,7 +231,7 @@ export default function NovoProjetoWizard() {
                     <Input 
                       placeholder="Nome completo ou Razão Social"
                       value={formData.cliente.nome}
-                      onChange={e => setFormData({...formData, cliente: {...formData.cliente, nome: e.target.value}})}
+                      onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, nome: e.target.value}}))}
                     />
                   </div>
                   <div>
@@ -228,7 +239,7 @@ export default function NovoProjetoWizard() {
                     <Input 
                       placeholder="000.000.000-00"
                       value={formData.cliente.cpf_cnpj}
-                      onChange={e => setFormData({...formData, cliente: {...formData.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}})}
+                      onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))}
                     />
                   </div>
                   <div>
@@ -236,7 +247,7 @@ export default function NovoProjetoWizard() {
                     <Input 
                       placeholder="(00) 00000-0000"
                       value={formData.cliente.telefone}
-                      onChange={e => setFormData({...formData, cliente: {...formData.cliente, telefone: maskPhone(e.target.value)}})}
+                      onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, telefone: maskPhone(e.target.value)}}))}
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -245,7 +256,7 @@ export default function NovoProjetoWizard() {
                       type="email"
                       placeholder="exemplo@email.com"
                       value={formData.cliente.email}
-                      onChange={e => setFormData({...formData, cliente: {...formData.cliente, email: e.target.value}})}
+                      onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))}
                     />
                   </div>
                </div>
@@ -254,12 +265,12 @@ export default function NovoProjetoWizard() {
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Endereço de Cobrança / Correspondência</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <Label>CEP</Label>
+                      <Label>CEP (Busca Automática)</Label>
                       <div className="relative">
                         <Input 
                           placeholder="00000-000"
                           value={formData.cliente.cep}
-                          onChange={e => handleCepSearch(e.target.value, 'cliente')}
+                          onChange={e => handleCepChange(e, 'cliente')}
                         />
                         {isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}
                       </div>
@@ -270,7 +281,7 @@ export default function NovoProjetoWizard() {
                           <Input 
                             placeholder="Rua, Av..."
                             value={formData.cliente.endereco}
-                            onChange={e => setFormData({...formData, cliente: {...formData.cliente, endereco: e.target.value}})}
+                            onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, endereco: e.target.value}}))}
                           />
                        </div>
                        <div className="w-24">
@@ -279,7 +290,7 @@ export default function NovoProjetoWizard() {
                             name="cliente_numero"
                             placeholder="123"
                             value={formData.cliente.numero}
-                            onChange={e => setFormData({...formData, cliente: {...formData.cliente, numero: e.target.value}})}
+                            onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, numero: e.target.value}}))}
                           />
                        </div>
                     </div>
@@ -288,7 +299,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="Bairro"
                         value={formData.cliente.bairro}
-                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, bairro: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, bairro: e.target.value}}))}
                       />
                     </div>
                     <div>
@@ -296,7 +307,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="Cidade"
                         value={formData.cliente.cidade}
-                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, cidade: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cidade: e.target.value}}))}
                       />
                     </div>
                     <div>
@@ -304,7 +315,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="UF"
                         value={formData.cliente.estado}
-                        onChange={e => setFormData({...formData, cliente: {...formData.cliente, estado: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, estado: e.target.value}}))}
                       />
                     </div>
                   </div>
@@ -316,7 +327,7 @@ export default function NovoProjetoWizard() {
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[80px]"
                     placeholder="Alguma nota importante sobre este cliente?"
                     value={formData.cliente.observacoes}
-                    onChange={e => setFormData({...formData, cliente: {...formData.cliente, observacoes: e.target.value}})}
+                    onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, observacoes: e.target.value}}))}
                   />
                </div>
             </div>
@@ -329,6 +340,7 @@ export default function NovoProjetoWizard() {
                   <div className="flex items-center justify-between mb-2">
                      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Localização da Obra</h3>
                      <button 
+                       type="button"
                        onClick={copyAddressFromCliente}
                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"
                      >
@@ -338,12 +350,12 @@ export default function NovoProjetoWizard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <Label>CEP do Imóvel</Label>
+                      <Label>CEP do Imóvel (Busca Automática)</Label>
                       <div className="relative">
                         <Input 
                           placeholder="00000-000"
                           value={formData.imovel.cep}
-                          onChange={e => handleCepSearch(e.target.value, 'imovel')}
+                          onChange={e => handleCepChange(e, 'imovel')}
                         />
                         {isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}
                       </div>
@@ -354,7 +366,7 @@ export default function NovoProjetoWizard() {
                           <Input 
                             placeholder="Rua, Avenida, Travessa..."
                             value={formData.imovel.endereco}
-                            onChange={e => setFormData({...formData, imovel: {...formData.imovel, endereco: e.target.value}})}
+                            onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))}
                           />
                        </div>
                        <div className="w-24">
@@ -363,7 +375,7 @@ export default function NovoProjetoWizard() {
                             name="imovel_numero"
                             placeholder="Ex: 123"
                             value={formData.imovel.numero}
-                            onChange={e => setFormData({...formData, imovel: {...formData.imovel, numero: e.target.value}})}
+                            onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))}
                           />
                        </div>
                     </div>
@@ -372,7 +384,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="Apto, Sala, Loja"
                         value={formData.imovel.complemento}
-                        onChange={e => setFormData({...formData, imovel: {...formData.imovel, complemento: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, complemento: e.target.value}}))}
                       />
                     </div>
                     <div>
@@ -380,7 +392,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="Nome do Bairro"
                         value={formData.imovel.bairro}
-                        onChange={e => setFormData({...formData, imovel: {...formData.imovel, bairro: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))}
                       />
                     </div>
                     <div>
@@ -388,7 +400,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="Cidade"
                         value={formData.imovel.cidade}
-                        onChange={e => setFormData({...formData, imovel: {...formData.imovel, cidade: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, cidade: e.target.value}}))}
                       />
                     </div>
                     <div>
@@ -396,7 +408,7 @@ export default function NovoProjetoWizard() {
                       <Input 
                         placeholder="BA"
                         value={formData.imovel.estado}
-                        onChange={e => setFormData({...formData, imovel: {...formData.imovel, estado: e.target.value}})}
+                        onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))}
                       />
                     </div>
                   </div>
@@ -408,19 +420,19 @@ export default function NovoProjetoWizard() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div>
                       <Label>Área Terreno (m²)</Label>
-                      <Input type="number" placeholder="0.00" value={formData.imovel.area_terreno} onChange={e => setFormData({...formData, imovel: {...formData.imovel, area_terreno: e.target.value}})} />
+                      <Input type="number" placeholder="0.00" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} />
                     </div>
                     <div>
                       <Label>Área Constr. (m²)</Label>
-                      <Input type="number" placeholder="0.00" value={formData.imovel.area_construida} onChange={e => setFormData({...formData, imovel: {...formData.imovel, area_construida: e.target.value}})} />
+                      <Input type="number" placeholder="0.00" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} />
                     </div>
                     <div>
                       <Label>Matrícula</Label>
-                      <Input placeholder="Nº Registro" value={formData.imovel.num_matricula} onChange={e => setFormData({...formData, imovel: {...formData.imovel, num_matricula: e.target.value}})} />
+                      <Input placeholder="Nº Registro" value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} />
                     </div>
                     <div>
                       <Label>Inscrição IPTU</Label>
-                      <Input placeholder="00.000..." value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData({...formData, imovel: {...formData.imovel, inscricao_imobiliaria: e.target.value}})} />
+                      <Input placeholder="00.000..." value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, inscricao_imobiliaria: e.target.value}}))} />
                     </div>
                   </div>
                </div>
@@ -432,7 +444,7 @@ export default function NovoProjetoWizard() {
                      <label className="flex items-center gap-3 cursor-pointer">
                         <span className="text-xs font-bold text-slate-600">O proprietário é o cliente?</span>
                         <div 
-                          onClick={() => setFormData({...formData, imovel: {...formData.imovel, isProprietario: !formData.imovel.isProprietario}})}
+                          onClick={() => setFormData(prev => ({...prev, imovel: {...prev.imovel, isProprietario: !prev.imovel.isProprietario}}))}
                           className={`w-12 h-6 rounded-full transition-colors relative ${formData.imovel.isProprietario ? 'bg-blue-600' : 'bg-slate-300'}`}
                         >
                            <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.imovel.isProprietario ? 'translate-x-6' : ''}`} />
@@ -444,15 +456,15 @@ export default function NovoProjetoWizard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-300">
                        <div className="md:col-span-2">
                          <Label>Nome do Proprietário</Label>
-                         <Input value={formData.imovel.proprietario_nome} onChange={e => setFormData({...formData, imovel: {...formData.imovel, proprietario_nome: e.target.value}})} />
+                         <Input value={formData.imovel.proprietario_nome} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, proprietario_nome: e.target.value}}))} />
                        </div>
                        <div>
                          <Label>CPF / CNPJ</Label>
-                         <Input value={formData.imovel.proprietario_doc} onChange={e => setFormData({...formData, imovel: {...formData.imovel, proprietario_doc: maskCpfCnpj(e.target.value)}})} />
+                         <Input value={formData.imovel.proprietario_doc} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, proprietario_doc: maskCpfCnpj(e.target.value)}}))} />
                        </div>
                        <div>
                          <Label>Telefone</Label>
-                         <Input value={formData.imovel.proprietario_tel} onChange={e => setFormData({...formData, imovel: {...formData.imovel, proprietario_tel: maskPhone(e.target.value)}})} />
+                         <Input value={formData.imovel.proprietario_tel} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, proprietario_tel: maskPhone(e.target.value)}}))} />
                        </div>
                     </div>
                   )}
@@ -469,7 +481,7 @@ export default function NovoProjetoWizard() {
                     <select 
                       className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white font-medium"
                       value={formData.processo.tipo}
-                      onChange={e => setFormData({...formData, processo: {...formData.processo, tipo: e.target.value}})}
+                      onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, tipo: e.target.value}}))}
                     >
                       {SERVICOS.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
                     </select>
@@ -502,7 +514,7 @@ export default function NovoProjetoWizard() {
                       className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]"
                       placeholder="Descreva brevemente o que será feito neste serviço..."
                       value={formData.processo.observacoes}
-                      onChange={e => setFormData({...formData, processo: {...formData.processo, observacoes: e.target.value}})}
+                      onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))}
                     />
                   </div>
                </div>
@@ -516,20 +528,20 @@ export default function NovoProjetoWizard() {
                   <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                     <div>
                       <Label>Valor Total do Contrato (R$)</Label>
-                      <Input type="number" value={formData.financeiro.valorTotal} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro, valorTotal: e.target.value}})} />
+                      <Input type="number" value={formData.financeiro.valorTotal} onChange={e => setFormData(prev => ({...prev, financeiro: {...prev.financeiro, valorTotal: e.target.value}}))} />
                     </div>
                     <div>
                       <Label>Valor de Entrada Recebido (R$)</Label>
-                      <Input type="number" value={formData.financeiro.entrada} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro, entrada: e.target.value}})} />
+                      <Input type="number" value={formData.financeiro.entrada} onChange={e => setFormData(prev => ({...prev, financeiro: {...prev.financeiro, entrada: e.target.value}}))} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                        <div>
                          <Label>Custos Processo</Label>
-                         <Input type="number" value={formData.financeiro.custos} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro, custos: e.target.value}})} />
+                         <Input type="number" value={formData.financeiro.custos} onChange={e => setFormData(prev => ({...prev, financeiro: {...prev.financeiro, custos: e.target.value}}))} />
                        </div>
                        <div>
                          <Label>Parceiros</Label>
-                         <Input type="number" value={formData.financeiro.parceiros} onChange={e => setFormData({...formData, financeiro: {...formData.financeiro, parceiros: e.target.value}})} />
+                         <Input type="number" value={formData.financeiro.parceiros} onChange={e => setFormData(prev => ({...prev, financeiro: {...prev.financeiro, parceiros: e.target.value}}))} />
                        </div>
                     </div>
                   </div>
