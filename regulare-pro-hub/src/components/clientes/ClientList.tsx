@@ -297,28 +297,29 @@ export default function ClientList({ initialClientes, stats }: ClientListProps) 
               const fd = new FormData(e.currentTarget)
               // Montar telefone composto
               const ddd = (fd.get('tel_ddd') as string || '').replace(/\D/g, '')
-              const num = (fd.get('tel_numero') as string || '').trim()
+              const num = (fd.get('tel_numero') as string || '').trim().toUpperCase()
               const telFinal = ddd && num ? `(${ddd}) ${num}` : (ddd || num || '')
               // Montar endereço composto
-              const rua = fd.get('end_rua') as string || ''
-              const numero = fd.get('end_numero') as string || ''
-              const bairro = fd.get('end_bairro') as string || ''
-              const cidade = fd.get('end_cidade') as string || ''
-              const estado = fd.get('end_estado') as string || ''
-              const cep = fd.get('end_cep') as string || ''
+              const rua = (fd.get('end_rua') as string || '').toUpperCase()
+              const numero = (fd.get('end_numero') as string || '').toUpperCase()
+              const bairro = (fd.get('end_bairro') as string || '').toUpperCase()
+              const cidade = (fd.get('end_cidade') as string || '').toUpperCase()
+              const estado = (fd.get('end_estado') as string || '').toUpperCase()
+              const cep = (fd.get('end_cep') as string || '').toUpperCase()
               const endFinal = [rua, numero, bairro, cidade && estado ? `${cidade}/${estado}` : cidade].filter(Boolean).join(', ')
 
               // Criar FormData limpo para o saveEdit
               const cleanForm = new FormData()
-              cleanForm.set('nome', fd.get('nome') as string)
+              cleanForm.set('nome', (fd.get('nome') as string || '').toUpperCase())
               cleanForm.set('cpf_cnpj', fd.get('cpf_cnpj') as string)
-              cleanForm.set('email', fd.get('email') as string)
+              cleanForm.set('email', (fd.get('email') as string || '').toLowerCase()) // email mantemos minusculo
               cleanForm.set('telefone', telFinal)
               cleanForm.set('endereco', endFinal)
+              cleanForm.set('bairro', bairro)
               cleanForm.set('cidade', cidade)
               cleanForm.set('estado', estado)
               cleanForm.set('cep', cep)
-              cleanForm.set('observacoes', fd.get('observacoes') as string)
+              cleanForm.set('observacoes', (fd.get('observacoes') as string || '').toUpperCase())
 
               // Chamar saveEdit diretamente com o evento modificado
               if (!selectedCliente) return
@@ -342,7 +343,8 @@ export default function ClientList({ initialClientes, stats }: ClientListProps) 
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome Completo *</label>
                     <input name="nome" defaultValue={selectedCliente.nome} required
-                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                      onChange={e => e.target.value = e.target.value.toUpperCase()}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CPF / CNPJ *</label>
@@ -378,8 +380,9 @@ export default function ClientList({ initialClientes, stats }: ClientListProps) 
                       <input
                         name="tel_numero"
                         defaultValue={telNumero}
+                        onChange={e => e.target.value = e.target.value.toUpperCase()}
                         placeholder="9 9999-9999"
-                        className="flex-1 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
+                        className="flex-1 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
                       />
                     </div>
                   </div>
@@ -392,23 +395,27 @@ export default function ClientList({ initialClientes, stats }: ClientListProps) 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex flex-col gap-1.5 md:col-span-2">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Logradouro (Rua / Av.)</label>
-                    <input name="end_rua" defaultValue={endRua} placeholder="Ex: Rua das Flores"
-                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                    <input name="end_rua" defaultValue={endRua} placeholder="EX: RUA DAS FLORES"
+                      onChange={e => e.target.value = e.target.value.toUpperCase()}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Número</label>
                     <input name="end_numero" defaultValue={endNumero} placeholder="143"
-                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                      onChange={e => e.target.value = e.target.value.toUpperCase()}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bairro</label>
-                    <input name="end_bairro" defaultValue={endBairro} placeholder="Centro"
-                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                    <input name="end_bairro" defaultValue={selectedCliente.bairro || endBairro} placeholder="CENTRO"
+                      onChange={e => e.target.value = e.target.value.toUpperCase()}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cidade</label>
-                    <input name="end_cidade" defaultValue={endCidade} placeholder="São Paulo"
-                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" />
+                    <input name="end_cidade" defaultValue={endCidade} placeholder="SÃO PAULO"
+                      onChange={e => e.target.value = e.target.value.toUpperCase()}
+                      className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado (UF)</label>

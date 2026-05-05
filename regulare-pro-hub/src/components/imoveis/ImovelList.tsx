@@ -295,11 +295,11 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                         const endParts = (cli.endereco || '').split(',').map(s => s.trim())
                         const ruaNum = endParts.slice(0, 2).join(', ') || cli.endereco || ''
                         setCreateFormData({
-                          endereco: ruaNum,
-                          bairro: cli.bairro || endParts[2] || '',
-                          cidade: cli.cidade || '',
-                          estado: cli.estado || '',
-                          cep: cli.cep || ''
+                          endereco: ruaNum.toUpperCase(),
+                          bairro: (cli.bairro || endParts[2] || '').toUpperCase(),
+                          cidade: (cli.cidade || '').toUpperCase(),
+                          estado: (cli.estado || '').toUpperCase(),
+                          cep: (cli.cep || '').toUpperCase()
                         })
                         setAutoFilled(true)
                       } else {
@@ -330,9 +330,9 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   <input 
                     name="endereco"
                     value={createFormData.endereco}
-                    onChange={e => setCreateFormData(p => ({ ...p, endereco: e.target.value }))}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="Rua, Número, Complemento"
+                    onChange={e => setCreateFormData(p => ({ ...p, endereco: e.target.value.toUpperCase() }))}
+                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
+                    placeholder="RUA, NÚMERO, COMPLEMENTO"
                     required
                   />
                 </div>
@@ -341,8 +341,8 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   <input 
                     name="bairro"
                     value={createFormData.bairro}
-                    onChange={e => setCreateFormData(p => ({ ...p, bairro: e.target.value }))}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
+                    onChange={e => setCreateFormData(p => ({ ...p, bairro: e.target.value.toUpperCase() }))}
+                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -351,14 +351,14 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                     <input 
                       name="cidade"
                       value={createFormData.cidade}
-                      onChange={e => setCreateFormData(p => ({ ...p, cidade: e.target.value }))}
-                      className="flex-1 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                      placeholder="Cidade"
+                      onChange={e => setCreateFormData(p => ({ ...p, cidade: e.target.value.toUpperCase() }))}
+                      className="flex-1 bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
+                      placeholder="CIDADE"
                     />
                     <select
                       name="estado"
                       value={createFormData.estado}
-                      onChange={e => setCreateFormData(p => ({ ...p, estado: e.target.value }))}
+                      onChange={e => setCreateFormData(p => ({ ...p, estado: e.target.value.toUpperCase() }))}
                       className="w-20 bg-background border border-border px-2 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
                     >
                       <option value="">UF</option>
@@ -373,8 +373,8 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                   <input 
                     name="cep"
                     value={createFormData.cep}
-                    onChange={e => setCreateFormData(p => ({ ...p, cep: e.target.value }))}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
+                    onChange={e => setCreateFormData(p => ({ ...p, cep: e.target.value.toUpperCase() }))}
+                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30 uppercase"
                     placeholder="00000-000"
                   />
                 </div>

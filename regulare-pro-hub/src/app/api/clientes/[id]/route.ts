@@ -42,6 +42,7 @@ export async function PATCH(
         telefone: data.telefone || null,
         email: data.email || null,
         endereco: data.endereco || null,
+        bairro: data.bairro || null,
         cidade: data.cidade || null,
         estado: data.estado || null,
         cep: data.cep || null,
