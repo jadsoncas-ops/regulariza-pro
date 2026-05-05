@@ -18,7 +18,7 @@ export default async function AgendaPage() {
     orderBy: { data: 'asc' }
   })
 
-  // Converter datas para string
+  // Converter datas para string para passar aos Client Components
   const safeEventos = eventos.map(e => ({
     ...e,
     data_inicio: e.data_inicio.toISOString(),
@@ -40,23 +40,7 @@ export default async function AgendaPage() {
   })
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto w-full min-h-screen relative font-mono overflow-x-hidden">
-      {/* HEADER TOP */}
-      <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
-        <div className="flex flex-col">
-          <h1 className="text-sm font-semibold tracking-wider text-foreground uppercase">
-            Agenda e Tarefas <span className="text-muted-foreground font-normal ml-2">// MOD.AGD / 07</span>
-          </h1>
-          <p className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">CALENDÁRIO DE COMPROMISSOS E DEMANDAS</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest border border-border px-2 py-1.5 rounded-sm bg-card">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            Sis. Online
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-[hsl(var(--background))]">
       <AgendaList initialEventos={safeEventos} initialTarefas={safeTarefas} processos={processos} />
     </div>
   )
