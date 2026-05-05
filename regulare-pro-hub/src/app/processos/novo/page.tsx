@@ -1,38 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   ArrowLeft, User, Building2, FolderKanban, 
   DollarSign, Check, ChevronRight, ChevronLeft, 
   Loader2, MapPin, Calculator, Info, Search,
-  Copy
+  Copy, HelpCircle, Plus, X, ChevronDown, ChevronUp,
+  Briefcase
 } from 'lucide-react'
 
-// --- CONSTANTES E TIPOS ---
-const SERVICOS = [
-  { id: 'regularizacao', label: 'Regularização de Imóvel', fields: ['area', 'matricula', 'iptu', 'zoneamento'] },
-  { id: 'averbacao',     label: 'Averbação de Construção', fields: ['area', 'matricula'] },
-  { id: 'desmembramento', label: 'Desmembramento',        fields: ['area', 'matricula', 'zoneamento'] },
-  { id: 'unificacao',    label: 'Unificação de Lotes',    fields: ['area', 'matricula'] },
-  { id: 'habite_se',     label: 'Habite-se',             fields: ['area'] },
-  { id: 'obra',          label: 'Administração de Obra',  fields: [] },
-  { id: 'projeto',       label: 'Projeto Arquitetônico', fields: ['area'] },
-  { id: 'laudo',         label: 'Laudo Técnico',         fields: [] },
-  { id: 'consultoria',   label: 'Consultoria',           fields: [] },
-]
-
 // --- COMPONENTES UI AUXILIARES ---
-function Label({ children }: { children: React.ReactNode }) {
-  return <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{children}</label>
+function Label({ children, help }: { children: React.ReactNode; help?: string }) {
+  return (
+    <div className="flex items-center gap-1.5 mb-2">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">{children}</label>
+      {help && (
+        <div className="group relative">
+          <HelpCircle className="w-3.5 h-3.5 text-slate-300 cursor-help hover:text-blue-500 transition-colors" />
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-800 text-white text-[10px] rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+            {help}
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white"
+      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all bg-white disabled:bg-slate-50 disabled:text-slate-500"
     />
   )
 }
@@ -54,6 +54,12 @@ export default function NovoProjetoWizard() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [isSearchingCep, setIsSearchingCep] = useState(false)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const [isNewServiceModalOpen, setIsNewServiceModalOpen] = useState(false)
+  
+  // Lista de serviços vinda da API
+  const [servicosDisponiveis, setServicosDisponiveis] = useState<any[]>([])
+  const [loadingServicos, setLoadingServicos] = useState(true)
 
   // ESTADO GLOBAL DO WIZARD
   const [formData, setFormData] = useState({
@@ -68,9 +74,49 @@ export default function NovoProjetoWizard() {
       isProprietario: true,
       proprietario_nome: '', proprietario_doc: '', proprietario_tel: '', proprietario_email: ''
     },
-    processo: { tipo: 'Regularização de Imóvel', observacoes: '' },
+    processo: { 
+      tipo: '', 
+      codigo_projeto: '', 
+      observacoes: '',
+      subservicos: [] as string[]
+    },
     financeiro: { valorTotal: '0', entrada: '0', parcelas: '1', parceiros: '0', custos: '0' }
   })
+
+  // Estado para criação de novo serviço
+  const [newService, setNewService] = useState({
+    nome: '', sigla: '', categoria: 'Regularização', descricao: ''
+  })
+
+  // BUSCAR SERVIÇOS
+  const fetchServicos = async () => {
+    try {
+      const res = await fetch('/api/servicos')
+      const data = await res.json()
+      setServicosDisponiveis(data)
+      if (data.length > 0 && !formData.processo.tipo) {
+        // Seleciona o primeiro serviço por padrão se nada estiver selecionado
+        setFormData(prev => ({...prev, processo: {...prev.processo, tipo: data[0].nome}}))
+      }
+      setLoadingServicos(false)
+    } catch (e) { console.error(e) }
+  }
+
+  useEffect(() => {
+    fetchServicos()
+  }, [])
+
+  // GERAÇÃO AUTOMÁTICA DE CÓDIGO
+  useEffect(() => {
+    const servico = servicosDisponiveis.find(s => s.nome === formData.processo.tipo)
+    if (servico && formData.cliente.nome) {
+      const sigla = servico.sigla || 'PRJ'
+      const nomeCliente = formData.cliente.nome.split(' ')[0].toUpperCase()
+      const random = Math.floor(Math.random() * 999).toString().padStart(3, '0')
+      const codigo = `${sigla}_${nomeCliente}_${random}`
+      setFormData(prev => ({...prev, processo: {...prev.processo, codigo_projeto: codigo}}))
+    }
+  }, [formData.processo.tipo, formData.cliente.nome, servicosDisponiveis])
 
   // MÁSCARAS E VALIDAÇÕES
   const maskCpfCnpj = (v: string) => {
@@ -89,13 +135,12 @@ export default function NovoProjetoWizard() {
     return v.replace(/(\d{5})(\d{3})/, "$1-$2")
   }
 
-  // BUSCA DE CEP MELHORADA
+  // BUSCA DE CEP
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'cliente' | 'imovel') => {
     const rawValue = e.target.value
     const cleanCep = rawValue.replace(/\D/g, '')
     const maskedValue = maskCep(rawValue)
 
-    // Atualiza o estado imediatamente para não travar a digitação
     setFormData(prev => ({
       ...prev,
       [target]: { ...prev[target as keyof typeof prev], cep: maskedValue }
@@ -117,7 +162,6 @@ export default function NovoProjetoWizard() {
               estado: data.uf,
             }
           }))
-          // Foco no campo número
           setTimeout(() => {
             const numInput = document.getElementsByName(`${target}_numero`)[0] as HTMLInputElement
             if (numInput) numInput.focus()
@@ -142,6 +186,25 @@ export default function NovoProjetoWizard() {
         estado: prev.cliente.estado,
       }
     }))
+  }
+
+  // CRIAR NOVO SERVIÇO
+  const handleCreateService = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch('/api/servicos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newService)
+      })
+      if (res.ok) {
+        await fetchServicos()
+        setIsNewServiceModalOpen(false)
+        setNewService({ nome: '', sigla: '', categoria: 'Regularização', descricao: '' })
+      }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
   }
 
   // CÁLCULOS FINANCEIROS
@@ -183,7 +246,17 @@ export default function NovoProjetoWizard() {
   const nextStep = () => setStep(s => Math.min(s + 1, 4))
   const prevStep = () => setStep(s => Math.max(s - 1, 1))
 
-  const selectedServico = SERVICOS.find(s => s.label === formData.processo.tipo)
+  // Agrupamento de serviços por categoria
+  const groupedServicos = useMemo(() => {
+    const groups: Record<string, any[]> = {}
+    servicosDisponiveis.forEach(s => {
+      if (!groups[s.categoria]) groups[s.categoria] = []
+      groups[s.categoria].push(s)
+    })
+    return groups
+  }, [servicosDisponiveis])
+
+  const selectedServicoData = servicosDisponiveis.find(s => s.nome === formData.processo.tipo)
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -265,7 +338,7 @@ export default function NovoProjetoWizard() {
                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Endereço de Cobrança / Correspondência</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <Label>CEP (Busca Automática)</Label>
+                      <Label>CEP</Label>
                       <div className="relative">
                         <Input 
                           placeholder="00000-000"
@@ -350,7 +423,7 @@ export default function NovoProjetoWizard() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <Label>CEP do Imóvel (Busca Automática)</Label>
+                      <Label>CEP do Imóvel</Label>
                       <div className="relative">
                         <Input 
                           placeholder="00000-000"
@@ -472,47 +545,108 @@ export default function NovoProjetoWizard() {
             </div>
           )}
 
-          {/* STEP 3: PROCESSO */}
+          {/* STEP 3: SERVIÇO */}
           {step === 3 && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-                  <div>
-                    <Label>Tipo de Serviço / Projeto *</Label>
-                    <select 
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white font-medium"
-                      value={formData.processo.tipo}
-                      onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, tipo: e.target.value}}))}
-                    >
-                      {SERVICOS.map(s => <option key={s.id} value={s.label}>{s.label}</option>)}
-                    </select>
-                  </div>
-
-                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                       <Info className="w-3 h-3" /> Campos sugeridos para {formData.processo.tipo}
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                       {selectedServico?.fields.includes('area') && (
-                          <div>
-                            <Label>Validar Área Total (m²)</Label>
-                            <Input value={formData.imovel.area_construida} readOnly className="bg-slate-100 opacity-60" />
-                          </div>
-                       )}
-                       {selectedServico?.fields.includes('matricula') && (
-                          <div>
-                            <Label>Confirmar Matrícula</Label>
-                            <Input value={formData.imovel.num_matricula} readOnly className="bg-slate-100 opacity-60" />
-                          </div>
-                       )}
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               
+               {/* GUIA DE PREENCHIMENTO */}
+               <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden transition-all">
+                  <button 
+                    onClick={() => setIsHelpOpen(!isHelpOpen)}
+                    className="w-full flex items-center justify-between px-6 py-4 text-blue-700 font-bold text-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <HelpCircle className="w-4 h-4" /> Guia de Preenchimento
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-4 italic">Estes campos foram preenchidos na etapa anterior e serão vinculados ao processo.</p>
+                    {isHelpOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  {isHelpOpen && (
+                    <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-blue-900 uppercase">Tipo de Serviço</p>
+                          <p className="text-xs text-blue-700">Selecione o serviço principal que será executado no projeto.</p>
+                       </div>
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-blue-900 uppercase">Código do Projeto</p>
+                          <p className="text-xs text-blue-700">Será gerado automaticamente com base no tipo de serviço e cliente.</p>
+                       </div>
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-blue-900 uppercase">Subserviços</p>
+                          <p className="text-xs text-blue-700">Marque apenas as atividades incluídas no contrato.</p>
+                       </div>
+                       <div className="space-y-1">
+                          <p className="text-[10px] font-bold text-blue-900 uppercase">Observações de Escopo</p>
+                          <p className="text-xs text-blue-700">Descreva brevemente o que será feito no serviço.</p>
+                       </div>
+                    </div>
+                  )}
+               </div>
+
+               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div>
+                        <Label help="Selecione o serviço principal. Se não encontrar, crie um novo abaixo.">Tipo de Serviço</Label>
+                        <select 
+                          className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white font-medium"
+                          value={formData.processo.tipo}
+                          onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, tipo: e.target.value}}))}
+                        >
+                          {Object.keys(groupedServicos).map(cat => (
+                            <optgroup key={cat} label={cat}>
+                              {groupedServicos[cat].map((s: any) => (
+                                <option key={s.id} value={s.nome}>{s.nome}</option>
+                              ))}
+                            </optgroup>
+                          ))}
+                        </select>
+                        <button 
+                          onClick={() => setIsNewServiceModalOpen(true)}
+                          className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors"
+                        >
+                           <Plus className="w-3.5 h-3.5" /> Criar Novo Serviço
+                        </button>
+                     </div>
+
+                     <div>
+                        <Label help="Identificador único gerado automaticamente para o projeto.">Código do Projeto</Label>
+                        <Input 
+                          value={formData.processo.codigo_projeto}
+                          readOnly
+                          className="bg-slate-50 font-mono font-bold text-blue-600 border-dashed"
+                        />
+                     </div>
                   </div>
 
+                  {/* SUBSERVIÇOS DINÂMICOS */}
+                  {selectedServicoData?.subservicos?.length > 0 && (
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                       <Label help="Atividades específicas que compõem este serviço.">Subserviços Incluídos</Label>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          {selectedServicoData.subservicos.map((sub: string) => (
+                            <label key={sub} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-blue-300 transition-colors">
+                               <input 
+                                 type="checkbox" 
+                                 className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500"
+                                 checked={formData.processo.subservicos.includes(sub)}
+                                 onChange={e => {
+                                   const next = e.target.checked 
+                                     ? [...formData.processo.subservicos, sub]
+                                     : formData.processo.subservicos.filter(s => s !== sub)
+                                   setFormData(prev => ({...prev, processo: {...prev.processo, subservicos: next}}))
+                                 }}
+                               />
+                               <span className="text-xs font-medium text-slate-700">{sub}</span>
+                            </label>
+                          ))}
+                       </div>
+                    </div>
+                  )}
+
                   <div>
-                    <Label>Observações de Escopo</Label>
+                    <Label help="Detalhamento livre do escopo contratado.">Observações de Escopo</Label>
                     <textarea 
                       className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]"
-                      placeholder="Descreva brevemente o que será feito neste serviço..."
+                      placeholder="Descreva o escopo técnico do projeto..."
                       value={formData.processo.observacoes}
                       onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))}
                     />
@@ -613,6 +747,75 @@ export default function NovoProjetoWizard() {
           </div>
         </div>
       </div>
+
+      {/* MODAL NOVO SERVIÇO */}
+      {isNewServiceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+           <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
+                 <div className="flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-blue-400" />
+                    <h2 className="font-bold">Cadastrar Novo Serviço</h2>
+                 </div>
+                 <button onClick={() => setIsNewServiceModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                    <X className="w-5 h-5" />
+                 </button>
+              </div>
+              <form onSubmit={handleCreateService} className="p-8 space-y-6">
+                 <div>
+                    <Label>Nome do Serviço</Label>
+                    <Input 
+                      placeholder="Ex: Regularização de Imóvel" 
+                      required 
+                      value={newService.nome}
+                      onChange={e => setNewService({...newService, nome: e.target.value})}
+                    />
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                       <Label help="Sigla de 3 ou 4 letras para o código.">Sigla</Label>
+                       <Input 
+                        placeholder="Ex: REG" 
+                        required 
+                        maxLength={4}
+                        value={newService.sigla}
+                        onChange={e => setNewService({...newService, sigla: e.target.value})}
+                       />
+                    </div>
+                    <div>
+                       <Label>Categoria</Label>
+                       <select 
+                         className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white"
+                         value={newService.categoria}
+                         onChange={e => setNewService({...newService, categoria: e.target.value})}
+                       >
+                         {['Regularização', 'Projetos', 'Parcelamento do solo', 'Laudos técnicos', 'Gestão de obra', 'Consultoria'].map(cat => (
+                           <option key={cat} value={cat}>{cat}</option>
+                         ))}
+                       </select>
+                    </div>
+                 </div>
+                 <div>
+                    <Label>Descrição Curta</Label>
+                    <textarea 
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[80px]"
+                      placeholder="Para que serve este serviço?"
+                      value={newService.descricao}
+                      onChange={e => setNewService({...newService, descricao: e.target.value})}
+                    />
+                 </div>
+                 <button 
+                   type="submit"
+                   disabled={loading}
+                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2"
+                 >
+                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}
+                   Salvar Serviço
+                 </button>
+              </form>
+           </div>
+        </div>
+      )}
 
     </div>
   )

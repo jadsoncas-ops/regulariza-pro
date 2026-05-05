@@ -56,6 +56,7 @@ export async function POST(request: Request) {
       // 3. Criar Processo
       const processo = await tx.processo.create({
         data: {
+          codigo_projeto: data.processo.codigo_projeto,
           clienteId: cliente.id,
           imovelId: imovel.id,
           tipo_regularizacao: data.processo.tipo.toUpperCase(),
