@@ -20,7 +20,7 @@ import {
   CreditCard,
   FolderClosed
 } from 'lucide-react'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import { useRouter } from 'next/navigation'
 
 interface Financeiro {
   tipo: string
@@ -49,6 +49,7 @@ interface ProcessoKanbanProps {
 }
 
 export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps) {
+  const router = useRouter()
   const [processos, setProcessos] = useState(initialProcessos)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban')
