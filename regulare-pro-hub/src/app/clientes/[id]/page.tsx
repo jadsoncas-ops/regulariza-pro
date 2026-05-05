@@ -39,7 +39,6 @@ export default function ClienteDetalhesPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isSearchingCep, setIsSearchingCep] = useState(false)
 
-  // Estado do Formulário
   const [formData, setFormData] = useState<any>({})
 
   const fetchCliente = () => {
@@ -54,6 +53,7 @@ export default function ClienteDetalhesPage() {
           telefone: d.telefone || '',
           email: d.email || '',
           endereco: d.endereco || '',
+          numero: d.numero || '',
           bairro: d.bairro || '',
           cidade: d.cidade || '',
           estado: d.estado || '',
@@ -91,6 +91,9 @@ export default function ClienteDetalhesPage() {
             cidade: data.localidade || prev.cidade,
             estado: data.uf || prev.estado,
           }))
+          // Foca no número após busca do CEP
+          const numInput = document.getElementsByName('numero')[0] as HTMLInputElement
+          if (numInput) numInput.focus()
         }
       } catch (error) {
         console.error('Erro ao buscar CEP:', error)
@@ -130,9 +133,8 @@ export default function ClienteDetalhesPage() {
     )
   }
 
-  if (!cliente) return <div className="p-8">Cliente não encontrado.</div>
+  if (!cliente) return <div className="p-8 text-center text-slate-500">Cliente não encontrado.</div>
 
-  // Cálculos financeiros
   let totalFaturado = 0
   let totalRecebido = 0
   cliente.processos?.forEach((p: any) => {
@@ -196,8 +198,6 @@ export default function ClienteDetalhesPage() {
 
       <div className="px-8 py-8 max-w-screen-xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* LEFT COLUMN */}
           <div className="lg:col-span-1 space-y-8">
             <section className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
               <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
@@ -215,13 +215,15 @@ export default function ClienteDetalhesPage() {
                 </div>
                 <div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Endereço Residencial</p>
-                  <p className="text-sm font-medium text-slate-800">{cliente.endereco || 'Não informado'}</p>
+                  <p className="text-sm font-medium text-slate-800">
+                    {cliente.endereco}{cliente.numero ? `, nº ${cliente.numero}` : ''}
+                  </p>
                   <p className="text-xs text-slate-400 mt-1">{cliente.bairro} {cliente.cidade ? `• ${cliente.cidade}/${cliente.estado}` : ''}</p>
                 </div>
                 {cliente.observacoes && (
                   <div className="pt-4 border-t border-slate-100">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Observações Internas</p>
-                    <p className="text-xs text-slate-600 italic bg-slate-50 p-3 rounded-lg border border-slate-100 line-clamp-4">
+                    <p className="text-xs text-slate-600 italic bg-slate-50 p-3 rounded-lg border border-slate-100">
                       "{cliente.observacoes}"
                     </p>
                   </div>
@@ -254,7 +256,6 @@ export default function ClienteDetalhesPage() {
             </section>
           </div>
 
-          {/* RIGHT COLUMN */}
           <div className="lg:col-span-2 space-y-8">
             <section className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-100 flex items-center justify-between">
@@ -343,15 +344,21 @@ export default function ClienteDetalhesPage() {
                 <h3 className="text-xs font-bold text-blue-600 uppercase tracking-widest mb-4">Endereço Residencial</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label>CEP</Label>
+                    <Label>CEP (Busca Automática)</Label>
                     <div className="relative">
-                      <input name="cep" value={formData.cep} onChange={handleCepChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <input name="cep" value={formData.cep} onChange={handleCepChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="00000-000" />
                       {isSearchingCep && <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin absolute right-3 top-2.5" />}
                     </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <Label>Logradouro / Endereço</Label>
-                    <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  <div className="md:col-span-2 flex gap-4">
+                    <div className="flex-1">
+                      <Label>Logradouro / Endereço</Label>
+                      <input name="endereco" value={formData.endereco} onChange={handleInputChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                    </div>
+                    <div className="w-24">
+                      <Label>Número</Label>
+                      <input name="numero" value={formData.numero} onChange={handleInputChange} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500/20" placeholder="Ex: 123" />
+                    </div>
                   </div>
                   <div>
                     <Label>Bairro</Label>
