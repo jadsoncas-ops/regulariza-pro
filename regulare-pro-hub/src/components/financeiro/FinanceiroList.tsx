@@ -6,14 +6,15 @@ import {
   Search, 
   Trash2, 
   X, 
-  Save, 
-  AlertTriangle,
   PlusCircle,
   TrendingUp,
   DollarSign,
   Calendar,
   CheckCircle2,
-  Edit2
+  Edit,
+  ArrowUpRight,
+  TrendingDown,
+  Check
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -38,11 +39,36 @@ interface FinanceiroListProps {
   processos: { id: string, tipo_regularizacao: string, cliente: { id: string, nome: string } }[]
 }
 
+// UI Components
+function Label({ children }: { children: React.ReactNode }) {
+  return <label className="block text-xs font-medium text-slate-600 mb-1.5">{children}</label>
+}
+
+function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+    />
+  )
+}
+
+function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      {...props}
+      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+    >
+      {children}
+    </select>
+  )
+}
+
 export default function FinanceiroList({ initialLancamentos, processos }: FinanceiroListProps) {
   const [lancamentos, setLancamentos] = useState(initialLancamentos)
   const [searchTerm, setSearchTerm] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create')
   const [selectedLancamento, setSelectedLancamento] = useState<Financeiro | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -56,18 +82,15 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
   const totalPago = filteredLancamentos.reduce((acc, l) => acc + l.valor_pago, 0)
   const totalPendente = totalReceita - totalPago
 
-  const handleEditClick = (lancamento: Financeiro) => {
-    setSelectedLancamento(lancamento)
+  const openCreateModal = () => {
+    setModalMode('create')
+    setSelectedLancamento(null)
     setIsModalOpen(true)
   }
 
-  const handleDeleteClick = (lancamento: Financeiro) => {
+  const openEditModal = (lancamento: Financeiro) => {
+    setModalMode('edit')
     setSelectedLancamento(lancamento)
-    setIsDeleteModalOpen(true)
-  }
-
-  const handleCreateNew = () => {
-    setSelectedLancamento(null)
     setIsModalOpen(true)
   }
 
@@ -77,7 +100,6 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
     const formData = new FormData(e.currentTarget)
     const data = Object.fromEntries(formData.entries())
     
-    // Process form data
     const processoId = data.processoId as string
     const selectedProcesso = processos.find(p => p.id === processoId)
     const clienteId = selectedProcesso ? selectedProcesso.cliente.id : (data.clienteId as string)
@@ -95,8 +117,8 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
     }
 
     try {
-      const url = selectedLancamento ? `/api/financeiro/${selectedLancamento.id}` : `/api/financeiro`
-      const method = selectedLancamento ? 'PATCH' : 'POST'
+      const url = modalMode === 'create' ? `/api/financeiro` : `/api/financeiro/${selectedLancamento?.id}`
+      const method = modalMode === 'create' ? 'POST' : 'PATCH'
 
       const res = await fetch(url, {
         method,
@@ -105,21 +127,9 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
       })
 
       if (res.ok) {
-        const saved = await res.json()
-        const procObj = processos.find(p => p.id === saved.processoId)
-        const enriched = { 
-          ...saved, 
-          processo: procObj ? { id: procObj.id, tipo_regularizacao: procObj.tipo_regularizacao } : null,
-          cliente: procObj ? procObj.cliente : null 
-        }
-
-        if (selectedLancamento) {
-          setLancamentos(prev => prev.map(l => l.id === saved.id ? enriched : l))
-        } else {
-          setLancamentos(prev => [enriched, ...prev])
-        }
         setIsModalOpen(false)
         router.refresh()
+        setTimeout(() => window.location.reload(), 300)
       }
     } catch (error) {
       console.error('Erro ao salvar:', error)
@@ -128,14 +138,13 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
     }
   }
 
-  const confirmDelete = async () => {
-    if (!selectedLancamento) return
+  const handleDelete = async (id: string) => {
+    if (!confirm('Excluir este lançamento?')) return
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/financeiro/${selectedLancamento.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/financeiro/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        setLancamentos(prev => prev.filter(l => l.id !== selectedLancamento.id))
-        setIsDeleteModalOpen(false)
+        setLancamentos(prev => prev.filter(l => l.id !== id))
         router.refresh()
       }
     } catch (error) {
@@ -145,148 +154,153 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
     }
   }
 
-  const getStatusStyle = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch(status) {
-      case 'pago': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-      case 'pendente': return 'bg-amber-500/10 text-amber-500 border-amber-500/20'
-      case 'atrasado': return 'bg-rose-500/10 text-rose-500 border-rose-500/20'
-      case 'cancelado': return 'bg-muted text-muted-foreground border-border'
-      default: return 'bg-muted text-muted-foreground border-border'
+      case 'pago': return 'badge-green'
+      case 'pendente': return 'badge-amber'
+      case 'atrasado': return 'badge-red'
+      default: return 'badge-gray'
     }
   }
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
+  }
+
   return (
-    <div className="space-y-8 font-mono">
+    <div className="space-y-8">
       
       {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card border border-border p-5 rounded-sm shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Faturado</span>
-            <DollarSign className="w-4 h-4 text-blue-500" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white border border-[hsl(var(--border))] p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <DollarSign className="w-5 h-5" />
+            </div>
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Total Bruto</span>
           </div>
-          <div className="text-2xl font-bold text-foreground">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalReceita)}
-          </div>
+          <div className="text-2xl font-bold text-slate-900">{formatCurrency(totalReceita)}</div>
+          <p className="text-xs text-slate-500 mt-1">Valor total de contratos</p>
         </div>
-        <div className="bg-card border border-border p-5 rounded-sm shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Recebido (Pago)</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+
+        <div className="bg-white border border-[hsl(var(--border))] p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Total Recebido</span>
           </div>
-          <div className="text-2xl font-bold text-emerald-500">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPago)}
-          </div>
+          <div className="text-2xl font-bold text-emerald-600">{formatCurrency(totalPago)}</div>
+          <p className="text-xs text-slate-500 mt-1">Valores liquidados</p>
         </div>
-        <div className="bg-card border border-border p-5 rounded-sm shadow-sm">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">A Receber</span>
-            <TrendingUp className="w-4 h-4 text-amber-500" />
+
+        <div className="bg-white border border-[hsl(var(--border))] p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+              <TrendingDown className="w-5 h-5" />
+            </div>
+            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Pendente</span>
           </div>
-          <div className="text-2xl font-bold text-amber-500">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalPendente)}
-          </div>
+          <div className="text-2xl font-bold text-amber-600">{formatCurrency(totalPendente)}</div>
+          <p className="text-xs text-slate-500 mt-1">Saldos em aberto</p>
         </div>
       </div>
 
       {/* SEARCH AND ACTIONS */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-muted/20 p-4 border border-border rounded-sm">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 border border-[hsl(var(--border))] rounded-xl shadow-sm">
         <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text"
-            placeholder="BUSCAR DESCRIÇÃO OU CLIENTE..."
-            className="w-full bg-background border border-border px-10 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/30 smooth-transition"
+            placeholder="Buscar por descrição ou cliente..."
+            className="w-full bg-slate-50 border border-[hsl(var(--border))] pl-10 pr-4 py-2 rounded-lg text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <button 
-            onClick={handleCreateNew}
-            className="flex-1 md:flex-none px-6 py-2.5 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center justify-center gap-2"
-          >
-            <PlusCircle className="w-3.5 h-3.5" /> NOVO LANÇAMENTO
-          </button>
-        </div>
+        <button 
+          onClick={openCreateModal}
+          className="flex-1 md:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
+        >
+          <PlusCircle className="w-4 h-4" /> Novo Lançamento
+        </button>
       </div>
 
       {/* TABLE */}
-      <div className="border border-border bg-card shadow-md rounded-sm overflow-hidden">
-        <table className="w-full text-xs text-left">
-          <thead className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/50 border-b border-border">
+      <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="border-b border-[hsl(var(--border))] bg-slate-50">
             <tr>
-              <th className="px-6 py-4">DESCRIÇÃO / CLIENTE</th>
-              <th className="px-6 py-4">VÍNCULO</th>
-              <th className="px-6 py-4">VALORES</th>
-              <th className="px-6 py-4">VENCIMENTO</th>
-              <th className="px-6 py-4 text-center">STATUS</th>
-              <th className="px-6 py-4 text-right">AÇÕES</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Descrição / Cliente</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Vínculo</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Valores</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Vencimento</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide text-center">Status</th>
+              <th className="px-6 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-[hsl(var(--border))]">
             {filteredLancamentos.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-16 text-center text-muted-foreground italic tracking-widest">
-                  NENHUM LANÇAMENTO ENCONTRADO
+                <td colSpan={6} className="px-6 py-16 text-center text-slate-400 italic">
+                  Nenhum lançamento encontrado.
                 </td>
               </tr>
             ) : (
               filteredLancamentos.map((l) => (
-                <tr key={l.id} className="hover:bg-muted/10 smooth-transition group">
-                  <td className="px-6 py-5 max-w-[250px]">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-bold text-sm text-foreground tracking-tight line-clamp-2">{l.descricao}</div>
-                      <div className="text-[9px] text-muted-foreground uppercase">{l.cliente?.nome || 'Sem Cliente'}</div>
+                <tr key={l.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-slate-800 line-clamp-1">{l.descricao}</span>
+                      <span className="text-xs text-slate-500 mt-0.5">{l.cliente?.nome || 'Lançamento Avulso'}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
+                  <td className="px-6 py-4">
                     {l.processo ? (
-                      <Link href={`/processos/${l.processo.id}`} className="flex flex-col hover:text-primary smooth-transition">
-                        <div className="text-[10px] font-bold">PRC-{l.processo.id.substring(0,8).toUpperCase()}</div>
-                        <div className="text-[9px] text-muted-foreground uppercase">{l.processo.tipo_regularizacao}</div>
+                      <Link href={`/processos/${l.processo.id}`} className="group/link">
+                        <div className="flex items-center gap-1 text-blue-600 font-medium">
+                          <span className="text-xs">#{l.processo.id.substring(0,6).toUpperCase()}</span>
+                          <ArrowUpRight className="w-3 h-3 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                        </div>
+                        <p className="text-[11px] text-slate-400 line-clamp-1">{l.processo.tipo_regularizacao}</p>
                       </Link>
                     ) : (
-                      <span className="text-[9px] text-muted-foreground uppercase">LANÇAMENTO AVULSO</span>
+                      <span className="text-[11px] text-slate-400 italic">Sem processo</span>
                     )}
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-xs font-bold text-foreground">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(l.valor)}
-                      </div>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-slate-900">{formatCurrency(l.valor)}</span>
                       {l.valor_pago > 0 && (
-                        <div className="text-[9px] text-emerald-500 uppercase font-bold tracking-widest">
-                          PAGO: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(l.valor_pago)}
-                        </div>
+                        <span className="text-[10px] text-emerald-600 font-medium">Pago: {formatCurrency(l.valor_pago)}</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
                       <span className="text-xs font-medium">
-                        {l.data_vencimento ? new Date(l.data_vencimento).toLocaleDateString('pt-BR') : '--'}
+                        {l.data_vencimento ? new Date(l.data_vencimento).toLocaleDateString('pt-BR') : '—'}
                       </span>
                     </div>
                   </td>
-                  <td className="px-6 py-5 text-center">
-                    <span className={`px-2 py-1 rounded-sm text-[9px] font-bold uppercase tracking-widest border ${getStatusStyle(l.status)}`}>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`badge ${getStatusBadge(l.status)} capitalize`}>
                       {l.status}
                     </span>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1">
                       <button 
-                        onClick={() => handleEditClick(l)}
-                        className="p-1.5 hover:bg-muted rounded-sm text-muted-foreground hover:text-blue-500 smooth-transition"
+                        onClick={() => openEditModal(l)}
+                        className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-md transition-colors"
                         title="Editar"
                       >
-                        <Edit2 className="w-4 h-4" />
+                        <Edit className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteClick(l)}
-                        className="p-1.5 hover:bg-muted rounded-sm text-muted-foreground hover:text-red-500 smooth-transition"
+                        onClick={() => handleDelete(l.id)}
+                        className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-md transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -300,174 +314,98 @@ export default function FinanceiroList({ initialLancamentos, processos }: Financ
         </table>
       </div>
 
-      {/* CREATE/EDIT MODAL */}
+      {/* MODAL (CREATE / EDIT) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-card border border-border w-full max-w-2xl rounded-sm shadow-2xl my-8">
-            <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30 sticky top-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white border border-[hsl(var(--border))] w-full max-w-lg rounded-xl shadow-2xl my-auto animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" /> {selectedLancamento ? 'Editar Lançamento' : 'Novo Lançamento'}
-                </h2>
+                <h2 className="text-base font-semibold text-slate-900">{modalMode === 'create' ? 'Novo Lançamento' : 'Editar Lançamento'}</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Gestão de entradas e saídas financeiras</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-muted rounded-sm smooth-transition">
-                <X className="w-4 h-4" />
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleSave} className="p-6 space-y-6">
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Vincular a Processo (Opcional)</label>
-                  <select 
-                    name="processoId" 
-                    defaultValue={selectedLancamento?.processoId || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  >
-                    <option value="">Lançamento Avulso (Sem Processo)</option>
-                    {processos.map(p => (
-                      <option key={p.id} value={p.id}>PRC-{p.id.substring(0,6).toUpperCase()} - {p.cliente.nome} ({p.tipo_regularizacao})</option>
-                    ))}
-                  </select>
-                </div>
+            
+            <form onSubmit={handleSave} className="p-6 space-y-5">
+              <div>
+                <Label>Vincular a Processo (Opcional)</Label>
+                <Select name="processoId" defaultValue={selectedLancamento?.processoId || ''}>
+                  <option value="">Lançamento Avulso</option>
+                  {processos.map(p => (
+                    <option key={p.id} value={p.id}>#{p.id.substring(0,6).toUpperCase()} - {p.cliente.nome} ({p.tipo_regularizacao})</option>
+                  ))}
+                </Select>
+              </div>
 
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Descrição do Lançamento *</label>
-                  <input 
-                    name="descricao"
-                    defaultValue={selectedLancamento?.descricao || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="Ex: Honorários 1ª Parcela - Habite-se"
-                    required
-                  />
-                </div>
+              <div>
+                <Label>Descrição *</Label>
+                <Input name="descricao" defaultValue={selectedLancamento?.descricao || ''} placeholder="Ex: Honorários 1ª Parcela" required />
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Valor Total (R$) *</label>
-                  <input 
-                    name="valor"
-                    type="number"
-                    step="0.01"
-                    defaultValue={selectedLancamento?.valor || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    required
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor Total (R$) *</Label>
+                  <Input name="valor" type="number" step="0.01" defaultValue={selectedLancamento?.valor || ''} required />
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Valor Pago (R$)</label>
-                  <input 
-                    name="valor_pago"
-                    type="number"
-                    step="0.01"
-                    defaultValue={selectedLancamento?.valor_pago || 0}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  />
+                <div>
+                  <Label>Valor Pago (R$)</Label>
+                  <Input name="valor_pago" type="number" step="0.01" defaultValue={selectedLancamento?.valor_pago || 0} />
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Data de Vencimento</label>
-                  <input 
-                    name="data_vencimento"
-                    type="date"
-                    defaultValue={selectedLancamento?.data_vencimento ? selectedLancamento.data_vencimento.split('T')[0] : ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Data Vencimento</Label>
+                  <Input name="data_vencimento" type="date" defaultValue={selectedLancamento?.data_vencimento ? selectedLancamento.data_vencimento.split('T')[0] : ''} />
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Data de Pagamento</label>
-                  <input 
-                    name="data_pagamento"
-                    type="date"
-                    defaultValue={selectedLancamento?.data_pagamento ? selectedLancamento.data_pagamento.split('T')[0] : ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  />
+                <div>
+                  <Label>Data Pagamento</Label>
+                  <Input name="data_pagamento" type="date" defaultValue={selectedLancamento?.data_pagamento ? selectedLancamento.data_pagamento.split('T')[0] : ''} />
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status *</label>
-                  <select 
-                    name="status" 
-                    defaultValue={selectedLancamento?.status || 'pendente'}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    required
-                  >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Status *</Label>
+                  <Select name="status" defaultValue={selectedLancamento?.status || 'pendente'} required>
                     <option value="pendente">Pendente</option>
                     <option value="pago">Pago</option>
                     <option value="atrasado">Atrasado</option>
                     <option value="cancelado">Cancelado</option>
-                  </select>
+                  </Select>
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Forma de Pagamento</label>
-                  <select 
-                    name="forma_pagamento" 
-                    defaultValue={selectedLancamento?.forma_pagamento || ''}
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                  >
+                <div>
+                  <Label>Forma de Pagamento</Label>
+                  <Select name="forma_pagamento" defaultValue={selectedLancamento?.forma_pagamento || ''}>
                     <option value="">Não informada</option>
                     <option value="pix">PIX</option>
                     <option value="boleto">Boleto</option>
-                    <option value="transferencia">Transferência Bancária</option>
-                    <option value="cartao">Cartão de Crédito/Débito</option>
+                    <option value="transferencia">Transferência</option>
+                    <option value="cartao">Cartão</option>
                     <option value="dinheiro">Dinheiro</option>
-                  </select>
+                  </Select>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-border mt-6">
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-6 py-2 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition"
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={isLoading}
-                  className="px-8 py-2 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  {isLoading ? 'SALVANDO...' : <><Save className="w-3.5 h-3.5" /> SALVAR LANÇAMENTO</>}
+                  {isLoading ? 'Salvando...' : <><Check className="w-4 h-4" /> {modalMode === 'create' ? 'Salvar Lançamento' : 'Salvar Alterações'}</>}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE CONFIRMATION */}
-      {isDeleteModalOpen && selectedLancamento && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border w-full max-w-md rounded-sm shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="p-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <h2 className="text-sm font-bold uppercase tracking-widest">Excluir Lançamento?</h2>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                VOCÊ ESTÁ PRESTES A EXCLUIR O REGISTRO <span className="text-foreground font-bold">{selectedLancamento.descricao}</span>.<br />
-                ESTA AÇÃO É IRREVERSÍVEL.
-              </p>
-              <div className="flex gap-3 pt-4">
-                <button 
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition"
-                >
-                  CANCELAR
-                </button>
-                <button 
-                  onClick={confirmDelete}
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 smooth-transition disabled:opacity-50"
-                >
-                  {isLoading ? 'EXCLUINDO...' : 'CONFIRMAR EXCLUSÃO'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

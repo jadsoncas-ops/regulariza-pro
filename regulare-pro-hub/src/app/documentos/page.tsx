@@ -33,24 +33,23 @@ export default async function DocumentosPage() {
   })
 
   return (
-    <div className="p-8 max-w-[1600px] mx-auto w-full min-h-screen relative font-mono overflow-x-hidden">
-      {/* HEADER TOP */}
-      <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
-        <div className="flex flex-col">
-          <h1 className="text-sm font-semibold tracking-wider text-foreground uppercase">
-            Central de Documentos <span className="text-muted-foreground font-normal ml-2">// MOD.DOC / 05</span>
-          </h1>
-          <p className="text-[9px] text-muted-foreground uppercase tracking-widest mt-1">REPOSITÓRIO E GED IMOBILIÁRIO</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest border border-border px-2 py-1.5 rounded-sm bg-card">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            Sis. Online
+    <div className="min-h-screen bg-[hsl(var(--background))]">
+      {/* PAGE HEADER */}
+      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold text-slate-900">Documentos</h1>
+            <p className="text-sm text-slate-500 mt-0.5">Gestão eletrônica de arquivos e certidões</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Ações principais no componente List */}
           </div>
         </div>
       </div>
 
-      <DocumentoList initialDocumentos={safeDocumentos} processos={processos} />
+      <div className="px-8 py-8">
+        <DocumentoList initialDocumentos={safeDocumentos} processos={processos} />
+      </div>
     </div>
   )
 }

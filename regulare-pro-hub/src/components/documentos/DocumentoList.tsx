@@ -7,12 +7,16 @@ import {
   Trash2, 
   Eye, 
   X, 
-  Save, 
-  AlertTriangle,
   FileText,
   Upload,
   Download,
-  Filter
+  Filter,
+  FileCode,
+  FileImage,
+  FileIcon,
+  PlusCircle,
+  MoreVertical,
+  Check
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -41,12 +45,35 @@ interface DocumentoListProps {
   processos: { id: string, tipo_regularizacao: string, cliente: { nome: string } }[]
 }
 
+// UI Components
+function Label({ children }: { children: React.ReactNode }) {
+  return <label className="block text-xs font-medium text-slate-600 mb-1.5">{children}</label>
+}
+
+function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+    />
+  )
+}
+
+function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      {...props}
+      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+    >
+      {children}
+    </select>
+  )
+}
+
 export default function DocumentoList({ initialDocumentos, processos }: DocumentoListProps) {
   const [documentos, setDocumentos] = useState(initialDocumentos)
   const [searchTerm, setSearchTerm] = useState('')
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [selectedDoc, setSelectedDoc] = useState<Documento | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -56,18 +83,12 @@ export default function DocumentoList({ initialDocumentos, processos }: Document
     (d.processo?.cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()))
   )
 
-  const handleDeleteClick = (doc: Documento) => {
-    setSelectedDoc(doc)
-    setIsDeleteModalOpen(true)
-  }
-
-  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     const formData = new FormData(e.currentTarget)
     const data = Object.fromEntries(formData.entries())
 
-    // Simulating upload by creating a record with a fake URL
     try {
       const res = await fetch(`/api/documentos`, {
         method: 'POST',
@@ -77,17 +98,15 @@ export default function DocumentoList({ initialDocumentos, processos }: Document
           tipo: data.tipo,
           processoId: data.processoId,
           url: `/uploads/${data.nome}`,
-          tamanho: Math.floor(Math.random() * 5000) + 100, // mock size
-          responsavel: 'Usuário Atual'
+          tamanho: Math.floor(Math.random() * 5000) + 100,
+          responsavel: 'Equipe'
         })
       })
 
       if (res.ok) {
-        const created = await res.json()
-        const processoObj = processos.find(p => p.id === created.processoId)
-        setDocumentos(prev => [{ ...created, processo: processoObj }, ...prev])
-        setIsUploadModalOpen(false)
+        setIsModalOpen(false)
         router.refresh()
+        setTimeout(() => window.location.reload(), 300)
       }
     } catch (error) {
       console.error('Erro ao fazer upload:', error)
@@ -96,14 +115,13 @@ export default function DocumentoList({ initialDocumentos, processos }: Document
     }
   }
 
-  const confirmDelete = async () => {
-    if (!selectedDoc) return
+  const handleDelete = async (id: string) => {
+    if (!confirm('Excluir este documento?')) return
     setIsLoading(true)
     try {
-      const res = await fetch(`/api/documentos/${selectedDoc.id}`, { method: 'DELETE' })
+      const res = await fetch(`/api/documentos/${id}`, { method: 'DELETE' })
       if (res.ok) {
-        setDocumentos(prev => prev.filter(d => d.id !== selectedDoc.id))
-        setIsDeleteModalOpen(false)
+        setDocumentos(prev => prev.filter(d => d.id !== id))
         router.refresh()
       }
     } catch (error) {
@@ -113,115 +131,98 @@ export default function DocumentoList({ initialDocumentos, processos }: Document
     }
   }
 
-  const getFormatIcon = (tipo: string) => {
-    return <FileText className="w-5 h-5 text-blue-500" />
+  const getFileIcon = (tipo: string) => {
+    const t = tipo.toLowerCase()
+    if (t.includes('pdf')) return <div className="p-2 bg-red-50 text-red-600 rounded-lg"><FileText className="w-5 h-5" /></div>
+    if (t.includes('dwg') || t.includes('cad')) return <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><FileCode className="w-5 h-5" /></div>
+    if (t.includes('jpg') || t.includes('png') || t.includes('imagem')) return <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><FileImage className="w-5 h-5" /></div>
+    return <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><FileIcon className="w-5 h-5" /></div>
   }
 
   return (
-    <div className="space-y-8 font-mono">
+    <div className="space-y-6">
       
       {/* SEARCH AND ACTIONS */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-muted/20 p-4 border border-border rounded-sm">
-        <div className="relative w-full md:w-[500px] flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input 
-              type="text"
-              placeholder="BUSCAR NOME DO ARQUIVO OU CLIENTE..."
-              className="w-full bg-background border border-border px-10 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest outline-none focus:ring-1 focus:ring-primary/30 smooth-transition"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <button className="px-4 py-2.5 bg-background border border-border rounded-sm text-muted-foreground hover:bg-muted smooth-transition flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest">
-            <Filter className="w-4 h-4" /> FILTROS
-          </button>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 border border-[hsl(var(--border))] rounded-xl shadow-sm">
+        <div className="relative w-full md:w-96">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input 
+            type="text"
+            placeholder="Buscar por nome ou cliente..."
+            className="w-full bg-slate-50 border border-[hsl(var(--border))] pl-10 pr-4 py-2 rounded-lg text-sm text-slate-700 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <button 
-            onClick={() => setIsUploadModalOpen(true)}
-            className="flex-1 md:flex-none px-6 py-2.5 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center justify-center gap-2"
-          >
-            <Upload className="w-3.5 h-3.5" /> NOVO UPLOAD
-          </button>
-        </div>
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex-1 md:flex-none px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center justify-center gap-2"
+        >
+          <Upload className="w-4 h-4" /> Novo Upload
+        </button>
       </div>
 
       {/* TABLE */}
-      <div className="border border-border bg-card shadow-md rounded-sm overflow-hidden">
-        <table className="w-full text-xs text-left">
-          <thead className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/50 border-b border-border">
+      <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+        <table className="w-full text-sm text-left">
+          <thead className="border-b border-[hsl(var(--border))] bg-slate-50">
             <tr>
-              <th className="px-6 py-4 w-16">TIPO</th>
-              <th className="px-6 py-4">NOME DO ARQUIVO</th>
-              <th className="px-6 py-4">VÍNCULO</th>
-              <th className="px-6 py-4">DATA / TAMANHO</th>
-              <th className="px-6 py-4 text-right">AÇÕES</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Arquivo</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Vínculo</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Data / Tamanho</th>
+              <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Responsável</th>
+              <th className="px-6 py-3"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody className="divide-y divide-[hsl(var(--border))]">
             {filteredDocs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-16 text-center text-muted-foreground italic tracking-widest">
-                  NENHUM DOCUMENTO ENCONTRADO
+                <td colSpan={5} className="px-6 py-16 text-center text-slate-400 italic">
+                  Nenhum documento encontrado.
                 </td>
               </tr>
             ) : (
               filteredDocs.map((doc) => (
-                <tr key={doc.id} className="hover:bg-muted/10 smooth-transition group">
-                  <td className="px-6 py-5">
-                    <div className="w-10 h-10 rounded-sm bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                      {getFormatIcon(doc.tipo)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-5 max-w-[300px]">
-                    <div className="flex flex-col gap-1">
-                      <div className="font-bold text-sm text-foreground tracking-tight truncate">{doc.nome}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase font-bold px-1.5 py-0.5 bg-muted/50 border border-border w-fit rounded-sm">
-                        {doc.tipo}
+                <tr key={doc.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                      {getFileIcon(doc.tipo)}
+                      <div className="flex flex-col">
+                        <span className="font-medium text-slate-800 line-clamp-1">{doc.nome}</span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{doc.tipo}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col gap-1">
-                      {doc.processo ? (
-                        <>
-                          <div className="text-[10px] font-bold text-foreground">PRC-{doc.processoId?.substring(0,8).toUpperCase()}</div>
-                          <div className="text-[9px] text-muted-foreground uppercase">{doc.processo.cliente.nome}</div>
-                        </>
-                      ) : doc.imovel ? (
-                        <>
-                          <div className="text-[10px] font-bold text-foreground">IMÓVEL</div>
-                          <div className="text-[9px] text-muted-foreground uppercase truncate w-48">{doc.imovel.endereco}</div>
-                        </>
-                      ) : (
-                        <div className="text-[9px] text-muted-foreground uppercase">SEM VÍNCULO</div>
-                      )}
+                  <td className="px-6 py-4">
+                    {doc.processo ? (
+                      <div className="flex flex-col">
+                        <span className="text-xs font-medium text-blue-600">PRC-{doc.processoId?.substring(0,6).toUpperCase()}</span>
+                        <span className="text-[11px] text-slate-500">{doc.processo.cliente.nome}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-slate-400 italic">Sem vínculo</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-slate-700">{new Date(doc.createdAt).toLocaleDateString('pt-BR')}</span>
+                      <span className="text-[11px] text-slate-400">{doc.tamanho ? `${(doc.tamanho / 1024).toFixed(1)} MB` : '—'}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex flex-col gap-1">
-                      <div className="text-xs font-bold text-foreground">{new Date(doc.createdAt).toLocaleDateString('pt-BR')}</div>
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-widest">{doc.tamanho ? `${(doc.tamanho / 1024).toFixed(1)} MB` : '--'}</div>
-                    </div>
+                  <td className="px-6 py-4">
+                    <span className="text-xs text-slate-600">{doc.responsavel || 'Equipe'}</span>
                   </td>
-                  <td className="px-6 py-5">
-                    <div className="flex items-center justify-end gap-2">
-                      <button 
-                        className="p-1.5 hover:bg-muted rounded-sm text-muted-foreground hover:text-blue-500 smooth-transition"
-                        title="Download"
-                      >
+                  <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end gap-1">
+                      <button className="p-1.5 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-md transition-colors" title="Download">
                         <Download className="w-4 h-4" />
                       </button>
-                      <button 
-                        className="p-1.5 hover:bg-muted rounded-sm text-muted-foreground hover:text-foreground smooth-transition"
-                        title="Visualizar"
-                      >
+                      <button className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-700 rounded-md transition-colors" title="Ver">
                         <Eye className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => handleDeleteClick(doc)}
-                        className="p-1.5 hover:bg-muted rounded-sm text-muted-foreground hover:text-red-500 smooth-transition"
+                        onClick={() => handleDelete(doc.id)}
+                        className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-md transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -235,107 +236,76 @@ export default function DocumentoList({ initialDocumentos, processos }: Document
         </table>
       </div>
 
-      {/* UPLOAD MODAL */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border w-full max-w-xl rounded-sm shadow-2xl">
-            <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30">
+      {/* MODAL (UPLOAD) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white border border-[hsl(var(--border))] w-full max-w-lg rounded-xl shadow-2xl my-auto animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2"><Upload className="w-4 h-4" /> Upload de Documento</h2>
+                <h2 className="text-base font-semibold text-slate-900">Novo Upload</h2>
+                <p className="text-xs text-slate-500 mt-0.5">Adicione arquivos ao repositório do sistema</p>
               </div>
-              <button onClick={() => setIsUploadModalOpen(false)} className="p-2 hover:bg-muted rounded-sm smooth-transition">
-                <X className="w-4 h-4" />
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleUpload} className="p-6 space-y-6">
-              
-              <div className="border-2 border-dashed border-border rounded-sm p-10 flex flex-col items-center justify-center text-center bg-muted/10 hover:bg-muted/30 smooth-transition cursor-pointer">
-                <Upload className="w-8 h-8 text-muted-foreground mb-4" />
-                <div className="text-xs font-bold uppercase tracking-widest text-foreground">CLIQUE PARA SELECIONAR OU ARRASTE AQUI</div>
-                <div className="text-[10px] text-muted-foreground mt-2">PDF, JPG, PNG, DWG (Máx: 50MB)</div>
+            
+            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-slate-100 hover:border-blue-400 transition-all cursor-pointer group">
+                <div className="p-4 bg-white border border-slate-200 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                  <Upload className="w-8 h-8 text-blue-500" />
+                </div>
+                <p className="mt-4 text-sm font-semibold text-slate-700">Arraste seus arquivos aqui</p>
+                <p className="text-xs text-slate-500 mt-1">ou clique para selecionar do computador</p>
+                <p className="text-[10px] text-slate-400 mt-4">PDF, DWG, PNG ou JPG (Máx: 50MB)</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Nome do Arquivo *</label>
-                  <input 
-                    name="nome"
-                    className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30"
-                    placeholder="Ex: Planta_Baixa_V1.pdf"
-                    required
-                  />
+              <div className="space-y-4">
+                <div>
+                  <Label>Nome do Arquivo *</Label>
+                  <Input name="nome" placeholder="Ex: Escritura_Lote_04.pdf" required />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Tipo/Formato *</label>
-                  <select name="tipo" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30" required>
-                    <option value="PDF">PDF</option>
-                    <option value="IMAGEM">IMAGEM</option>
-                    <option value="DWG">DWG</option>
-                    <option value="DOC">DOC / DOCX</option>
-                    <option value="OUTRO">OUTRO</option>
-                  </select>
-                </div>
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Vincular a Processo</label>
-                  <select name="processoId" className="bg-background border border-border px-3 py-2 rounded-sm text-xs outline-none focus:ring-1 focus:ring-primary/30">
-                    <option value="">Nenhum vínculo inicial</option>
-                    {processos.map(p => (
-                      <option key={p.id} value={p.id}>PRC-{p.id.substring(0,6).toUpperCase()} - {p.cliente.nome} ({p.tipo_regularizacao})</option>
-                    ))}
-                  </select>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Tipo de Documento *</Label>
+                    <Select name="tipo" required>
+                      <option value="PDF">PDF</option>
+                      <option value="DWG">DWG (CAD)</option>
+                      <option value="IMAGEM">IMAGEM</option>
+                      <option value="DOCX">WORD / DOCX</option>
+                      <option value="OUTRO">OUTROS</option>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Processo Vinculado</Label>
+                    <Select name="processoId">
+                      <option value="">Sem vínculo</option>
+                      {processos.map(p => (
+                        <option key={p.id} value={p.id}>#{p.id.substring(0,6).toUpperCase()} - {p.cliente.nome}</option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-border">
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
                 <button 
                   type="button"
-                  onClick={() => setIsUploadModalOpen(false)}
-                  className="px-6 py-2 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={isLoading}
-                  className="px-8 py-2 bg-foreground text-background rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition flex items-center gap-2 disabled:opacity-50"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
                 >
-                  {isLoading ? 'ENVIANDO...' : <><Save className="w-3.5 h-3.5" /> CONFIRMAR UPLOAD</>}
+                  {isLoading ? 'Enviando...' : <><Check className="w-4 h-4" /> Finalizar Upload</>}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* DELETE CONFIRMATION */}
-      {isDeleteModalOpen && selectedDoc && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-          <div className="bg-card border border-border w-full max-w-md rounded-sm shadow-2xl animate-in fade-in zoom-in duration-200">
-            <div className="p-6 text-center space-y-4">
-              <div className="mx-auto w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <h2 className="text-sm font-bold uppercase tracking-widest">Excluir Arquivo?</h2>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                VOCÊ ESTÁ PRESTES A EXCLUIR <span className="text-foreground font-bold">{selectedDoc.nome}</span>.<br />
-                ESTA AÇÃO É IRREVERSÍVEL.
-              </p>
-              <div className="flex gap-3 pt-4">
-                <button 
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 border border-border rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition"
-                >
-                  CANCELAR
-                </button>
-                <button 
-                  onClick={confirmDelete}
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-red-700 smooth-transition disabled:opacity-50"
-                >
-                  {isLoading ? 'EXCLUINDO...' : 'CONFIRMAR EXCLUSÃO'}
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
