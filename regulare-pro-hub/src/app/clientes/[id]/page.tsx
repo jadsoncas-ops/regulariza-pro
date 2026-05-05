@@ -13,14 +13,19 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Building2,
+  ChevronRight,
+  DollarSign,
+  Briefcase
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ClienteDetalhesPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const cliente = await prisma.cliente.findUnique({
-    where: { id: (await params).id },
+    where: { id },
     include: {
       processos: {
         include: {
@@ -45,262 +50,245 @@ export default async function ClienteDetalhesPage({ params }: { params: Promise<
   
   cliente.processos.forEach(p => {
     p.financeiro.forEach(f => {
-      if (f.tipo === 'receita') {
-        totalFaturado += f.valor
-        totalRecebido += f.valor_pago
-      } else if (f.tipo === 'despesa') {
-        totalDespesas += f.valor
-        totalDespesasPagas += f.valor_pago
-      }
+      // Nota: No modelo atual, o financeiro pode ter tipo 'receita' ou 'despesa'
+      // Se não houver campo 'tipo', assumimos que 'valor' é o bruto e 'valor_pago' é o recebido
+      totalFaturado += f.valor
+      totalRecebido += f.valor_pago
     })
   })
 
   const receitaPendente = totalFaturado - totalRecebido
-  const despesaPendente = totalDespesas - totalDespesasPagas
-  const lucroEsperado = totalFaturado - totalDespesas
-  const lucroRealizado = totalRecebido - totalDespesasPagas
+
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
+  }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto w-full font-mono">
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 pb-6 border-b border-border">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-[hsl(var(--background))]">
+      {/* PAGE HEADER */}
+      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
+        <div className="flex items-center gap-4 mb-4">
           <Link 
             href="/clientes" 
-            className="p-2 border border-border rounded-sm hover:bg-muted smooth-transition"
+            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{cliente.nome}</h1>
-              <span className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm text-[10px] font-bold uppercase tracking-widest">
-                {cliente.cpf_cnpj.length > 14 ? 'CLIENTE PJ' : 'CLIENTE PF'}
-              </span>
-            </div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
-              Registro: {new Date(cliente.createdAt).toLocaleDateString('pt-BR')} • ID: {cliente.id}
-            </p>
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <Link href="/clientes" className="hover:text-blue-600">Clientes</Link>
+            <ChevronRight className="w-3 h-3" />
+            <span className="text-slate-600">{cliente.nome}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <Link 
-            href={`/processos/novo?clienteId=${cliente.id}`}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-foreground text-background px-6 py-2.5 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition"
-          >
-            <Plus className="w-3.5 h-3.5" /> Novo Processo
-          </Link>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-lg font-bold">
+              {cliente.nome.substring(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">{cliente.nome}</h1>
+              <div className="flex items-center gap-3 mt-1">
+                <span className={`badge ${cliente.cpf_cnpj.length > 14 ? 'badge-blue' : 'badge-gray'} capitalize`}>
+                  {cliente.cpf_cnpj.length > 14 ? 'Pessoa Jurídica' : 'Pessoa Física'}
+                </span>
+                <span className="text-xs text-slate-400 font-mono">Doc: {cliente.cpf_cnpj}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link 
+              href={`/processos/novo?clienteId=${cliente.id}`}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Novo Processo
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* LEFT COLUMN: INFO */}
-        <div className="lg:col-span-1 space-y-8">
-          <section className="bg-card border border-border rounded-sm overflow-hidden shadow-sm">
-            <div className="p-4 bg-muted/30 border-b border-border flex items-center gap-2">
-              <User className="w-4 h-4 text-primary" />
-              <h2 className="text-[10px] font-bold uppercase tracking-widest">Informações Gerais</h2>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-1">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Documento</span>
-                <p className="text-xs font-bold">{cliente.cpf_cnpj}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Telefone</span>
-                <div className="flex items-center gap-2 text-xs font-bold">
-                  <Phone className="w-3 h-3 text-muted-foreground" />
-                  {cliente.telefone || 'NÃO INFORMADO'}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Email</span>
-                <div className="flex items-center gap-2 text-xs font-bold break-all">
-                  <Mail className="w-3 h-3 text-muted-foreground" />
-                  {cliente.email || 'NÃO INFORMADO'}
-                </div>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Endereço</span>
-                <div className="flex items-start gap-2 text-xs font-bold">
-                  <MapPin className="w-3 h-3 text-muted-foreground mt-0.5" />
-                  <span className="leading-relaxed">{cliente.endereco || 'NÃO INFORMADO'}</span>
-                </div>
-              </div>
-              <div className="pt-4 border-t border-border mt-4">
-                <span className="text-[9px] font-bold text-muted-foreground uppercase">Observações</span>
-                <p className="text-xs text-muted-foreground mt-2 italic leading-relaxed">
-                  {cliente.observacoes || 'SEM OBSERVAÇÕES REGISTRADAS.'}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          <section className="bg-card border border-border rounded-sm overflow-hidden shadow-sm">
-            <div className="p-4 bg-muted/30 border-b border-border flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-[10px] font-bold uppercase tracking-widest">Resumo Financeiro</h2>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4 border-b border-border pb-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Valor do Contrato</span>
-                  <span className="text-lg font-bold">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalFaturado)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Já Recebido</span>
-                  <span className="text-sm font-bold text-emerald-500">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalRecebido)}
-                  </span>
-                </div>
-                
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Custo / Repasses</span>
-                  <span className="text-sm font-bold text-red-500">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDespesas)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Custo Pago</span>
-                  <span className="text-sm font-bold text-red-500/70">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalDespesasPagas)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Receita Pendente</span>
-                  <span className="font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(receitaPendente)}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Despesa Pendente</span>
-                  <span className="font-bold">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(despesaPendente)}</span>
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center bg-muted/20 p-3 rounded-sm border-t border-border">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Lucro Esperado</span>
-                  <span className="text-sm font-bold text-emerald-500">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lucroEsperado)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1 text-right">
-                  <span className="text-[9px] font-bold text-muted-foreground uppercase">Caixa Atual</span>
-                  <span className="text-sm font-bold text-blue-500">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(lucroRealizado)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* RIGHT COLUMN: PROCESSES AND CONTENT */}
-        <div className="lg:col-span-2 space-y-8">
-          <section className="bg-card border border-border rounded-sm overflow-hidden shadow-sm">
-            <div className="p-4 bg-muted/30 border-b border-border flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-blue-500" />
-                <h2 className="text-[10px] font-bold uppercase tracking-widest">Processos Vinculados ({cliente.processos.length})</h2>
-              </div>
-            </div>
+      <div className="px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* LEFT COLUMN: INFO & FINANCE */}
+          <div className="lg:col-span-1 space-y-8">
             
-            <div className="divide-y divide-border">
-              {cliente.processos.length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground space-y-3">
-                  <AlertCircle className="w-8 h-8 mx-auto opacity-20" />
-                  <p className="text-xs uppercase tracking-widest font-bold">Nenhum processo vinculado a este cliente.</p>
+            {/* INFORMAÇÕES DE CONTATO */}
+            <section className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <User className="w-4 h-4" />
                 </div>
-              ) : (
-                cliente.processos.map((p) => (
-                  <div key={p.id} className="p-6 hover:bg-muted/10 smooth-transition flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-3">
-                        <Link href={`/processos/${p.id}`} className="font-black text-sm hover:text-primary transition-colors">
-                          {p.tipo_regularizacao.toUpperCase()}
-                        </Link>
-                        <span className={`px-2 py-0.5 rounded-sm text-[8px] font-black uppercase tracking-tighter border ${
-                          p.status === 'concluído' ? 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5' : 'border-blue-500/30 text-blue-500 bg-blue-500/5'
-                        }`}>
-                          {p.status}
-                        </span>
-                      </div>
-                      <div className="bg-muted/30 border border-border p-3 rounded-sm space-y-1">
-                        <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground uppercase tracking-widest">
-                          <MapPin className="w-3 h-3" /> LOCALIZAÇÃO DO IMÓVEL / LOTE
-                        </div>
-                        <div className="text-xs font-bold text-foreground">
-                          {p.imovel?.endereco?.toUpperCase() || 'ENDEREÇO NÃO VINCULADO'}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground">
-                          {p.imovel?.bairro?.toUpperCase()} {p.imovel?.cidade ? `• ${p.imovel.cidade.toUpperCase()}` : ''}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-8 w-full md:w-auto">
-                      <div className="text-right">
-                        <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Abertura</div>
-                        <div className="text-xs font-bold">{new Date(p.data_inicio).toLocaleDateString('pt-BR')}</div>
-                      </div>
-                      <div className="h-10 w-px bg-border hidden md:block"></div>
-                      <div className="flex flex-col gap-2">
-                        <Link 
-                          href={`/processos/${p.id}`}
-                          className="px-4 py-2 bg-foreground text-background rounded-sm text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-all text-center"
-                        >
-                          GERENCIAR PROCESSO
-                        </Link>
-                        {p.imovelId && (
-                          <Link 
-                            href={`/imoveis?edit=${p.imovelId}`}
-                            className="px-4 py-2 border border-border rounded-sm text-[9px] font-black uppercase tracking-widest hover:bg-muted transition-all text-center"
-                          >
-                            EDITAR IMÓVEL
-                          </Link>
-                        )}
-                      </div>
-                    </div>
+                <h2 className="text-sm font-semibold text-slate-900">Informações de Contato</h2>
+              </div>
+              <div className="p-6 space-y-5">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-slate-50 text-slate-400 rounded-lg">
+                    <Phone className="w-4 h-4" />
                   </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          {/* QUICK DOCUMENT VIEW */}
-          <section className="bg-card border border-border rounded-sm overflow-hidden shadow-sm">
-            <div className="p-4 bg-muted/30 border-b border-border">
-              <h2 className="text-[10px] font-bold uppercase tracking-widest">Documentação Consolidada</h2>
-            </div>
-            <div className="p-0">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border">
-                {cliente.processos.flatMap(p => p.documentos).slice(0, 6).map((doc) => (
-                  <div key={doc.id} className="bg-card p-4 flex items-center justify-between hover:bg-muted/10 smooth-transition">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-muted rounded-sm flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold truncate w-32 md:w-48">{doc.nome}</div>
-                        <div className="text-[9px] text-muted-foreground uppercase">{doc.tipo}</div>
-                      </div>
-                    </div>
-                    <button className="text-[9px] font-bold text-primary hover:underline uppercase tracking-widest">Baixar</button>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Telefone</p>
+                    <p className="text-sm font-medium text-slate-800">{cliente.telefone || 'Não informado'}</p>
                   </div>
-                ))}
-                {cliente.processos.flatMap(p => p.documentos).length === 0 && (
-                  <div className="bg-card p-12 text-center text-muted-foreground col-span-2 text-[10px] font-bold uppercase tracking-widest italic">
-                    Nenhum documento anexado.
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-slate-50 text-slate-400 rounded-lg">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email</p>
+                    <p className="text-sm font-medium text-slate-800 truncate">{cliente.email || 'Não informado'}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-slate-50 text-slate-400 rounded-lg shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Endereço Residencial</p>
+                    <p className="text-sm font-medium text-slate-800 leading-relaxed">{cliente.endereco || 'Não informado'}</p>
+                    <p className="text-xs text-slate-400 mt-1">{cliente.bairro} {cliente.cidade ? `• ${cliente.cidade}/${cliente.estado}` : ''}</p>
+                  </div>
+                </div>
+                {cliente.observacoes && (
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Observações Internas</p>
+                    <p className="text-xs text-slate-600 italic bg-slate-50 p-3 rounded-lg border border-slate-100">
+                      "{cliente.observacoes}"
+                    </p>
                   </div>
                 )}
               </div>
-            </div>
-          </section>
+            </section>
+
+            {/* RESUMO FINANCEIRO */}
+            <section className="bg-slate-900 rounded-xl shadow-lg p-6 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl -translate-y-16 translate-x-16"></div>
+              
+              <div className="flex items-center gap-2 mb-6">
+                <DollarSign className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">Visão Financeira</span>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Total em Contratos</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalFaturado)}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Recebido</p>
+                    <p className="text-base font-bold text-emerald-400">{formatCurrency(totalRecebido)}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Pendente</p>
+                    <p className="text-base font-bold text-amber-400">{formatCurrency(receitaPendente)}</p>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-emerald-500" 
+                      style={{ width: `${totalFaturado > 0 ? (totalRecebido / totalFaturado) * 100 : 0}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-2 text-right font-medium">
+                    {totalFaturado > 0 ? ((totalRecebido / totalFaturado) * 100).toFixed(1) : 0}% Liquidados
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* RIGHT COLUMN: PROCESSES */}
+          <div className="lg:col-span-2 space-y-8">
+            
+            <section className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <Briefcase className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-slate-900">Processos Vinculados</h2>
+                    <p className="text-xs text-slate-500">Acompanhamento dos projetos ativos e finalizados</p>
+                  </div>
+                </div>
+                <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">
+                  {cliente.processos.length.toString().padStart(2, '0')}
+                </span>
+              </div>
+              
+              <div className="divide-y divide-slate-100">
+                {cliente.processos.length === 0 ? (
+                  <div className="p-16 text-center">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-dashed border-slate-200">
+                      <AlertCircle className="w-8 h-8 text-slate-300" />
+                    </div>
+                    <p className="text-sm text-slate-500">Nenhum processo registrado para este cliente.</p>
+                  </div>
+                ) : (
+                  cliente.processos.map((p) => (
+                    <div key={p.id} className="p-6 hover:bg-slate-50 transition-colors group">
+                      <div className="flex flex-col md:flex-row justify-between gap-6">
+                        <div className="space-y-3 flex-1">
+                          <div className="flex items-center gap-3">
+                            <Link href={`/processos/${p.id}`} className="text-base font-bold text-slate-900 hover:text-blue-600 transition-colors">
+                              {p.tipo_regularizacao}
+                            </Link>
+                            <span className={`badge ${p.status === 'concluído' ? 'badge-green' : 'badge-blue'} capitalize text-[10px]`}>
+                              {p.status}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 text-xs text-slate-500">
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Calendar className="w-3.5 h-3.5" /> 
+                              Início: {new Date(p.data_inicio).toLocaleDateString('pt-BR')}
+                            </span>
+                            <span className="flex items-center gap-1.5 font-medium truncate max-w-[300px]">
+                              <MapPin className="w-3.5 h-3.5" /> 
+                              {p.imovel?.endereco || 'Imóvel não vinculado'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right hidden md:block">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Contrato</p>
+                            <p className="text-sm font-semibold text-slate-800">{formatCurrency(p.financeiro.reduce((acc, f) => acc + f.valor, 0))}</p>
+                          </div>
+                          <Link 
+                            href={`/processos/${p.id}`}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </Link>
+                        </div>
+                      </div>
+
+                      {/* MINI DOCS VIEW */}
+                      {p.documentos.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          {p.documentos.slice(0, 3).map(doc => (
+                            <div key={doc.id} className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-100 rounded text-[10px] text-slate-500 font-medium">
+                              <FileText className="w-3 h-3 text-slate-400" />
+                              <span className="truncate max-w-[80px]">{doc.nome}</span>
+                            </div>
+                          ))}
+                          {p.documentos.length > 3 && (
+                            <span className="text-[10px] text-slate-400 self-center">+{p.documentos.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </div>
