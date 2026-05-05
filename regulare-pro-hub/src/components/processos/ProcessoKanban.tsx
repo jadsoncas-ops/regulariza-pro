@@ -300,9 +300,7 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
       {/* GAVETA / DRAWER (Sheet) */}
       <Sheet open={!!activeProcessId} onOpenChange={(open) => !open && setActiveProcessId(null)}>
         <SheetContent className="w-full sm:max-w-md border-l border-border bg-background p-0 flex flex-col font-mono" side="right">
-          {activeProcess && (() => {
-            const fin = calculateFinances(activeProcess)
-            return (
+          {activeProcess && (
             <>
               <SheetHeader className="p-6 border-b border-border bg-muted/20">
                 <SheetTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-foreground">
@@ -335,17 +333,17 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
                     
                     <div className="flex justify-between items-center pb-3 border-b border-border">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Valor do Contrato</span>
-                      <span className="text-sm font-bold">R$ {fin.faturamentoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-sm font-bold">R$ {calculateFinances(activeProcess).faturamentoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                     </div>
                     
                     <div className="space-y-2">
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Recebido</span>
-                        <span className="font-bold text-emerald-500">R$ {fin.receitaPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-emerald-500">R$ {calculateFinances(activeProcess).receitaPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                       <div className="flex justify-between items-center text-xs">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pendente</span>
-                        <span className="font-bold text-amber-500">R$ {fin.receitaPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-amber-500">R$ {calculateFinances(activeProcess).receitaPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 
@@ -390,7 +388,7 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
                 </Link>
               </div>
             </>
-          )})}
+          )}
         </SheetContent>
       </Sheet>
 

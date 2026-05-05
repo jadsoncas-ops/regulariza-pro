@@ -31,7 +31,7 @@ interface Cliente {
   cep: string | null
   observacoes: string | null
   processos: any[]
-  createdAt: string
+  createdAt: string | Date
 }
 
 interface ClientListProps {
