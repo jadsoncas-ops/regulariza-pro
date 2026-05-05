@@ -1,58 +1,25 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export async function POST() {
+export async function GET() {
   try {
-    // 1. Pegar todos os imóveis que NÃO possuem processos vinculados
-    const imoveisSemProcesso = await prisma.imovel.findMany({
-      where: {
-        processos: {
-          none: {}
-        }
-      },
-      include: {
-        cliente: true
-      }
-    })
-
-    let criadosCount = 0
-
-    // 2. Criar um processo para cada imóvel "órfão"
-    const results = await prisma.$transaction(
-      imoveisSemProcesso.map((imovel) => {
-        return prisma.processo.create({
-          data: {
-            clienteId: imovel.clienteId,
-            imovelId: imovel.id,
-            tipo_regularizacao: 'REGULARIZAÇÃO DE OBRA',
-            status: 'em_analise',
-            etapa_atual: 'MIGRAÇÃO AUTOMÁTICA',
-            responsavel: 'SISTEMA',
-            observacoes: `PROCESSO GERADO AUTOMATICAMENTE A PARTIR DO IMÓVEL: ${imovel.endereco}`,
-            // Criar financeiro inicial simbólico para aparecer no dashboard
-            financeiro: {
-              create: {
-                clienteId: imovel.clienteId,
-                descricao: 'FATURAMENTO ESTIMADO (MIGRAÇÃO)',
-                valor: 1500, // Valor padrão de exemplo
-                tipo: 'receita',
-                status: 'pendente'
-              }
-            }
-          }
-        })
-      })
-    )
-
-    criadosCount = results.length
+    // Ordem de exclusão para respeitar as chaves estrangeiras
+    await prisma.tarefa.deleteMany({})
+    await prisma.financeiro.deleteMany({})
+    await prisma.documento.deleteMany({})
+    await prisma.checklist.deleteMany({})
+    await prisma.evento.deleteMany({})
+    await prisma.alerta.deleteMany({})
+    await prisma.processo.deleteMany({})
+    await prisma.imovel.deleteMany({})
+    await prisma.cliente.deleteMany({})
 
     return NextResponse.json({ 
       success: true, 
-      message: `${criadosCount} novos processos criados com sucesso!`,
-      total: criadosCount
+      message: "Sistema resetado com sucesso! Todos os dados foram apagados." 
     })
   } catch (error) {
-    console.error('ERRO NA MIGRAÇÃO EM MASSA:', error)
-    return NextResponse.json({ error: 'Falha na migração' }, { status: 500 })
+    console.error('ERRO AO RESETAR SISTEMA:', error)
+    return NextResponse.json({ error: 'Falha ao resetar sistema' }, { status: 500 })
   }
 }
