@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
     // INICIAR TRANSAÇÃO ATÔMICA
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Criar Cliente (ou buscar se já existir pelo CPF/CNPJ)
+      // 1. Criar Cliente (ou buscar se já existir)
       let cliente = await tx.cliente.findFirst({
         where: { cpf_cnpj: data.cliente.cpf_cnpj }
       })
@@ -19,8 +19,12 @@ export async function POST(request: Request) {
             cpf_cnpj: data.cliente.cpf_cnpj,
             telefone: data.cliente.telefone,
             email: data.cliente.email.toUpperCase(),
+            cep: data.cliente.cep,
             endereco: data.cliente.endereco?.toUpperCase() || null,
+            numero: data.cliente.numero,
+            bairro: data.cliente.bairro?.toUpperCase() || null,
             cidade: data.cliente.cidade?.toUpperCase() || null,
+            estado: data.cliente.estado?.toUpperCase() || null,
             observacoes: data.cliente.observacoes?.toUpperCase() || null,
             status: 'ativo'
           }
@@ -45,7 +49,6 @@ export async function POST(request: Request) {
           inscricao_imobiliaria: data.imovel.inscricao_imobiliaria?.toUpperCase() || null,
           zoneamento: data.imovel.zoneamento?.toUpperCase() || null,
           observacoes: data.imovel.observacoes?.toUpperCase() || null,
-          // Dados do proprietário (se não for o cliente)
           proprietario_nome: data.imovel.isProprietario ? null : data.imovel.proprietario_nome?.toUpperCase(),
           proprietario_doc: data.imovel.isProprietario ? null : data.imovel.proprietario_doc,
           proprietario_tel: data.imovel.isProprietario ? null : data.imovel.proprietario_tel,
@@ -63,57 +66,50 @@ export async function POST(request: Request) {
           status: 'em_analise',
           etapa_atual: 'CADASTRO INICIAL',
           responsavel: 'JADSON CASTRO SANTANA',
-          observacoes: `PROJETO CRIADO VIA WIZARD EM ${new Date().toLocaleDateString('pt-BR')}`
+          observacoes: data.processo.observacoes?.toUpperCase() || null,
+          valor_total: parseFloat(data.financeiro.valorTotal) || 0
         }
       })
 
-      // 4. Fluxo Financeiro Inteligente
-      const financeiro = data.financeiro
+      // 4. Fluxo Financeiro Detalhado
+      const { receitas, despesas } = data.financeiro
       
-      // REGISTRO DE ENTRADA (Já recebida)
-      if (financeiro.entrada > 0) {
-        await tx.financeiro.create({
-          data: {
-            processoId: processo.id,
-            clienteId: cliente.id,
-            descricao: `ENTRADA: ${data.processo.tipo.toUpperCase()}`,
-            valor: parseFloat(financeiro.entrada),
-            valor_pago: parseFloat(financeiro.entrada),
-            tipo: 'receita',
-            status: 'pago',
-            data_pagamento: new Date()
-          }
-        })
+      // REGISTRAR RECEITAS (Entradas)
+      for (const rec of receitas) {
+        if (parseFloat(rec.valor) > 0) {
+          await tx.financeiro.create({
+            data: {
+              processoId: processo.id,
+              clienteId: cliente.id,
+              descricao: rec.descricao.toUpperCase(),
+              valor: parseFloat(rec.valor),
+              valor_pago: rec.status === 'pago' ? parseFloat(rec.valor) : 0,
+              tipo: 'receita',
+              status: rec.status,
+              data_vencimento: new Date(rec.data),
+              data_pagamento: rec.status === 'pago' ? new Date(rec.data) : null
+            }
+          })
+        }
       }
 
-      // REGISTRO DE SALDO (Pendente)
-      const saldoRemanescente = parseFloat(financeiro.valorTotal) - parseFloat(financeiro.entrada)
-      if (saldoRemanescente > 0) {
-        await tx.financeiro.create({
-          data: {
-            processoId: processo.id,
-            clienteId: cliente.id,
-            descricao: `SALDO CONTRATUAL: ${data.processo.tipo.toUpperCase()}`,
-            valor: saldoRemanescente,
-            tipo: 'receita',
-            status: 'pendente'
-          }
-        })
-      }
-
-      // REGISTRO DE PARCEIROS / CUSTOS (Despesas)
-      const totalDespesas = (parseFloat(financeiro.parceiros) || 0) + (parseFloat(financeiro.custos) || 0)
-      if (totalDespesas > 0) {
-        await tx.financeiro.create({
-          data: {
-            processoId: processo.id,
-            clienteId: cliente.id,
-            descricao: `CUSTOS E PARCEIROS INICIAIS`,
-            valor: totalDespesas,
-            tipo: 'despesa',
-            status: 'pendente'
-          }
-        })
+      // REGISTRAR DESPESAS (Custos / Parceiros)
+      for (const desp of despesas) {
+        if (parseFloat(desp.valor) > 0) {
+          await tx.financeiro.create({
+            data: {
+              processoId: processo.id,
+              clienteId: cliente.id,
+              descricao: `PARCEIRO: ${desp.parceiro.toUpperCase()} - ${desp.servico.toUpperCase()}`,
+              valor: parseFloat(desp.valor),
+              valor_pago: desp.status === 'pago' ? parseFloat(desp.valor) : 0,
+              tipo: 'despesa',
+              status: desp.status,
+              data_vencimento: new Date(desp.data),
+              data_pagamento: desp.status === 'pago' ? new Date(desp.data) : null
+            }
+          })
+        }
       }
 
       return processo
@@ -121,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('ERRO NO WIZARD DE CADASTRO:', error)
-    return NextResponse.json({ error: 'Falha ao processar cadastro unificado' }, { status: 500 })
+    console.error('ERRO NO WIZARD FINANCEIRO:', error)
+    return NextResponse.json({ error: 'Falha ao processar cadastro financeiro detalhado' }, { status: 500 })
   }
 }
