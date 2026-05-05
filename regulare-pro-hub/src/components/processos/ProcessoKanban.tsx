@@ -251,10 +251,10 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
                 filteredProcessos.map((p) => {
                   const fin = calculateFinances(p)
                   return (
-                  <tr key={p.id} className="hover:bg-muted/10 smooth-transition group cursor-pointer" onClick={() => setActiveProcessId(p.id)}>
+                  <tr key={p.id} className="hover:bg-muted/10 smooth-transition group cursor-pointer" onClick={() => router.push(`/processos/${p.id}`)}>
                     <td className="px-6 py-5">
                       <div className="flex flex-col">
-                        <span className="font-bold text-sm text-foreground hover:text-primary hover:underline tracking-tight">
+                        <span className="font-bold text-sm text-foreground group-hover:text-primary group-hover:underline tracking-tight">
                           {p.tipo_regularizacao.toUpperCase()}
                         </span>
                         <span className="text-[9px] text-muted-foreground mt-1 uppercase tracking-wider font-bold">
@@ -283,12 +283,10 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
                         R$ {fin.lucroEsperado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </td>
-                    <td className="px-6 py-5 text-right">
-                      <button 
-                        className="inline-flex px-4 py-2 border border-border bg-card rounded-sm text-[9px] font-bold uppercase tracking-widest hover:bg-foreground hover:text-background smooth-transition"
-                      >
-                        GAVETA
-                      </button>
+                    <td className="px-6 py-5 text-right opacity-0 group-hover:opacity-100 smooth-transition">
+                      <div className="flex items-center justify-end gap-2 text-[9px] font-bold text-primary uppercase">
+                        Ver Detalhes <ArrowRight className="w-3 h-3" />
+                      </div>
                     </td>
                   </tr>
                 )})
@@ -298,102 +296,6 @@ export default function ProcessoKanban({ initialProcessos }: ProcessoKanbanProps
         </div>
       )}
 
-      {/* GAVETA / DRAWER (Sheet) */}
-      <Sheet open={!!activeProcessId} onOpenChange={(open) => !open && setActiveProcessId(null)}>
-        <SheetContent className="w-full sm:max-w-md border-l border-border bg-background p-0 flex flex-col font-mono" side="right">
-          {activeProcess && (
-            <>
-              <SheetHeader className="p-6 border-b border-border bg-muted/20">
-                <SheetTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-foreground">
-                  <FolderClosed className="w-4 h-4 text-primary" /> {activeProcess.tipo_regularizacao}
-                </SheetTitle>
-                <SheetDescription className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-                  {activeProcess.cliente.nome} • PRC-{activeProcess.id.substring(0,6)}
-                </SheetDescription>
-              </SheetHeader>
-              
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                
-                {/* Status Geral */}
-                <div className="space-y-3">
-                  <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Status Atual</h4>
-                  <div className={`p-4 rounded-sm border flex items-center justify-between ${getStatusColor(activeProcess.status)}`}>
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase tracking-widest">{activeProcess.status.replace(/_/g, ' ')}</span>
-                      <span className="text-xs text-muted-foreground mt-1">{activeProcess.etapa_atual || 'Iniciado'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Resumo Financeiro na Gaveta */}
-                <div className="space-y-3">
-                  <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                    <DollarSign className="w-3.5 h-3.5" /> Posição Financeira
-                  </h4>
-                  <div className="bg-card border border-border p-4 rounded-sm space-y-4 shadow-sm">
-                    
-                    <div className="flex justify-between items-center pb-3 border-b border-border">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Valor do Contrato</span>
-                      <span className="text-sm font-bold">R$ {calculateFinances(activeProcess).faturamentoTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Recebido</span>
-                        <span className="font-bold text-emerald-500">R$ {calculateFinances(activeProcess).receitaPaga.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Pendente</span>
-                        <span className="font-bold text-amber-500">R$ {calculateFinances(activeProcess).receitaPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-border space-y-2">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5"><TrendingUp className="w-3 h-3 text-red-500"/> Custos Totais</span>
-                        <span className="font-bold text-red-500">R$ {calculateFinances(activeProcess).despesaTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">A Pagar</span>
-                        <span className="font-bold text-amber-500">R$ {calculateFinances(activeProcess).despesaPendente.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-border bg-muted/30 p-3 -mx-4 -mb-4 mt-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Caixa Real (Líquido)</span>
-                        <span className="text-sm font-bold text-primary">R$ {calculateFinances(activeProcess).caixaReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                {/* Localização */}
-                <div className="space-y-3">
-                  <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Imóvel</h4>
-                  <div className="p-3 bg-muted/20 border border-border rounded-sm flex items-start gap-3">
-                    <MapPin className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
-                    <span className="text-xs leading-relaxed">{activeProcess.imovel?.endereco || 'Endereço não cadastrado'}</span>
-                  </div>
-                </div>
-
-              </div>
-
-              <div className="p-6 border-t border-border bg-background">
-                <Link 
-                  href={`/processos/${activeProcess.id}`}
-                  className="w-full flex items-center justify-center gap-2 bg-foreground text-background py-3 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition"
-                >
-                  <ArrowRight className="w-4 h-4" /> Detalhes Completos
-                </Link>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
-
     </div>
   )
 }
-
