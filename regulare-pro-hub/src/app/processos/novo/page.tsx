@@ -57,6 +57,15 @@ export default function NovoProjetoWizard() {
   )
 }
 
+const CATEGORIAS_PADRAO = [
+  'Regularização',
+  'Projetos',
+  'Laudos Técnicos',
+  'Consultoria',
+  'Levantamentos',
+  'Administração de Obras'
+]
+
 function WizardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -88,6 +97,7 @@ function WizardContent() {
       proprietario_nome: '', proprietario_doc: '', proprietario_tel: '', proprietario_email: ''
     },
     processo: { 
+      categoria: 'Regularização',
       tipo: '', 
       codigo_projeto: '', 
       observacoes: '',
@@ -608,10 +618,95 @@ function WizardContent() {
           {/* STEP 3: SERVIÇO */}
           {step === 3 && (
             <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden transition-all"><button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-full flex items-center justify-between px-6 py-4 text-blue-700 font-bold text-sm"><div className="flex items-center gap-2"><HelpCircle className="w-4 h-4" /> Guia de Preenchimento</div>{isHelpOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}</button>{isHelpOpen && (<div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200"><div className="space-y-1"><p className="text-[10px] font-bold text-blue-900 uppercase">Tipo de Serviço</p><p className="text-xs text-blue-700">Selecione o serviço principal que será executado.</p></div><div className="space-y-1"><p className="text-[10px] font-bold text-blue-900 uppercase">Código do Projeto</p><p className="text-xs text-blue-700">Gerado automaticamente para identificação única.</p></div></div>)}</div>
-               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8"><div className="grid grid-cols-1 md:grid-cols-2 gap-8"><div><Label help="Se não encontrar, crie um novo.">Tipo de Serviço</Label><select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white font-medium" value={formData.processo.tipo} onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, tipo: e.target.value}}))}>{Object.keys(groupedServicos).map(cat => (<optgroup key={cat} label={cat}>{groupedServicos[cat].map((s: any) => (<option key={s.id} value={s.nome}>{s.nome}</option>))}</optgroup>))}</select><button onClick={() => setIsNewServiceModalOpen(true)} className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors"><Plus className="w-3.5 h-3.5" /> Criar Novo Serviço</button></div><div><Label help="Identificador único.">Código do Projeto</Label><Input value={formData.processo.codigo_projeto} readOnly className="bg-slate-50 font-mono font-bold text-blue-600 border-dashed" /></div></div>
-               {selectedServicoData?.subservicos?.length > 0 && (<div className="p-6 bg-slate-50 rounded-2xl border border-slate-100"><Label help="Atividades específicas.">Subserviços Incluídos</Label><div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">{selectedServicoData.subservicos.map((sub: string) => (<label key={sub} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-blue-300 transition-colors"><input type="checkbox" className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500" checked={formData.processo.subservicos.includes(sub)} onChange={e => { const next = e.target.checked ? [...formData.processo.subservicos, sub] : formData.processo.subservicos.filter(s => s !== sub); setFormData(prev => ({...prev, processo: {...prev.processo, subservicos: next}})) }} /><span className="text-xs font-medium text-slate-700">{sub}</span></label>))}</div></div>)}
-               <div><Label help="Detalhamento técnico.">Observações de Escopo</Label><textarea className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]" value={formData.processo.observacoes} onChange={e => setFormData(prev => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))} /></div></div>
+               <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden transition-all">
+                 <button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-full flex items-center justify-between px-6 py-4 text-blue-700 font-bold text-sm">
+                   <div className="flex items-center gap-2"><HelpCircle className="w-4 h-4" /> Guia de Preenchimento</div>
+                   {isHelpOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                 </button>
+                 {isHelpOpen && (
+                   <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
+                     <div className="space-y-1">
+                       <p className="text-[10px] font-bold text-blue-900 uppercase">Tipo de Serviço</p>
+                       <p className="text-xs text-blue-700">Selecione primeiro a categoria e depois o serviço específico.</p>
+                     </div>
+                     <div className="space-y-1">
+                       <p className="text-[10px] font-bold text-blue-900 uppercase">Código do Projeto</p>
+                       <p className="text-xs text-blue-700">Identificador único gerado automaticamente.</p>
+                     </div>
+                   </div>
+                 )}
+               </div>
+
+               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <Label help="Escolha a categoria principal.">1. Categoria do Serviço</Label>
+                      <select 
+                        className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer"
+                        value={formData.processo.categoria} 
+                        onChange={e => {
+                          const cat = e.target.value
+                          setFormData((prev: any) => ({
+                            ...prev, 
+                            processo: { ...prev.processo, categoria: cat, tipo: '' }
+                          }))
+                        }}
+                      >
+                        {CATEGORIAS_PADRAO.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label help="Selecione o serviço específico.">2. Serviço Específico</Label>
+                      <select 
+                        className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer disabled:opacity-50"
+                        value={formData.processo.tipo} 
+                        disabled={!formData.processo.categoria}
+                        onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, tipo: e.target.value}}))}
+                      >
+                        <option value="">Selecione um serviço...</option>
+                        {(groupedServicos[formData.processo.categoria] || []).map((s: any) => (
+                          <option key={s.id} value={s.nome}>{s.nome}</option>
+                        ))}
+                      </select>
+                      <button onClick={() => setIsNewServiceModalOpen(true)} className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors">
+                        <Plus className="w-3.5 h-3.5" /> + Criar Novo Serviço em {formData.processo.categoria}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <Label help="Identificador único baseado no serviço.">Código do Projeto</Label>
+                      <Input value={formData.processo.codigo_projeto} readOnly className="bg-slate-50 font-mono font-bold text-blue-600 border-dashed" />
+                    </div>
+                  </div>
+
+                  {selectedServicoData?.subservicos?.length > 0 && (
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                      <Label help="Atividades específicas.">Subserviços Incluídos</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        {selectedServicoData.subservicos.map((sub: string) => (
+                          <label key={sub} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-blue-300 transition-colors">
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500" 
+                              checked={formData.processo.subservicos.includes(sub)} 
+                              onChange={e => { 
+                                const next = e.target.checked ? [...formData.processo.subservicos, sub] : formData.processo.subservicos.filter(s => s !== sub); 
+                                setFormData((prev: any) => ({...prev, processo: {...prev.processo, subservicos: next}})) 
+                              }} 
+                            />
+                            <span className="text-xs font-medium text-slate-700">{sub}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div><Label help="Detalhamento técnico.">Observações de Escopo</Label><textarea className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]" value={formData.processo.observacoes} onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))} /></div>
+               </div>
             </div>
           )}
 
@@ -786,7 +881,7 @@ function WizardContent() {
       </div>
 
       {/* MODAL NOVO SERVIÇO */}
-      {isNewServiceModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"><div className="p-6 bg-slate-900 text-white flex justify-between items-center"><div className="flex items-center gap-2"><Plus className="w-5 h-5 text-blue-400" /><h2 className="font-bold">Cadastrar Novo Serviço</h2></div><button onClick={() => setIsNewServiceModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg transition-colors"><X className="w-5 h-5" /></button></div><form onSubmit={handleCreateService} className="p-8 space-y-6"><div><Label>Nome do Serviço</Label><Input placeholder="Ex: Regularização" required value={newService.nome} onChange={e => setNewService({...newService, nome: e.target.value})} /></div><div className="grid grid-cols-2 gap-4"><div><Label help="Sigla de 3 letras.">Sigla</Label><Input placeholder="Ex: REG" required maxLength={4} value={newService.sigla} onChange={e => setNewService({...newService, sigla: e.target.value})} /></div><div><Label>Categoria</Label><select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white" value={newService.categoria} onChange={e => setNewService({...newService, categoria: e.target.value})}>{['Regularização', 'Projetos', 'Parcelamento do solo', 'Laudos técnicos', 'Gestão de obra', 'Consultoria'].map(cat => (<option key={cat} value={cat}>{cat}</option>))}</select></div></div><button type="submit" disabled={loading} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2">{loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}Salvar Serviço</button></form></div></div>)}
+      {isNewServiceModalOpen && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"><div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"><div className="p-6 bg-slate-900 text-white flex justify-between items-center"><div className="flex items-center gap-2"><Plus className="w-5 h-5 text-blue-400" /><h2 className="font-bold">Cadastrar Novo Serviço</h2></div><button onClick={() => setIsNewServiceModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg transition-colors"><X className="w-5 h-5" /></button></div><form onSubmit={handleCreateService} className="p-8 space-y-6"><div><Label>Nome do Serviço</Label><Input placeholder="Ex: Regularização" required value={newService.nome} onChange={e => setNewService({...newService, nome: e.target.value})} /></div><div className="grid grid-cols-2 gap-4"><div><Label help="Sigla de 3 letras.">Sigla</Label><Input placeholder="Ex: REG" required maxLength={4} value={newService.sigla} onChange={e => setNewService({...newService, sigla: e.target.value})} /></div><div><Label>Categoria</Label><select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 bg-white" value={newService.categoria} onChange={e => setNewService({...newService, categoria: e.target.value})}>{CATEGORIAS_PADRAO.map(cat => (<option key={cat} value={cat}>{cat}</option>))}</select></div></div><button type="submit" disabled={loading} className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2">{loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />}Salvar Serviço</button></form></div></div>)}
 
     </div>
   )
