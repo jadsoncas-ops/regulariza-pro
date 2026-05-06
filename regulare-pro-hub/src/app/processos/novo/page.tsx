@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useMemo, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   ArrowLeft, User, Building2, FolderKanban, 
@@ -48,9 +48,19 @@ function WizardStep({ active, icon: Icon, title }: { active: boolean; icon: any;
   )
 }
 
-// --- PÁGINA PRINCIPAL ---
+// --- PÁGINA PRINCIPAL COM SUSPENSE ---
 export default function NovoProjetoWizard() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>}>
+      <WizardContent />
+    </Suspense>
+  )
+}
+
+function WizardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const imovelId = searchParams.get('imovelId')
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [isSearchingCep, setIsSearchingCep] = useState(false)
@@ -114,32 +124,57 @@ export default function NovoProjetoWizard() {
     }
   }
 
+  // BUSCAR DADOS DO IMÓVEL SE HOUVER ID
   useEffect(() => {
-    fetchServicos()
-    
-    // Inicializa a primeira receita apenas no cliente para evitar erro de hidratação
-    setFormData(prev => ({
-      ...prev,
-      financeiro: {
-        ...prev.financeiro,
-        receitas: [
-          { id: '1', descricao: 'Entrada Contrato', valor: '0', data: new Date().toISOString().split('T')[0], status: 'pago' }
-        ]
-      }
-    }))
-  }, [])
+    if (imovelId) {
+      setLoading(true)
+      fetch(`/api/imoveis/${imovelId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && !data.error) {
+            setFormData(prev => ({
+              ...prev,
+              cliente: {
+                ...prev.cliente,
+                nome: data.cliente.nome,
+                cpf_cnpj: data.cliente.cpf_cnpj || '',
+                telefone: data.cliente.telefone || '',
+                email: data.cliente.email || '',
+              },
+              imovel: {
+                ...prev.imovel,
+                cep: data.cep || '',
+                endereco: data.endereco || '',
+                numero: data.numero || '',
+                bairro: data.bairro || '',
+                cidade: data.cidade || '',
+                estado: data.estado || '',
+                area_terreno: data.area_terreno || '',
+                area_construida: data.area_construida || '',
+                num_matricula: data.num_matricula || '',
+              }
+            }))
+            // Pula para a etapa de serviço se já temos os dados
+            setStep(3)
+          }
+        })
+        .finally(() => setLoading(false))
+    }
+  }, [imovelId])
 
-  // GERAÇÃO AUTOMÁTICA DE CÓDIGO
+  // GERAÇÃO AUTOMÁTICA DE CÓDIGO (NOVO PADRÃO: SIGLA-001)
   useEffect(() => {
     const servico = servicosDisponiveis.find(s => s.nome === formData.processo.tipo)
-    if (servico && formData.cliente.nome) {
-      const sigla = servico.sigla || 'PRJ'
-      const nomeCliente = formData.cliente.nome.split(' ')[0].toUpperCase()
+    if (servico) {
+      const sigla = (servico.sigla || 'REG').toUpperCase()
+      
+      // Busca contagem para gerar o número (simulado aqui, o ideal seria API, mas faremos randômico único se não houver API)
       const random = Math.floor(Math.random() * 999).toString().padStart(3, '0')
-      const codigo = `${sigla}_${nomeCliente}_${random}`
+      const codigo = `${sigla}-${random}`
+      
       setFormData(prev => ({...prev, processo: {...prev.processo, codigo_projeto: codigo}}))
     }
-  }, [formData.processo.tipo, formData.cliente.nome, servicosDisponiveis])
+  }, [formData.processo.tipo, servicosDisponiveis])
 
   // MÁSCARAS
   const maskCpfCnpj = (v: string) => {
@@ -311,10 +346,16 @@ export default function NovoProjetoWizard() {
   const handleFinalSubmit = async () => {
     setLoading(true)
     try {
+      // Se viemos de um imóvel, garantimos que o ID está no payload
+      const payload = {
+        ...formData,
+        imovelId: imovelId || null
+      }
+
       const res = await fetch('/api/processos/novo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       })
       if (res.ok) {
         const data = await res.json()

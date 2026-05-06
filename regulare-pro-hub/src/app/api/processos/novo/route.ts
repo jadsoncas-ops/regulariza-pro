@@ -31,37 +31,60 @@ export async function POST(request: Request) {
         })
       }
 
-      // 2. Criar Imóvel
-      const imovel = await tx.imovel.create({
-        data: {
-          clienteId: cliente.id,
-          cep: data.imovel.cep,
-          endereco: data.imovel.endereco.toUpperCase(),
-          numero: data.imovel.numero,
-          complemento: data.imovel.complemento?.toUpperCase() || null,
-          bairro: data.imovel.bairro.toUpperCase(),
-          cidade: data.imovel.cidade.toUpperCase(),
-          estado: data.imovel.estado.toUpperCase(),
-          area_terreno: data.imovel.area_terreno ? parseFloat(data.imovel.area_terreno) : null,
-          area_construida: data.imovel.area_construida ? parseFloat(data.imovel.area_construida) : null,
-          num_matricula: data.imovel.num_matricula?.toUpperCase() || null,
-          cartorio: data.imovel.cartorio?.toUpperCase() || null,
-          inscricao_imobiliaria: data.imovel.inscricao_imobiliaria?.toUpperCase() || null,
-          zoneamento: data.imovel.zoneamento?.toUpperCase() || null,
-          observacoes: data.imovel.observacoes?.toUpperCase() || null,
-          proprietario_nome: data.imovel.isProprietario ? null : data.imovel.proprietario_nome?.toUpperCase(),
-          proprietario_doc: data.imovel.isProprietario ? null : data.imovel.proprietario_doc,
-          proprietario_tel: data.imovel.isProprietario ? null : data.imovel.proprietario_tel,
-          proprietario_email: data.imovel.isProprietario ? null : data.imovel.proprietario_email?.toUpperCase(),
-        }
+      // 2. Criar ou Buscar Imóvel
+      let imovelId = data.imovelId
+      
+      if (!imovelId) {
+        const newImovel = await tx.imovel.create({
+          data: {
+            clienteId: cliente.id,
+            cep: data.imovel.cep,
+            endereco: data.imovel.endereco.toUpperCase(),
+            numero: data.imovel.numero,
+            complemento: data.imovel.complemento?.toUpperCase() || null,
+            bairro: data.imovel.bairro.toUpperCase(),
+            cidade: data.imovel.cidade.toUpperCase(),
+            estado: data.imovel.estado.toUpperCase(),
+            area_terreno: data.imovel.area_terreno ? parseFloat(data.imovel.area_terreno) : null,
+            area_construida: data.imovel.area_construida ? parseFloat(data.imovel.area_construida) : null,
+            num_matricula: data.imovel.num_matricula?.toUpperCase() || null,
+            cartorio: data.imovel.cartorio?.toUpperCase() || null,
+            inscricao_imobiliaria: data.imovel.inscricao_imobiliaria?.toUpperCase() || null,
+            zoneamento: data.imovel.zoneamento?.toUpperCase() || null,
+            observacoes: data.imovel.observacoes?.toUpperCase() || null,
+            proprietario_nome: data.imovel.isProprietario ? null : data.imovel.proprietario_nome?.toUpperCase(),
+            proprietario_doc: data.imovel.isProprietario ? null : data.imovel.proprietario_doc,
+            proprietario_tel: data.imovel.isProprietario ? null : data.imovel.proprietario_tel,
+            proprietario_email: data.imovel.isProprietario ? null : data.imovel.proprietario_email?.toUpperCase(),
+          }
+        })
+        imovelId = newImovel.id
+      }
+
+      // 3. Criar Processo (Geração de Código Sequencial)
+      const servico = await tx.servicoPadrao.findFirst({ where: { nome: data.processo.tipo } })
+      const sigla = (servico?.sigla || 'REG').toUpperCase()
+      
+      // Busca o último processo com essa sigla para incrementar
+      const lastProcess = await tx.processo.findFirst({
+        where: { codigo_projeto: { startsWith: sigla } },
+        orderBy: { createdAt: 'desc' }
       })
 
-      // 3. Criar Processo
+      let nextNum = 1
+      if (lastProcess?.codigo_projeto) {
+        const parts = lastProcess.codigo_projeto.split('-')
+        const lastNum = parseInt(parts[parts.length - 1])
+        if (!isNaN(lastNum)) nextNum = lastNum + 1
+      }
+      
+      const codigoProjeto = `${sigla}-${nextNum.toString().padStart(3, '0')}`
+
       const processo = await tx.processo.create({
         data: {
-          codigo_projeto: data.processo.codigo_projeto,
+          codigo_projeto: codigoProjeto,
           clienteId: cliente.id,
-          imovelId: imovel.id,
+          imovelId: imovelId,
           tipo_regularizacao: data.processo.tipo.toUpperCase(),
           status: 'em_analise',
           etapa_atual: 'CADASTRO INICIAL',

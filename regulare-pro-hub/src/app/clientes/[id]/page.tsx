@@ -11,9 +11,8 @@ import {
 
 const TABS = [
   { id: 'crm',       label: 'Painel CRM',     icon: Activity },
+  { id: 'imoveis',   label: 'Imóveis & Processos', icon: Building2 },
   { id: 'dados',     label: 'Dados',           icon: Users },
-  { id: 'imoveis',   label: 'Imóveis',         icon: Building2 },
-  { id: 'processos', label: 'Processos',       icon: Briefcase },
   { id: 'financeiro',label: 'Financeiro',      icon: DollarSign },
   { id: 'obs',       label: 'Observações',     icon: MessageSquare },
 ]
@@ -101,9 +100,12 @@ export default function ClienteDetailPage() {
                 {cliente.cidade && <><span className="text-slate-300">•</span><span className="text-xs text-slate-500">{cliente.cidade}/{cliente.estado}</span></>}
               </div>
             </div>
-            <Link href={`/processos/novo?clienteId=${cliente.id}`} className="btn-primary text-sm">
-              <Plus className="w-4 h-4" /> Novo Processo
+            <Link href={`/clientes`} className="btn-secondary text-sm">
+              <ArrowLeft className="w-4 h-4" /> Voltar
             </Link>
+            <button onClick={() => setTab('imoveis')} className="btn-primary text-sm">
+              <Plus className="w-4 h-4" /> Novo Imóvel
+            </button>
           </div>
         </div>
       </div>
@@ -155,16 +157,19 @@ export default function ClienteDetailPage() {
             <div className="p-3 space-y-2">
               {imoveis.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-6">Nenhum imóvel</p>
-              ) : imoveis.map((im: any) => (
-                <div key={im.id} className="p-3 bg-slate-50 rounded-xl">
-                  <p className="text-sm font-medium text-slate-800">{im.endereco}{im.numero ? `, ${im.numero}` : ''}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{im.bairro} · {im.cidade}/{im.estado}</p>
-                  <div className="flex gap-2 mt-2 flex-wrap">
-                    {im.area_construida && <span className="badge badge-blue text-[10px]">{im.area_construida} m²</span>}
-                    {im.num_matricula && <span className="badge badge-slate text-[10px]">Mat: {im.num_matricula}</span>}
+              ) : imoveis.map((im: any) => {
+                const imProcesses = processos.filter((p: any) => p.imovelId === im.id)
+                return (
+                  <div key={im.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-sm font-medium text-slate-800">{im.endereco}{im.numero ? `, ${im.numero}` : ''}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{im.bairro} · {im.cidade}/{im.estado}</p>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      <span className="badge badge-purple text-[10px]">{imProcesses.length} processos</span>
+                      {im.area_construida && <span className="badge badge-blue text-[10px]">{im.area_construida} m²</span>}
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
 
@@ -248,57 +253,97 @@ export default function ClienteDetailPage() {
         </div>
       )}
 
-      {/* ── IMÓVEIS TAB ──────────────────────────────────────────────── */}
+      {/* ── IMÓVEIS & PROCESSOS TAB ──────────────────────────────────── */}
       {tab === 'imoveis' && (
-        <div className="space-y-4 animate-fade-up">
+        <div className="space-y-6 animate-fade-up">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-800">Imóveis & Seus Processos</h3>
+            <Link href={`/imoveis/novo?clienteId=${cliente.id}`} className="btn-primary text-xs py-2">
+              <Plus className="w-3.5 h-3.5" /> Adicionar Novo Imóvel
+            </Link>
+          </div>
+
           {imoveis.length === 0 ? (
             <div className="card p-12 text-center">
-              <Building2 className="w-8 h-8 text-slate-300 mx-auto mb-3"/>
-              <p className="text-sm text-slate-500">Nenhum imóvel vinculado</p>
-            </div>
-          ) : imoveis.map((im: any) => (
-            <div key={im.id} className="card p-5">
-              <p className="text-sm font-semibold text-slate-800">{im.endereco}, {im.numero}</p>
-              <p className="text-xs text-slate-500 mt-1">{im.bairro} · {im.cidade}/{im.estado}</p>
-              <div className="flex gap-2 mt-3 flex-wrap">
-                {im.area_construida && <span className="badge badge-blue">{im.area_construida} m²</span>}
-                {im.num_matricula && <span className="badge badge-slate">Mat: {im.num_matricula}</span>}
-                {im.zoneamento && <span className="badge badge-purple">Zona: {im.zoneamento}</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── PROCESSOS TAB ────────────────────────────────────────────── */}
-      {tab === 'processos' && (
-        <div className="space-y-3 animate-fade-up">
-          {processos.length === 0 ? (
-            <div className="card p-12 text-center">
-              <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-3"/>
-              <p className="text-sm text-slate-500 mb-4">Nenhum processo</p>
-              <Link href={`/processos/novo?clienteId=${cliente.id}`} className="btn-primary inline-flex">Criar Processo</Link>
-            </div>
-          ) : processos.map((p: any) => {
-            const st = PROCESS_STATUS[p.status] || { label: p.status, badge: 'badge-slate' }
-            return (
-              <Link key={p.id} href={`/processos/${p.id}`}>
-                <div className="card-hover p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="badge badge-blue text-[10px]">{p.codigo_projeto || 'SEM CÓDIGO'}</span>
-                        <span className={`badge ${st.badge} text-[10px]`}>{st.label}</span>
-                      </div>
-                      <p className="text-sm font-semibold text-slate-800">{p.tipo_regularizacao}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-400" />
-                  </div>
-                </div>
+              <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4"/>
+              <p className="text-slate-500 font-medium">Este cliente ainda não possui imóveis cadastrados.</p>
+              <p className="text-sm text-slate-400 mt-1">Cadastre um imóvel para iniciar o fluxo de regularização.</p>
+              <Link href={`/imoveis/novo?clienteId=${cliente.id}`} className="btn-primary mt-6 inline-flex">
+                Cadastrar Primeiro Imóvel
               </Link>
-            )
-          })}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6">
+              {imoveis.map((im: any) => {
+                const imProcesses = processos.filter((p: any) => p.imovelId === im.id)
+                return (
+                  <div key={im.id} className="card overflow-hidden border-l-4 border-l-blue-500">
+                    <div className="p-5 bg-slate-50/50 border-b border-slate-100 flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
+                          <Building2 className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-base font-bold text-slate-900 leading-tight">
+                            {im.endereco}{im.numero ? `, nº ${im.numero}` : ''}
+                          </h4>
+                          <p className="text-sm text-slate-500 mt-1">{im.bairro} · {im.cidade}/{im.estado}</p>
+                          <div className="flex gap-2 mt-3">
+                            {im.area_construida && <span className="badge badge-blue">{im.area_construida} m²</span>}
+                            {im.num_matricula && <span className="badge badge-slate">Mat: {im.num_matricula}</span>}
+                            {im.zoneamento && <span className="badge badge-purple">Zona: {im.zoneamento}</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Link href={`/processos/novo?imovelId=${im.id}`} className="btn-primary text-xs py-2 px-4 shadow-blue-200 shadow-lg">
+                          <Plus className="w-3.5 h-3.5" /> Novo Processo
+                        </Link>
+                        <Link href={`/imoveis/editar/${im.id}`} className="btn-ghost text-xs py-2 px-4">
+                          Editar Imóvel
+                        </Link>
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Processos neste Imóvel</p>
+                      {imProcesses.length === 0 ? (
+                        <div className="bg-slate-50/50 rounded-xl p-6 text-center border-2 border-dashed border-slate-200">
+                          <p className="text-xs text-slate-400">Nenhum processo iniciado para este imóvel.</p>
+                          <button onClick={() => window.location.href=`/processos/novo?imovelId=${im.id}`} className="text-xs font-bold text-blue-600 hover:underline mt-2">
+                            + Iniciar primeiro processo
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {imProcesses.map((p: any) => {
+                            const st = PROCESS_STATUS[p.status] || { label: p.status, badge: 'badge-slate' }
+                            return (
+                              <Link key={p.id} href={`/processos/${p.id}`} className="group p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto || '—'}</span>
+                                    <span className={`badge ${st.badge} text-[10px]`}>{st.label}</span>
+                                  </div>
+                                  <p className="text-sm font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                                    {p.tipo_regularizacao}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> Atualizado em {new Date(p.updatedAt).toLocaleDateString('pt-BR')}
+                                  </p>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400" />
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 

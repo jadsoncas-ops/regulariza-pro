@@ -15,7 +15,6 @@ const NAV = [
     { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
     { href: '/processos', label: 'Processos',   icon: Briefcase },
     { href: '/clientes',  label: 'Clientes',    icon: Users },
-    { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
   ]},
   { section: 'Gestão', items: [
     { href: '/financeiro',  label: 'Financeiro',       icon: DollarSign },
