@@ -647,130 +647,166 @@ function WizardContent() {
             </div>
           )}
 
-          {/* STEP 3: NATUREZA E ATIVIDADES TÉCNICAS */}
-          {step === 3 && (
-            <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden transition-all">
-                 <button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-full flex items-center justify-between px-6 py-4 text-blue-700 font-bold text-sm">
-                   <div className="flex items-center gap-2"><HelpCircle className="w-4 h-4" /> Guia de Escopo Técnico</div>
-                   {isHelpOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                 </button>
-                 {isHelpOpen && (
-                   <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
-                     <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-blue-900 uppercase">Natureza do Processo</p>
-                       <p className="text-xs text-blue-700">Define o objetivo principal do projeto.</p>
-                     </div>
-                     <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-blue-900 uppercase">Atividades Técnicas</p>
-                       <p className="text-xs text-blue-700">Tarefas específicas que compõem o escopo do serviço.</p>
-                     </div>
-                   </div>
-                 )}
-               </div>
+          {/* STEP 3: NATUREZA E ATIVIDADES TÉCNICAS — refatorado */}
+          {step === 3 && (() => {
+            const NATUREZAS = [
+              { label: 'Regularização Imobiliária', sigla: 'REG', icon: '🏠', cor: '#2563EB', atividades: ['Levantamento cadastral','Memorial descritivo','Emissão de ART','Relatório fotográfico','Protocolo na prefeitura','Acompanhamento processual','Entrega documental'] },
+              { label: 'Administração de Obra',     sigla: 'ADM', icon: '🏗️', cor: '#7C3AED', atividades: ['Vistoria técnica','Diário de obra','Cronograma físico-financeiro','Relatório mensal','Medição de serviços'] },
+              { label: 'Projeto Arquitetônico',     sigla: 'ARQ', icon: '📐', cor: '#0891B2', atividades: ['Levantamento cadastral','Projeto arquitetônico','Projeto As-Built','Emissão de ART','Análise urbanística','Protocolo na prefeitura'] },
+              { label: 'Aprovação de Projeto',      sigla: 'APR', icon: '✅', cor: '#059669', atividades: ['Análise urbanística','Protocolo na prefeitura','Acompanhamento processual','Emissão de ART','Entrega documental'] },
+              { label: 'Habite-se',                 sigla: 'HAB', icon: '🔑', cor: '#D97706', atividades: ['Vistoria técnica','Relatório fotográfico','Memorial descritivo','Protocolo na prefeitura','Acompanhamento processual'] },
+              { label: 'Averbação',                 sigla: 'AVB', icon: '📄', cor: '#4F46E5', atividades: ['Levantamento cadastral','Memorial descritivo','Emissão de ART','Protocolo no cartório','Entrega documental'] },
+              { label: 'Consultoria Técnica',       sigla: 'CON', icon: '💼', cor: '#0D9488', atividades: ['Vistoria técnica','Relatório fotográfico','Parecer técnico','Emissão de ART'] },
+              { label: 'Laudo / Perícia',           sigla: 'LDO', icon: '🔬', cor: '#DC2626', atividades: ['Vistoria técnica','Relatório fotográfico','Laudo técnico','Emissão de ART'] },
+              { label: 'Desmembramento',            sigla: 'DES', icon: '✂️', cor: '#9333EA', atividades: ['Levantamento cadastral','Memorial descritivo','Emissão de ART','Protocolo na prefeitura','Acompanhamento processual'] },
+              { label: 'Unificação de Lotes',       sigla: 'UNI', icon: '🔗', cor: '#EA580C', atividades: ['Levantamento cadastral','Memorial descritivo','Emissão de ART','Protocolo no cartório'] },
+              { label: 'Levantamento Técnico',      sigla: 'LEV', icon: '📏', cor: '#0369A1', atividades: ['Levantamento cadastral','Relatório fotográfico','Memorial descritivo','Emissão de ART'] },
+            ]
+            const TODAS = Array.from(new Set(['Levantamento cadastral','Memorial descritivo','Emissão de ART','Projeto arquitetônico','Projeto As-Built','Relatório fotográfico','Vistoria técnica','Protocolo na prefeitura','Protocolo no cartório','Acompanhamento processual','Entrega documental','Análise urbanística','Laudo técnico','Parecer técnico','Diário de obra','Cronograma físico-financeiro','Relatório mensal','Medição de serviços',...customAtividades]))
+            const naturezaSel = NATUREZAS.find(n => n.label === formData.processo.tipo)
+            const sugeridas = naturezaSel?.atividades || []
+            const toggleAtiv = (a: string) => {
+              const has = formData.processo.subservicos.includes(a)
+              setFormData((prev: any) => ({ ...prev, processo: { ...prev.processo, subservicos: has ? prev.processo.subservicos.filter((s: string) => s !== a) : [...prev.processo.subservicos, a] } }))
+            }
+            const selectNatureza = (n: typeof NATUREZAS[0]) => {
+              const num = String(Math.floor(Math.random()*899+100))
+              setFormData((prev: any) => ({ ...prev, processo: { ...prev.processo, tipo: n.label, categoria: n.label, codigo_projeto: `${n.sigla}-${num}`, subservicos: n.atividades } }))
+            }
+            return (
+              <div className="animate-fade-in" style={{ display:'flex', flexDirection:'column', gap:16, maxWidth:860, margin:'0 auto' }}>
 
-               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <Label help="Selecione o tipo principal de processo.">Natureza do Processo</Label>
-                      <select 
-                        className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer"
-                        value={formData.processo.tipo} 
-                        onChange={e => {
-                          const val = e.target.value
-                          const serv = servicosDisponiveis.find(s => s.nome === val)
-                          setFormData((prev: any) => ({
-                            ...prev, 
-                            processo: { 
-                              ...prev.processo, 
-                              tipo: val,
-                              subservicos: serv?.subservicos || [] // Sugestão automática
-                            }
-                          }))
-                        }}
-                      >
-                        <option value="">Selecione a Natureza...</option>
-                        {servicosDisponiveis.map(s => (
-                          <option key={s.id} value={s.nome}>{s.nome}</option>
-                        ))}
-                      </select>
-                      <button onClick={() => setIsNewServiceModalOpen(true)} className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors">
-                        <Plus className="w-3.5 h-3.5" /> + Criar Natureza de Processo
-                      </button>
+                {/* ── 1. NATUREZA (MACRO) ── */}
+                <div className="card" style={{ padding:'20px 22px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+                    <div style={{ width:28, height:28, borderRadius:8, background:'#EFF6FF', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>📋</div>
+                    <div style={{ flex:1 }}>
+                      <h3 style={{ fontSize:13, fontWeight:700, color:'#111827', letterSpacing:'-0.02em' }}>Natureza do Processo</h3>
+                      <p style={{ fontSize:11, color:'#9CA3AF', marginTop:1 }}>Tipo principal do contrato — selecione apenas um</p>
                     </div>
-
-                    <div>
-                      <Label help="Identificador único.">Código do Projeto</Label>
-                      <Input value={formData.processo.codigo_projeto} readOnly className="bg-slate-50 font-mono font-bold text-blue-600 border-dashed" />
-                    </div>
-                  </div>
-
-                  <div className="pt-6 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><CheckCircle2 className="w-5 h-5" /></div>
-                        <div>
-                          <h2 className="text-base font-bold text-slate-900">Atividades Técnicas</h2>
-                          <p className="text-xs text-slate-500">Selecione as atividades incluídas no escopo</p>
-                        </div>
+                    {naturezaSel && (
+                      <div style={{ display:'flex', alignItems:'center', gap:6, padding:'4px 10px', borderRadius:20, background:'#EFF6FF', border:'1px solid #BFDBFE' }}>
+                        <span style={{ fontSize:11, fontWeight:700, color:'#1D4ED8', fontFamily:'monospace' }}>{naturezaSel.sigla}</span>
+                        <span style={{ fontSize:10, color:'#3B82F6' }}>·</span>
+                        <span style={{ fontSize:11, color:'#2563EB', fontWeight:600 }}>{formData.processo.codigo_projeto}</span>
                       </div>
-                      <button 
-                        type="button" 
-                        onClick={() => setIsNewActivityModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-colors uppercase tracking-wider"
-                      >
-                         <Plus className="w-3 h-3" /> Nova Atividade Personalizada
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* ATIVIDADES SUGERIDAS E GLOBAIS */}
-                      {Array.from(new Set([
-                        ...(selectedServicoData?.subservicos || []),
-                        ...customAtividades,
-                        "Levantamento Cadastral", "Memorial Descritivo", "Projeto As-Built", 
-                        "Projeto Arquitetônico", "Emissão de ART", "Análise Urbanística", 
-                        "Relatório Fotográfico", "Vistoria Técnica", "Protocolo na Prefeitura", 
-                        "Acompanhamento de Processo", "Entrega de Documentação"
-                      ])).map((ativ: string) => (
-                        <label 
-                          key={ativ} 
-                          className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
-                            formData.processo.subservicos.includes(ativ) 
-                              ? 'border-blue-500 bg-blue-50 shadow-sm shadow-blue-100' 
-                              : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
-                          }`}
+                    )}
+                  </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(175px,1fr))', gap:8 }}>
+                    {NATUREZAS.map(n => {
+                      const active = formData.processo.tipo === n.label
+                      return (
+                        <button key={n.label} type="button" onClick={() => selectNatureza(n)}
+                          style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 12px', borderRadius:10, border:'none', cursor:'pointer', textAlign:'left', transition:'all 0.15s', background: active ? `${n.cor}15` : '#F9FAFB', outline: active ? `2px solid ${n.cor}35` : '2px solid transparent' }}
+                          onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F3F4F6' }}
+                          onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = '#F9FAFB' }}
                         >
-                          <input 
-                            type="checkbox" 
-                            className="w-5 h-5 rounded-lg text-blue-600 border-slate-300 focus:ring-blue-500 transition-all" 
-                            checked={formData.processo.subservicos.includes(ativ)} 
-                            onChange={e => {
-                              const next = e.target.checked 
-                                ? [...formData.processo.subservicos, ativ]
-                                : formData.processo.subservicos.filter(s => s !== ativ)
-                              setFormData((prev: any) => ({ ...prev, processo: { ...prev.processo, subservicos: next } }))
-                            }}
-                          />
-                          <span className={`text-xs font-bold ${formData.processo.subservicos.includes(ativ) ? 'text-blue-700' : 'text-slate-600'}`}>
-                            {ativ}
-                          </span>
-                        </label>
-                      ))}
+                          <span style={{ fontSize:16, lineHeight:1, flexShrink:0 }}>{n.icon}</span>
+                          <div style={{ minWidth:0, flex:1 }}>
+                            <div style={{ fontSize:12, fontWeight:600, color: active ? n.cor : '#374151', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{n.label}</div>
+                            <div style={{ fontSize:10, fontFamily:'monospace', fontWeight:700, color: active ? n.cor : '#9CA3AF', marginTop:2 }}>{n.sigla}</div>
+                          </div>
+                          {active && <div style={{ width:16, height:16, borderRadius:'50%', background:n.cor, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}><Check size={9} color="#fff" strokeWidth={3} /></div>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <button type="button" onClick={() => setIsNewServiceModalOpen(true)}
+                    style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:12, fontSize:11, fontWeight:600, color:'#6B7280', background:'none', border:'1px dashed #D1D5DB', borderRadius:8, padding:'5px 10px', cursor:'pointer', transition:'all 0.12s' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='#2563EB'; (e.currentTarget as HTMLElement).style.color='#2563EB' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='#D1D5DB'; (e.currentTarget as HTMLElement).style.color='#6B7280' }}>
+                    <Plus size={12} /> Criar natureza personalizada
+                  </button>
+                </div>
+
+                {/* ── 2. ATIVIDADES TÉCNICAS (MICRO) ── */}
+                <div className="card" style={{ padding:'20px 22px' }}>
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                      <div style={{ width:28, height:28, borderRadius:8, background:'#ECFDF5', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>✅</div>
+                      <div>
+                        <h3 style={{ fontSize:13, fontWeight:700, color:'#111827', letterSpacing:'-0.02em' }}>Atividades Técnicas</h3>
+                        <p style={{ fontSize:11, color: formData.processo.subservicos.length > 0 ? '#059669' : '#9CA3AF', fontWeight: formData.processo.subservicos.length > 0 ? 600 : 400, marginTop:1 }}>
+                          {formData.processo.subservicos.length > 0 ? `${formData.processo.subservicos.length} atividade(s) selecionada(s)` : 'Selecione as entregas que compõem o escopo'}
+                        </p>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setIsNewActivityModalOpen(true)}
+                      style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'6px 11px', fontSize:11, fontWeight:600, color:'#374151', background:'#F3F4F6', border:'none', borderRadius:8, cursor:'pointer', transition:'background 0.12s' }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background='#E5E7EB'}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background='#F3F4F6'}>
+                      <Plus size={12} /> Personalizada
+                    </button>
+                  </div>
+
+                  {sugeridas.length > 0 && (
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ fontSize:10, fontWeight:600, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>💡 Sugeridas para esta natureza</div>
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:7 }}>
+                        {sugeridas.map(a => {
+                          const checked = formData.processo.subservicos.includes(a)
+                          return (
+                            <button key={a} type="button" onClick={() => toggleAtiv(a)}
+                              style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'6px 11px', borderRadius:20, border:'none', fontSize:12, fontWeight:500, cursor:'pointer', transition:'all 0.15s', background: checked ? '#ECFDF5' : '#F9FAFB', color: checked ? '#059669' : '#4B5563', outline: checked ? '1.5px solid #A7F3D0' : '1.5px solid #E5E7EB' }}>
+                              <span style={{ width:14, height:14, borderRadius:'50%', background: checked ? '#059669' : '#D1D5DB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, transition:'all 0.15s' }}>
+                                {checked && <Check size={8} color="#fff" strokeWidth={3} />}
+                              </span>
+                              {a}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{ borderTop:'1px solid rgba(0,0,0,0.05)', paddingTop:14 }}>
+                    <div style={{ fontSize:10, fontWeight:600, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:10 }}>Catálogo completo</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(195px,1fr))', gap:6 }}>
+                      {TODAS.map(a => {
+                        const checked = formData.processo.subservicos.includes(a)
+                        return (
+                          <label key={a} style={{ display:'flex', alignItems:'center', gap:9, padding:'8px 11px', borderRadius:9, cursor:'pointer', border:`1.5px solid ${checked ? '#A7F3D0' : 'rgba(0,0,0,0.06)'}`, background: checked ? '#ECFDF5' : 'transparent', transition:'all 0.15s' }}
+                            onMouseEnter={e => { if (!checked) (e.currentTarget as HTMLElement).style.background='#F9FAFB' }}
+                            onMouseLeave={e => { if (!checked) (e.currentTarget as HTMLElement).style.background='transparent' }}>
+                            <div style={{ width:16, height:16, borderRadius:5, flexShrink:0, background: checked ? '#059669' : '#fff', border:`1.5px solid ${checked ? '#059669' : '#D1D5DB'}`, display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s' }}>
+                              {checked && <Check size={9} color="#fff" strokeWidth={3} />}
+                            </div>
+                            <input type="checkbox" hidden checked={checked} onChange={() => toggleAtiv(a)} />
+                            <span style={{ fontSize:12, fontWeight: checked ? 600 : 400, color: checked ? '#059669' : '#374151', flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a}</span>
+                            {sugeridas.includes(a) && !checked && <span style={{ fontSize:9, color:'#93C5FD', fontWeight:700, flexShrink:0 }}>IA</span>}
+                          </label>
+                        )
+                      })}
                     </div>
                   </div>
 
-                  <div>
-                    <Label help="Detalhamento técnico adicional.">Observações de Escopo</Label>
-                    <textarea 
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]" 
-                      value={formData.processo.observacoes} 
-                      onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))} 
-                    />
-                  </div>
-               </div>
-            </div>
-          )}
+                  {formData.processo.subservicos.length > 0 && (
+                    <div style={{ marginTop:16, paddingTop:14, borderTop:'1px solid rgba(0,0,0,0.05)' }}>
+                      <div style={{ fontSize:10, fontWeight:600, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:8 }}>Escopo definido ({formData.processo.subservicos.length})</div>
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
+                        {formData.processo.subservicos.map(a => (
+                          <span key={a} style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'3px 9px', borderRadius:20, background:'#EFF6FF', color:'#1D4ED8', fontSize:11, fontWeight:600, border:'1px solid #BFDBFE' }}>
+                            {a}
+                            <button type="button" onClick={() => toggleAtiv(a)} style={{ background:'none', border:'none', cursor:'pointer', color:'#93C5FD', padding:0, display:'flex', alignItems:'center' }}><X size={11} /></button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Observações ── */}
+                <div className="card" style={{ padding:'16px 20px' }}>
+                  <Label help="Informações complementares ao escopo técnico.">Observações de Escopo</Label>
+                  <textarea className="input-field" style={{ minHeight:80, resize:'vertical', fontFamily:'inherit', lineHeight:1.5 }}
+                    placeholder="Descreva detalhes técnicos, condicionantes ou restrições..."
+                    value={formData.processo.observacoes}
+                    onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))} />
+                </div>
+
+              </div>
+            )
+          })()}
 
           {/* STEP 4: FINANCEIRO (NOVA ESTRUTURA) */}
           {step === 4 && (
