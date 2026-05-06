@@ -17,7 +17,8 @@ import {
   DollarSign,
   Printer,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Calculator
 } from 'lucide-react'
 import Link from 'next/link'
 

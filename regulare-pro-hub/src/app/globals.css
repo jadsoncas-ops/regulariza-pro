@@ -1,38 +1,46 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-background: hsl(222 47% 11%);
+  --color-foreground: hsl(210 40% 98%);
+  --color-card: hsl(222 47% 13%);
+  --color-card-foreground: hsl(210 40% 98%);
+  --color-popover: hsl(222 47% 11%);
+  --color-popover-foreground: hsl(210 40% 98%);
+  --color-primary: hsl(188 100% 50%);
+  --color-primary-foreground: hsl(222 47% 11%);
+  --color-secondary: hsl(217 32% 17%);
+  --color-secondary-foreground: hsl(210 40% 98%);
+  --color-muted: hsl(217 32% 17%);
+  --color-muted-foreground: hsl(215 20% 65%);
+  --color-accent: hsl(188 100% 50%);
+  --color-accent-foreground: hsl(210 40% 98%);
+  --color-destructive: hsl(0 62% 30%);
+  --color-destructive-foreground: hsl(210 40% 98%);
+  --color-border: hsl(217 32% 17%);
+  --color-input: hsl(217 32% 17%);
+  --color-ring: hsl(188 100% 50%);
+  --color-warning: hsl(38 92% 50%);
+  
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+}
 
 :root {
   --background: 222 47% 11%;
   --foreground: 210 40% 98%;
-  --card: 222 47% 13%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222 47% 11%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 188 100% 50%; /* Neon Cyan */
-  --primary-foreground: 222 47% 11%;
-  --secondary: 217 32% 17%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217 32% 17%;
-  --muted-foreground: 215 20% 65%;
-  --accent: 188 100% 50%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 210 40% 98%;
   --border: 217 32% 17%;
-  --input: 217 32% 17%;
-  --ring: 188 100% 50%;
-  --radius: 0.75rem;
-  --warning: 38 92% 50%; /* Neon Amber */
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/30;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    @apply antialiased selection:bg-primary/30;
     background-image: 
       radial-gradient(at 0% 0%, hsla(188, 100%, 50%, 0.05) 0, transparent 50%),
       radial-gradient(at 100% 100%, hsla(38, 92%, 50%, 0.03) 0, transparent 50%);
@@ -65,13 +73,12 @@
   }
 }
 
-/* Scrollbar Customization */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-background;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
