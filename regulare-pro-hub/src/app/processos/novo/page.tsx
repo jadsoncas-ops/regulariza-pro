@@ -445,11 +445,20 @@ function WizardContent() {
                       onChange={(e) => {
                         const id = e.target.value
                         setSelectedClienteId(id)
+                        setSelectedImovelId('') // Limpa seleção anterior
+                        setFormData((prev: any) => ({ 
+                          ...prev, 
+                          imovel: {
+                            cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
+                            area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '',
+                            zoneamento: '', isProprietario: true
+                          }
+                        }))
                         if (id) {
                           const c = existingClientes.find(x => x.id === id)
-                          if (c) setFormData(prev => ({ ...prev, cliente: { ...c } }))
+                          if (c) setFormData((prev: any) => ({ ...prev, cliente: { ...c } }))
                         } else {
-                          setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
+                          setFormData((prev: any) => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
                         }
                       }}
                     >
@@ -491,63 +500,108 @@ function WizardContent() {
           {/* STEP 2: IMÓVEL */}
           {step === 2 && (
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between mb-2">
-                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Seleção de Imóvel</h3>
+              {/* SELEÇÃO OU CADASTRO DE IMÓVEL */}
+              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm transition-all duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><Building2 className="w-5 h-5" /></div>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">Propriedade (Imóvel)</h2>
+                    <p className="text-xs text-slate-500">Selecione um imóvel existente ou cadastre um novo</p>
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <Label>Selecione o Imóvel para este Processo</Label>
+                  <select 
+                    className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer"
+                    value={selectedImovelId}
+                    onChange={(e) => {
+                      const id = e.target.value
+                      setSelectedImovelId(id)
+                      if (id) {
+                        const im = existingImoveis.find(x => x.id === id)
+                        if (im) {
+                          setFormData((prev: any) => ({ 
+                            ...prev, 
+                            imovel: { 
+                              ...im, 
+                              isProprietario: true,
+                              area_terreno: im.area_terreno || '',
+                              area_construida: im.area_construida || '',
+                              num_matricula: im.num_matricula || '',
+                              inscricao_imobiliaria: im.inscricao_imobiliaria || '',
+                              zoneamento: im.zoneamento || '',
+                              complemento: im.complemento || '',
+                              numero: im.numero || ''
+                            } 
+                          }))
+                        }
+                      } else {
+                        setFormData((prev: any) => ({ 
+                          ...prev, 
+                          imovel: {
+                            cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
+                            area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '',
+                            zoneamento: '', isProprietario: true
+                          }
+                        }))
+                      }
+                    }}
+                  >
+                    <option value="">+ CADASTRAR NOVO IMÓVEL</option>
+                    {existingImoveis.map(im => (
+                      <option key={im.id} value={im.id}>{im.endereco}, {im.numero} - {im.bairro} ({im.cidade})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={`space-y-8 transition-all duration-500 ${selectedImovelId ? 'opacity-90 grayscale-[0.5]' : ''}`}>
+                  <div className="flex items-center justify-between mb-2 pt-4 border-t border-slate-100">
+                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                       {selectedImovelId ? 'Dados do Imóvel Selecionado' : 'Dados do Novo Imóvel'}
+                     </h3>
+                     {!selectedImovelId && (
+                       <button type="button" onClick={copyAddressFromCliente} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">
+                         <Copy className="w-3 h-3" /> Copiar do cliente
+                       </button>
+                     )}
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <Label>CEP</Label>
+                      <Input disabled={!!selectedImovelId} placeholder="00000-000" value={formData.imovel.cep} onChange={e => handleCepChange(e, 'imovel')} />
+                    </div>
+                    <div className="md:col-span-2 flex gap-4">
+                      <div className="flex-1">
+                        <Label>Endereço / Logradouro</Label>
+                        <Input disabled={!!selectedImovelId} placeholder="Rua, Av..." value={formData.imovel.endereco} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))} />
+                      </div>
+                      <div className="w-24">
+                        <Label>Nº</Label>
+                        <Input disabled={!!selectedImovelId} name="imovel_numero" placeholder="123" value={formData.imovel.numero} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))} />
+                      </div>
+                    </div>
+                    <div><Label>Bairro</Label><Input disabled={!!selectedImovelId} value={formData.imovel.bairro} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))} /></div>
+                    <div><Label>Cidade</Label><Input disabled={!!selectedImovelId} value={formData.imovel.cidade} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, cidade: e.target.value}}))} /></div>
+                    <div><Label>UF</Label><Input disabled={!!selectedImovelId} value={formData.imovel.estado} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))} /></div>
                   </div>
 
-                  {existingImoveis.length > 0 && (
-                    <div className="mb-6">
-                      <Label>Escolher Imóvel do Cliente</Label>
-                      <select 
-                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                        value={selectedImovelId}
-                        onChange={(e) => {
-                          const id = e.target.value
-                          setSelectedImovelId(id)
-                          if (id) {
-                            const im = existingImoveis.find(x => x.id === id)
-                            if (im) setFormData(prev => ({ ...prev, imovel: { ...im, isProprietario: true } }))
-                          }
-                        }}
-                      >
-                        <option value="">+ Cadastrar Novo Imóvel</option>
-                        {existingImoveis.map(im => (
-                          <option key={im.id} value={im.id}>{im.endereco}, {im.numero} - {im.bairro}</option>
-                        ))}
-                      </select>
+                  <div className="pt-8 border-t border-slate-100">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Informações Técnicas</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div><Label>Área Terreno</Label><Input disabled={!!selectedImovelId} type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div>
+                      <div><Label>Área Constr.</Label><Input disabled={!!selectedImovelId} type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div>
+                      <div><Label>Matrícula</Label><Input disabled={!!selectedImovelId} value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div>
+                      <div><Label>Zoneamento</Label><Input disabled={!!selectedImovelId} value={formData.imovel.zoneamento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, zoneamento: e.target.value}}))} /></div>
                     </div>
-                  )}
-
-                  {!selectedImovelId && (
-                    <>
-                      <div className="flex items-center justify-between mb-2 pt-4 border-t border-slate-100">
-                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Dados do Novo Imóvel</h3>
-                         <button type="button" onClick={copyAddressFromCliente} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"><Copy className="w-3 h-3" /> Copiar do cliente</button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div><Label>CEP do Imóvel</Label><div className="relative"><Input placeholder="00000-000" value={formData.imovel.cep} onChange={e => handleCepChange(e, 'imovel')} />{isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}</div></div>
-                        <div className="md:col-span-2 flex gap-4"><div className="flex-1"><Label>Endereço / Logradouro</Label><Input placeholder="Rua, Av..." value={formData.imovel.endereco} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))} /></div><div className="w-24"><Label>Número</Label><Input name="imovel_numero" placeholder="123" value={formData.imovel.numero} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))} /></div></div>
-                        <div><Label>Complemento</Label><Input value={formData.imovel.complemento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, complemento: e.target.value}}))} /></div>
-                        <div><Label>Bairro</Label><Input value={formData.imovel.bairro} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))} /></div>
-                        <div><Label>Cidade</Label><Input value={formData.imovel.cidade} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, cidade: e.target.value}}))} /></div>
-                        <div><Label>UF</Label><Input value={formData.imovel.estado} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))} /></div>
-                      </div>
-                    </>
-                  )}
-               </div>
-               
-               {!selectedImovelId && (
-                 <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
-                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Informações Técnicas (Opcional)</h3>
-                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                     <div><Label>Área Terreno</Label><Input type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div>
-                     <div><Label>Área Constr.</Label><Input type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div>
-                     <div><Label>Matrícula</Label><Input value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div>
-                     <div><Label>IPTU</Label><Input value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, inscricao_imobiliaria: e.target.value}}))} /></div>
-                   </div>
-                 </div>
-               )}
+                    <div className="mt-6">
+                       <Label>IPTU / Inscrição Imobiliária</Label>
+                       <Input disabled={!!selectedImovelId} value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, inscricao_imobiliaria: e.target.value}}))} />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
