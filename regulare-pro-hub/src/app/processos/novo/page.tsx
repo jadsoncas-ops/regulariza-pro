@@ -68,7 +68,11 @@ function WizardContent() {
   const [isNewServiceModalOpen, setIsNewServiceModalOpen] = useState(false)
   
   const [servicosDisponiveis, setServicosDisponiveis] = useState<any[]>([])
+  const [existingClientes, setExistingClientes] = useState<any[]>([])
+  const [existingImoveis, setExistingImoveis] = useState<any[]>([])
   const [loadingServicos, setLoadingServicos] = useState(true)
+  const [selectedClienteId, setSelectedClienteId] = useState<string>('')
+  const [selectedImovelId, setSelectedImovelId] = useState<string>('')
 
   // ESTADO GLOBAL DO WIZARD
   const [formData, setFormData] = useState({
@@ -101,28 +105,34 @@ function WizardContent() {
     nome: '', sigla: '', categoria: 'Regularização', descricao: ''
   })
 
-  // BUSCAR SERVIÇOS
-  const fetchServicos = async () => {
+  // BUSCAR SERVIÇOS E CLIENTES
+  const fetchData = async () => {
     try {
-      const res = await fetch('/api/servicos')
-      const data = await res.json()
+      const [sRes, cRes] = await Promise.all([
+        fetch('/api/servicos'),
+        fetch('/api/clientes')
+      ])
+      const [sData, cData] = await Promise.all([sRes.json(), cRes.json()])
       
-      if (Array.isArray(data)) {
-        setServicosDisponiveis(data)
-        // Só define o tipo padrão se o usuário ainda não tiver selecionado nada e houver dados
-        if (data.length > 0 && !formData.processo.tipo) {
-          setFormData(prev => ({
-            ...prev, 
-            processo: { ...prev.processo, tipo: data[0].nome }
-          }))
-        }
-      }
+      if (Array.isArray(sData)) setServicosDisponiveis(sData)
+      if (Array.isArray(cData)) setExistingClientes(cData)
     } catch (e) { 
-      console.error('Erro ao buscar serviços:', e) 
+      console.error('Erro ao buscar dados:', e) 
     } finally {
       setLoadingServicos(false)
     }
   }
+
+  // BUSCAR IMÓVEIS DO CLIENTE SELECIONADO
+  useEffect(() => {
+    if (selectedClienteId) {
+      fetch(`/api/clientes/${selectedClienteId}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.imoveis) setExistingImoveis(data.imoveis)
+        })
+    }
+  }, [selectedClienteId])
 
   // BUSCAR DADOS DO IMÓVEL SE HOUVER ID
   useEffect(() => {
@@ -163,6 +173,10 @@ function WizardContent() {
   }, [imovelId])
 
   // GERAÇÃO AUTOMÁTICA DE CÓDIGO (NOVO PADRÃO: SIGLA-001)
+  useEffect(() => {
+    fetchData()
+  }, [])
+  
   useEffect(() => {
     const servico = servicosDisponiveis.find(s => s.nome === formData.processo.tipo)
     if (servico) {
@@ -334,7 +348,7 @@ function WizardContent() {
         body: JSON.stringify(newService)
       })
       if (res.ok) {
-        await fetchServicos()
+        await fetchData()
         setIsNewServiceModalOpen(false)
         setNewService({ nome: '', sigla: '', categoria: 'Regularização', descricao: '' })
       }
@@ -346,10 +360,10 @@ function WizardContent() {
   const handleFinalSubmit = async () => {
     setLoading(true)
     try {
-      // Se viemos de um imóvel, garantimos que o ID está no payload
       const payload = {
         ...formData,
-        imovelId: imovelId || null
+        clienteId: selectedClienteId || null,
+        imovelId: selectedImovelId || imovelId || null
       }
 
       const res = await fetch('/api/processos/novo', {
@@ -419,25 +433,58 @@ function WizardContent() {
           {/* STEP 1: CLIENTE */}
           {step === 1 && (
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                  <div className="md:col-span-2">
-                    <Label>Nome do Cliente / Empresa *</Label>
-                    <Input placeholder="Nome completo ou Razão Social" value={formData.cliente.nome} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, nome: e.target.value}}))} />
+               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Seleção de Cliente</h3>
                   </div>
-                  <div><Label>CPF ou CNPJ *</Label><Input placeholder="000.000.000-00" value={formData.cliente.cpf_cnpj} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))} /></div>
-                  <div><Label>Telefone / WhatsApp *</Label><Input placeholder="(00) 00000-0000" value={formData.cliente.telefone} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, telefone: maskPhone(e.target.value)}}))} /></div>
-                  <div className="md:col-span-2"><Label>E-mail de Contato *</Label><Input type="email" placeholder="exemplo@email.com" value={formData.cliente.email} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))} /></div>
-               </div>
-               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Endereço de Cobrança</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div><Label>CEP</Label><div className="relative"><Input placeholder="00000-000" value={formData.cliente.cep} onChange={e => handleCepChange(e, 'cliente')} />{isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}</div></div>
-                    <div className="md:col-span-2 flex gap-4"><div className="flex-1"><Label>Logradouro / Endereço</Label><Input placeholder="Rua, Av..." value={formData.cliente.endereco} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, endereco: e.target.value}}))} /></div><div className="w-24"><Label>Número</Label><Input name="cliente_numero" placeholder="123" value={formData.cliente.numero} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, numero: e.target.value}}))} /></div></div>
-                    <div><Label>Bairro</Label><Input value={formData.cliente.bairro} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, bairro: e.target.value}}))} /></div>
-                    <div><Label>Cidade</Label><Input value={formData.cliente.cidade} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cidade: e.target.value}}))} /></div>
-                    <div><Label>Estado</Label><Input value={formData.cliente.estado} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, estado: e.target.value}}))} /></div>
+                  <div>
+                    <Label>Escolher Cliente Existente</Label>
+                    <select 
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                      value={selectedClienteId}
+                      onChange={(e) => {
+                        const id = e.target.value
+                        setSelectedClienteId(id)
+                        if (id) {
+                          const c = existingClientes.find(x => x.id === id)
+                          if (c) setFormData(prev => ({ ...prev, cliente: { ...c } }))
+                        } else {
+                          setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
+                        }
+                      }}
+                    >
+                      <option value="">+ Criar Novo Cliente</option>
+                      {existingClientes.map(c => (
+                        <option key={c.id} value={c.id}>{c.nome} ({c.cpf_cnpj})</option>
+                      ))}
+                    </select>
                   </div>
+
+                  {!selectedClienteId && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                      <div className="md:col-span-2">
+                        <Label>Nome do Cliente / Empresa *</Label>
+                        <Input placeholder="Nome completo ou Razão Social" value={formData.cliente.nome} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, nome: e.target.value}}))} />
+                      </div>
+                      <div><Label>CPF ou CNPJ *</Label><Input placeholder="000.000.000-00" value={formData.cliente.cpf_cnpj} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))} /></div>
+                      <div><Label>Telefone / WhatsApp *</Label><Input placeholder="(00) 00000-0000" value={formData.cliente.telefone} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, telefone: maskPhone(e.target.value)}}))} /></div>
+                      <div className="md:col-span-2"><Label>E-mail de Contato *</Label><Input type="email" placeholder="exemplo@email.com" value={formData.cliente.email} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))} /></div>
+                    </div>
+                  )}
                </div>
+
+               {!selectedClienteId && (
+                 <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Endereço de Cobrança</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div><Label>CEP</Label><div className="relative"><Input placeholder="00000-000" value={formData.cliente.cep} onChange={e => handleCepChange(e, 'cliente')} />{isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}</div></div>
+                      <div className="md:col-span-2 flex gap-4"><div className="flex-1"><Label>Logradouro / Endereço</Label><Input placeholder="Rua, Av..." value={formData.cliente.endereco} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, endereco: e.target.value}}))} /></div><div className="w-24"><Label>Número</Label><Input name="cliente_numero" placeholder="123" value={formData.cliente.numero} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, numero: e.target.value}}))} /></div></div>
+                      <div><Label>Bairro</Label><Input value={formData.cliente.bairro} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, bairro: e.target.value}}))} /></div>
+                      <div><Label>Cidade</Label><Input value={formData.cliente.cidade} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cidade: e.target.value}}))} /></div>
+                      <div><Label>Estado</Label><Input value={formData.cliente.estado} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, estado: e.target.value}}))} /></div>
+                    </div>
+                 </div>
+               )}
             </div>
           )}
 
@@ -446,19 +493,61 @@ function WizardContent() {
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
                   <div className="flex items-center justify-between mb-2">
-                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Localização da Obra</h3>
-                     <button type="button" onClick={copyAddressFromCliente} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"><Copy className="w-3 h-3" /> Usar mesmo endereço do cliente</button>
+                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Seleção de Imóvel</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div><Label>CEP do Imóvel</Label><div className="relative"><Input placeholder="00000-000" value={formData.imovel.cep} onChange={e => handleCepChange(e, 'imovel')} />{isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}</div></div>
-                    <div className="md:col-span-2 flex gap-4"><div className="flex-1"><Label>Endereço / Logradouro</Label><Input placeholder="Rua, Av..." value={formData.imovel.endereco} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))} /></div><div className="w-24"><Label>Número</Label><Input name="imovel_numero" placeholder="123" value={formData.imovel.numero} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))} /></div></div>
-                    <div><Label>Complemento</Label><Input value={formData.imovel.complemento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, complemento: e.target.value}}))} /></div>
-                    <div><Label>Bairro</Label><Input value={formData.imovel.bairro} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))} /></div>
-                    <div><Label>Cidade</Label><Input value={formData.imovel.cidade} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, cidade: e.target.value}}))} /></div>
-                    <div><Label>UF</Label><Input value={formData.imovel.estado} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))} /></div>
-                  </div>
+
+                  {existingImoveis.length > 0 && (
+                    <div className="mb-6">
+                      <Label>Escolher Imóvel do Cliente</Label>
+                      <select 
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
+                        value={selectedImovelId}
+                        onChange={(e) => {
+                          const id = e.target.value
+                          setSelectedImovelId(id)
+                          if (id) {
+                            const im = existingImoveis.find(x => x.id === id)
+                            if (im) setFormData(prev => ({ ...prev, imovel: { ...im, isProprietario: true } }))
+                          }
+                        }}
+                      >
+                        <option value="">+ Cadastrar Novo Imóvel</option>
+                        {existingImoveis.map(im => (
+                          <option key={im.id} value={im.id}>{im.endereco}, {im.numero} - {im.bairro}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {!selectedImovelId && (
+                    <>
+                      <div className="flex items-center justify-between mb-2 pt-4 border-t border-slate-100">
+                         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Dados do Novo Imóvel</h3>
+                         <button type="button" onClick={copyAddressFromCliente} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors"><Copy className="w-3 h-3" /> Copiar do cliente</button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div><Label>CEP do Imóvel</Label><div className="relative"><Input placeholder="00000-000" value={formData.imovel.cep} onChange={e => handleCepChange(e, 'imovel')} />{isSearchingCep && <Loader2 className="w-4 h-4 text-blue-500 animate-spin absolute right-4 top-3.5" />}</div></div>
+                        <div className="md:col-span-2 flex gap-4"><div className="flex-1"><Label>Endereço / Logradouro</Label><Input placeholder="Rua, Av..." value={formData.imovel.endereco} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))} /></div><div className="w-24"><Label>Número</Label><Input name="imovel_numero" placeholder="123" value={formData.imovel.numero} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))} /></div></div>
+                        <div><Label>Complemento</Label><Input value={formData.imovel.complemento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, complemento: e.target.value}}))} /></div>
+                        <div><Label>Bairro</Label><Input value={formData.imovel.bairro} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))} /></div>
+                        <div><Label>Cidade</Label><Input value={formData.imovel.cidade} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, cidade: e.target.value}}))} /></div>
+                        <div><Label>UF</Label><Input value={formData.imovel.estado} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))} /></div>
+                      </div>
+                    </>
+                  )}
                </div>
-               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm"><h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Informações Técnicas (Opcional)</h3><div className="grid grid-cols-2 md:grid-cols-4 gap-6"><div><Label>Área Terreno</Label><Input type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div><div><Label>Área Constr.</Label><Input type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div><div><Label>Matrícula</Label><Input value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div><div><Label>IPTU</Label><Input value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, inscricao_imobiliaria: e.target.value}}))} /></div></div></div>
+               
+               {!selectedImovelId && (
+                 <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                   <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Informações Técnicas (Opcional)</h3>
+                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                     <div><Label>Área Terreno</Label><Input type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div>
+                     <div><Label>Área Constr.</Label><Input type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div>
+                     <div><Label>Matrícula</Label><Input value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div>
+                     <div><Label>IPTU</Label><Input value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, inscricao_imobiliaria: e.target.value}}))} /></div>
+                   </div>
+                 </div>
+               )}
             </div>
           )}
 

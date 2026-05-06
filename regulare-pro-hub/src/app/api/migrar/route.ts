@@ -83,19 +83,19 @@ export async function POST(request: Request) {
       const novoClienteId = mapClientes.get(proc.clienteId)
       if (!novoClienteId) { stats.ignorados++; continue }
 
-      // Imovel opcional: busca o cliente original pra ver se tinha propertyAddress
-      let imovelId: string | null = null
+      // Tenta achar o imóvel ou cria um padrão (Obrigatório na nova arquitetura)
+      let imovelId = ''
       const oldCli = clientes.find((c: any) => c.id === proc.clienteId)
-      if (oldCli?.propertyAddress) {
-        const imovel = await prisma.imovel.create({
-          data: {
-            clienteId: novoClienteId,
-            endereco: oldCli.propertyAddress,
-            tipo: 'Não Informado',
-          }
-        })
-        imovelId = imovel.id
-      }
+      const address = oldCli?.propertyAddress || (oldCli?.endereco ? [oldCli.endereco.rua, oldCli.endereco.numero].filter(Boolean).join(', ') : null) || 'ENDEREÇO NÃO INFORMADO (IMPORTADO)'
+      
+      const imovel = await prisma.imovel.create({
+        data: {
+          clienteId: novoClienteId,
+          endereco: address,
+          tipo: 'IMPORTADO',
+        }
+      })
+      imovelId = imovel.id
 
       // Montar observações com timeline
       let obs = ''

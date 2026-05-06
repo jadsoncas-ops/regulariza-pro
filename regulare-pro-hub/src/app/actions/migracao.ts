@@ -52,20 +52,19 @@ export async function processMigration(jsonData: string) {
       const novoClienteId = mapClientes.get(proc.clienteId)
       if (!novoClienteId) continue // Processo órfão
 
-      // Tenta achar o imóvel (o sistema antigo guardava endereço solto ou no cliente)
-      // Vamos criar um imóvel genérico se houver endereço, senão nulo
-      let imovelId = null
+      // Tenta achar o imóvel ou cria um padrão (Obrigatório na nova arquitetura)
+      let imovelId = ''
       const oldClient = clientes.find((c: any) => c.id === proc.clienteId)
-      if (oldClient && oldClient.propertyAddress) {
-        const imovel = await prisma.imovel.create({
-          data: {
-            clienteId: novoClienteId,
-            endereco: oldClient.propertyAddress,
-            tipo: 'Não Informado'
-          }
-        })
-        imovelId = imovel.id
-      }
+      const address = oldClient?.propertyAddress || (oldClient?.endereco ? `${oldClient.endereco.rua || ''} ${oldClient.endereco.numero || ''}`.trim() : null) || 'ENDEREÇO NÃO INFORMADO (IMPORTADO)'
+      
+      const imovel = await prisma.imovel.create({
+        data: {
+          clienteId: novoClienteId,
+          endereco: address,
+          tipo: 'IMPORTADO'
+        }
+      })
+      imovelId = imovel.id
 
       // Mapear status do sistema antigo para o novo Prisma enum/string
       let novoStatus = 'em_analise'

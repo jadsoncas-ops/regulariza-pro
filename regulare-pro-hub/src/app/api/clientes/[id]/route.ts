@@ -9,12 +9,14 @@ export async function GET(
     const cliente = await prisma.cliente.findUnique({
       where: { id: (await params).id },
       include: { 
+        imoveis: true,
         processos: {
           include: {
             financeiro: true,
             documentos: true
           }
-        }
+        },
+        financeiro: true
       }
     })
     

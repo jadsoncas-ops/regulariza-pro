@@ -376,19 +376,26 @@ export default function ProcessoDetailPage() {
                   Acessar ficha completa <ChevronRight className="w-3 h-3" />
                 </Link>
               </SectionCard>
-              {processo.imovel && (
-                <SectionCard title="Localização do Imóvel">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm text-slate-700 font-medium leading-relaxed">
-                        {processo.imovel.endereco}{processo.imovel.numero ? `, nº ${processo.imovel.numero}` : ''}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">{processo.imovel.bairro} • {processo.imovel.cidade}</p>
+              <SectionCard title="Imóvel Vinculado">
+                {processo.imovel ? (
+                  <>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Building2 className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800">{processo.imovel.endereco}, {processo.imovel.numero}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{processo.imovel.bairro} • {processo.imovel.cidade}</p>
+                      </div>
                     </div>
-                  </div>
-                </SectionCard>
-              )}
+                    <Link href={`/imoveis/${processo.imovelId}`} className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1">
+                      Ver detalhes do imóvel <ChevronRight className="w-3 h-3" />
+                    </Link>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Nenhum imóvel vinculado.</p>
+                )}
+              </SectionCard>
             </div>
           </div>
         )}
@@ -437,11 +444,114 @@ export default function ProcessoDetailPage() {
           </div>
         )}
 
-        {(tab === 'documentos' || tab === 'financeiro' || tab === 'tarefas' || tab === 'historico') && (
+        {tab === 'financeiro' && (
+          <div className="space-y-8 animate-in fade-in duration-300">
+            {/* CARDS DE RESUMO FINANCEIRO */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              <div className="card p-6 border-l-4 border-l-blue-500">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Contrato Total</p>
+                <p className="text-xl font-bold text-slate-800">
+                  {processo.valor_total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+              </div>
+              <div className="card p-6 border-l-4 border-l-emerald-500">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Valor Recebido</p>
+                <p className="text-xl font-bold text-emerald-600">
+                  {(processo.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((acc: number, f: any) => acc + f.valor, 0))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+              </div>
+              <div className="card p-6 border-l-4 border-l-amber-500">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Saldo a Receber</p>
+                <p className="text-xl font-bold text-amber-600">
+                  {(processo.valor_total - (processo.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((acc: number, f: any) => acc + f.valor, 0)))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+              </div>
+              <div className="card p-6 border-l-4 border-l-indigo-500">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lucro Líquido Real</p>
+                <p className="text-xl font-bold text-indigo-600">
+                  {((processo.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((acc: number, f: any) => acc + f.valor, 0)) - (processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status === 'pago').reduce((acc: number, f: any) => acc + f.valor, 0)))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2 space-y-6">
+                <SectionCard title="Detalhamento de Fluxo">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-red-50 text-red-600 rounded-lg flex items-center justify-center font-bold text-xs">D</div>
+                        <span className="text-sm font-bold text-slate-700">Despesas Totais (Pagas + Pendentes)</span>
+                      </div>
+                      <span className="text-sm font-bold text-red-600">
+                        {(processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: number, f: any) => acc + f.valor, 0))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg flex items-center justify-center font-bold text-xs">L</div>
+                        <span className="text-sm font-bold text-slate-700">Lucro Total Previsto (Contrato - Despesas Totais)</span>
+                      </div>
+                      <span className="text-sm font-bold text-emerald-600">
+                        {(processo.valor_total - (processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: number, f: any) => acc + f.valor, 0)))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                  </div>
+                </SectionCard>
+
+                <SectionCard title="Transações do Processo">
+                   {processo.financeiro?.length === 0 ? (
+                     <p className="text-center py-10 text-slate-400 italic text-sm">Nenhuma transação financeira vinculada.</p>
+                   ) : (
+                     <div className="divide-y divide-slate-100">
+                        {processo.financeiro.map((f: any) => (
+                          <div key={f.id} className="py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[10px] ${f.tipo === 'receita' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                                 {f.tipo === 'receita' ? 'REC' : 'DES'}
+                               </div>
+                               <div>
+                                 <p className="text-sm font-bold text-slate-800">{f.descricao}</p>
+                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{new Date(f.data_vencimento).toLocaleDateString('pt-BR')} • {f.status}</p>
+                               </div>
+                            </div>
+                            <p className={`text-sm font-bold ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-600'}`}>
+                              {f.tipo === 'receita' ? '+' : '-'} {f.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                            </p>
+                          </div>
+                        ))}
+                     </div>
+                   )}
+                </SectionCard>
+              </div>
+
+              <div className="space-y-6">
+                <div className="card p-6 bg-slate-900 text-white border-0 shadow-2xl">
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Resumo Executivo</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400">Despesas Pagas</span>
+                      <span className="text-sm font-bold text-red-400">
+                        {(processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status === 'pago').reduce((acc: number, f: any) => acc + f.valor, 0))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-slate-400">Despesas Pendentes</span>
+                      <span className="text-sm font-bold text-amber-400">
+                        {(processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status !== 'pago').reduce((acc: number, f: any) => acc + f.valor, 0))?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(tab === 'documentos' || tab === 'tarefas' || tab === 'historico') && (
            <div className="bg-white border border-dashed border-slate-200 rounded-2xl py-20 text-center animate-in fade-in duration-300">
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                  {tab === 'documentos' && <FileText className="w-8 h-8 text-slate-300" />}
-                 {tab === 'financeiro' && <DollarSign className="w-8 h-8 text-slate-300" />}
                  {tab === 'tarefas' && <ListTodo className="w-8 h-8 text-slate-300" />}
                  {tab === 'historico' && <History className="w-8 h-8 text-slate-300" />}
               </div>

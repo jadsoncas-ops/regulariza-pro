@@ -157,19 +157,19 @@ export default function ClienteDetailPage() {
             <div className="p-3 space-y-2">
               {imoveis.length === 0 ? (
                 <p className="text-xs text-slate-400 text-center py-6">Nenhum imóvel</p>
-              ) : imoveis.map((im: any) => {
-                const imProcesses = processos.filter((p: any) => p.imovelId === im.id)
-                return (
-                  <div key={im.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    <p className="text-sm font-medium text-slate-800">{im.endereco}{im.numero ? `, ${im.numero}` : ''}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{im.bairro} · {im.cidade}/{im.estado}</p>
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      <span className="badge badge-purple text-[10px]">{imProcesses.length} processos</span>
-                      {im.area_construida && <span className="badge badge-blue text-[10px]">{im.area_construida} m²</span>}
-                    </div>
-                  </div>
-                )
-              })}
+                ) : imoveis.map((im: any) => {
+                  const imProcesses = processos.filter((p: any) => p.imovelId === im.id)
+                  return (
+                    <Link key={im.id} href={`/imoveis/${im.id}`} className="block p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all group">
+                      <p className="text-sm font-medium text-slate-800 group-hover:text-blue-600 transition-colors">{im.endereco}{im.numero ? `, ${im.numero}` : ''}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{im.bairro} · {im.cidade}/{im.estado}</p>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        <span className="badge badge-purple text-[10px]">{imProcesses.length} processos</span>
+                        {im.area_construida && <span className="badge badge-blue text-[10px]">{im.area_construida} m²</span>}
+                      </div>
+                    </Link>
+                  )
+                })}
             </div>
           </div>
 

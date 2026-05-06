@@ -19,13 +19,13 @@ function NovoImovelContent() {
   
   const [formData, setFormData] = useState({
     clienteId: clienteIdParam || '',
-    cep: '',
     endereco: '',
     numero: '',
     complemento: '',
     bairro: '',
     cidade: '',
     estado: '',
+    cep: '',
     area_terreno: '',
     area_construida: '',
     num_matricula: '',
@@ -62,8 +62,7 @@ function NovoImovelContent() {
         body: JSON.stringify(formData)
       })
       if (res.ok) {
-        const data = await res.json()
-        router.push(`/clientes/${formData.clienteId}`)
+        router.push(formData.clienteId ? `/clientes/${formData.clienteId}` : '/imoveis')
       }
     } catch (error) {
       alert('Erro ao cadastrar imóvel.')
@@ -82,7 +81,7 @@ function NovoImovelContent() {
             </button>
             <div>
               <h1 className="text-xl font-bold text-slate-900">Novo Imóvel</h1>
-              <p className="text-xs text-slate-500">Cadastre uma nova propriedade para este cliente</p>
+              <p className="text-xs text-slate-500">Cadastre uma nova propriedade e vincule a um cliente</p>
             </div>
           </div>
           {clienteSelecionado && (
