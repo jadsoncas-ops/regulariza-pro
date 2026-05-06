@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import {
   LayoutDashboard, Briefcase, Users, Building2, DollarSign,
   FileText, Calendar, Settings, Bell, Search, Plus,
-  Zap, LogOut, Menu, X, Moon, Sun, ChevronDown
+  Zap, LogOut, Menu, X, Moon, Sun, MapPin
 } from 'lucide-react'
 
 const NAV = [
@@ -17,9 +17,10 @@ const NAV = [
     { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
   ]},
   { section: 'Gestão', items: [
-    { href: '/financeiro',  label: 'Financeiro',  icon: DollarSign },
-    { href: '/documentos',  label: 'Documentos',  icon: FileText },
-    { href: '/agenda',      label: 'Agenda',      icon: Calendar },
+    { href: '/financeiro',  label: 'Financeiro',       icon: DollarSign },
+    { href: '/documentos',  label: 'Documentos',       icon: FileText },
+    { href: '/agenda',      label: 'Agenda',           icon: Calendar },
+    { href: '/mapa',        label: 'Mapa de Projetos', icon: MapPin },
   ]},
   { section: 'Sistema', items: [
     { href: '/configuracoes', label: 'Configurações', icon: Settings },

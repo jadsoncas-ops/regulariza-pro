@@ -1,148 +1,313 @@
-import { Search } from 'lucide-react'
+'use client'
+
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import dynamic from 'next/dynamic'
+import { MapPin, Filter, Search, RefreshCw, Layers, AlertCircle, CheckCircle2, Clock, Circle, X } from 'lucide-react'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
+// Import do mapa SEM SSR (Leaflet não funciona no servidor)
+const MapView = dynamic(() => import('@/components/MapView'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-slate-100 rounded-xl" style={{ minHeight: '500px' }}>
+      <div className="text-center">
+        <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-3" />
+        <p className="text-sm text-slate-500">Carregando mapa...</p>
+      </div>
+    </div>
+  ),
+})
 
-export default async function MapaPage() {
+const STATUS_CONFIG = [
+  { value: '',           label: 'Todos',         color: '#6366f1', icon: Layers },
+  { value: 'finalizado', label: 'Finalizado',    color: '#16a34a', icon: CheckCircle2 },
+  { value: 'em_analise', label: 'Em Análise',    color: '#f59e0b', icon: Clock },
+  { value: 'protocolo',  label: 'Protocolado',   color: '#2563eb', icon: Circle },
+  { value: 'pendente',   label: 'Pendente',      color: '#ef4444', icon: AlertCircle },
+]
+
+// Geocode um projeto que não tem coordenadas
+async function geocodeProject(imovel: any): Promise<{ lat: number; lng: number } | null> {
+  if (!imovel?.endereco) return null
+  const address = [imovel.endereco, imovel.numero, imovel.cidade, imovel.estado]
+    .filter(Boolean).join(', ')
+  try {
+    const res = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`)
+    const data = await res.json()
+    if (data.lat && data.lng) return { lat: data.lat, lng: data.lng }
+  } catch { /* silencioso */ }
+  return null
+}
+
+export default function MapaPage() {
+  const [projetos, setProjetos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [geocoding, setGeocoding] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [tipoFilter, setTipoFilter] = useState('')
+  const [search, setSearch] = useState('')
+  const [withoutCoords, setWithoutCoords] = useState(0)
+  const [mapKey, setMapKey] = useState(0)
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    const res = await fetch('/api/mapa').then(r => r.json()).catch(() => [])
+    const list = Array.isArray(res) ? res : []
+    setProjetos(list)
+    setWithoutCoords(list.filter((p: any) => p.imovel && !p.imovel.latitude).length)
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  // Geocoding automático para projetos sem coordenadas
+  const handleAutoGeocode = async () => {
+    setGeocoding(true)
+    const semCoords = projetos.filter(p => p.imovel && !p.imovel.latitude)
+    let updated = 0
+
+    for (const proj of semCoords) {
+      const coords = await geocodeProject(proj.imovel)
+      if (coords) {
+        // Salvar coords no banco via API
+        await fetch(`/api/imoveis/${proj.imovel.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ latitude: coords.lat, longitude: coords.lng }),
+        })
+        updated++
+        // Aguardar 1s entre requests para respeitar rate limit do Nominatim
+        await new Promise(r => setTimeout(r, 1100))
+      }
+    }
+
+    setGeocoding(false)
+    if (updated > 0) {
+      await fetchData()
+      setMapKey(k => k + 1)
+    }
+    alert(`✅ ${updated} de ${semCoords.length} imóveis geocodificados!`)
+  }
+
+  // Filtros
+  const projetosFiltrados = useMemo(() => projetos.filter(p => {
+    const matchStatus = !statusFilter || p.status === statusFilter
+    const matchTipo   = !tipoFilter   || p.tipo?.toLowerCase().includes(tipoFilter.toLowerCase())
+    const matchSearch = !search       ||
+      p.cliente?.nome?.toLowerCase().includes(search.toLowerCase()) ||
+      p.imovel?.cidade?.toLowerCase().includes(search.toLowerCase()) ||
+      p.codigo?.toLowerCase().includes(search.toLowerCase())
+    return matchStatus && matchTipo && matchSearch
+  }), [projetos, statusFilter, tipoFilter, search])
+
+  const comCoordenadas = projetosFiltrados.filter(p => p.imovel?.latitude && p.imovel?.longitude)
+
+  // Centro do mapa = cidade com mais projetos
+  const center = useMemo((): [number, number] => {
+    if (comCoordenadas.length === 0) return [-12.9718, -38.5011] // Salvador default
+
+    // Média ponderada das coordenadas
+    const lats = comCoordenadas.map(p => p.imovel.latitude!)
+    const lngs = comCoordenadas.map(p => p.imovel.longitude!)
+    return [
+      lats.reduce((a: number, b: number) => a + b, 0) / lats.length,
+      lngs.reduce((a: number, b: number) => a + b, 0) / lngs.length,
+    ]
+  }, [comCoordenadas])
+
+  const tiposUnicos = [...new Set(projetos.map(p => p.tipo).filter(Boolean))]
+
   return (
-    <div className="p-8 max-w-[1600px] mx-auto w-full min-h-screen relative font-mono overflow-x-hidden">
-      {/* HEADER TOP - ENGARQ STYLE */}
-      <div className="flex justify-between items-center mb-8 pb-4 border-b border-border">
-        <h1 className="text-sm font-semibold tracking-wider text-foreground uppercase">
-          Mapa Zonal de Imóveis <span className="text-muted-foreground font-normal ml-2">// MOD.MAP / 08</span>
-        </h1>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-background border border-border rounded-sm text-xs w-64 shadow-sm">
-            <Search className="w-3 h-3 text-muted-foreground" />
-            <input 
-              placeholder="Buscar processo, cliente, matrícula..." 
-              className="bg-transparent outline-none flex-1 text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-          <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-500 uppercase tracking-widest border border-border px-2 py-1.5 rounded-sm">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            Sis. Online
-          </div>
-          <button className="flex items-center gap-2 bg-background border border-border px-3 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-muted smooth-transition">
-            + Assistente IA
-          </button>
-          <Link href="/processos/novo" className="flex items-center gap-2 bg-foreground text-background px-4 py-1.5 rounded-sm text-[10px] font-bold uppercase tracking-widest hover:bg-foreground/90 smooth-transition">
-            + Novo Processo
-          </Link>
+    <div className="flex flex-col h-full" style={{ height: 'calc(100vh - 56px - 64px)' }}>
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="page-title">Mapa de Projetos</h1>
+          <p className="page-subtitle">
+            {loading ? 'Carregando...' : `${comCoordenadas.length} projeto(s) no mapa · ${projetos.length} total`}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {withoutCoords > 0 && (
+            <button
+              onClick={handleAutoGeocode}
+              disabled={geocoding}
+              className="btn-secondary text-sm"
+              title={`${withoutCoords} imóveis sem coordenadas`}
+            >
+              <RefreshCw className={`w-4 h-4 ${geocoding ? 'animate-spin' : ''}`} />
+              {geocoding ? 'Geocodificando...' : `Geocodificar (${withoutCoords})`}
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="space-y-8">
-        {/* FILTER BAR */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-0 border border-border rounded-sm overflow-hidden text-[10px] font-bold uppercase tracking-widest bg-card shadow-sm">
-            <div className="px-3 py-2 bg-foreground text-background border-r border-border">STATUS TODOS</div>
-            <div className="px-3 py-2 hover:bg-muted smooth-transition cursor-pointer border-r border-border">TIPO *</div>
-            <div className="px-3 py-2 hover:bg-muted smooth-transition cursor-pointer">ZONA SP+REG</div>
+      {/* LAYOUT PRINCIPAL */}
+      <div className="flex gap-4 flex-1 min-h-0">
+
+        {/* PAINEL LATERAL */}
+        <div className="w-64 shrink-0 flex flex-col gap-3 overflow-y-auto">
+
+          {/* Busca */}
+          <div className="card p-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                placeholder="Cliente, cidade, código..."
+                className="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
           </div>
+
+          {/* Filtro Status */}
+          <div className="card p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Status</p>
+            <div className="space-y-1">
+              {STATUS_CONFIG.map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => setStatusFilter(s.value)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all ${
+                    statusFilter === s.value
+                      ? 'bg-blue-50 text-blue-700 font-semibold'
+                      : 'text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                  <span className="flex-1 text-left">{s.label}</span>
+                  <span className="text-xs text-slate-400">
+                    {s.value
+                      ? projetos.filter(p => p.status === s.value && p.imovel?.latitude).length
+                      : comCoordenadas.length}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Filtro Tipo */}
+          <div className="card p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Tipo de Serviço</p>
+            <button
+              onClick={() => setTipoFilter('')}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 transition-all ${!tipoFilter ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
+            >
+              Todos
+            </button>
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {tiposUnicos.map(tipo => (
+                <button
+                  key={tipo}
+                  onClick={() => setTipoFilter(tipo)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all truncate ${
+                    tipoFilter === tipo ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  {tipo}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* LEGENDA */}
+          <div className="card p-4">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Legenda</p>
+            <div className="space-y-2">
+              {STATUS_CONFIG.slice(1).map(s => (
+                <div key={s.value} className="flex items-center gap-2.5">
+                  <div className="w-4 h-4 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: s.color }} />
+                  <span className="text-xs text-slate-600">{s.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Lista de projetos sem coords */}
+          {withoutCoords > 0 && (
+            <div className="card p-4 border-amber-200 bg-amber-50">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <p className="text-xs font-bold text-amber-700">{withoutCoords} sem localização</p>
+              </div>
+              <p className="text-[11px] text-amber-600">
+                Clique em "Geocodificar" para gerar coordenadas automaticamente via endereço.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* MAPA */}
-        <section>
-          <h2 className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-4">
-            Distribuição Geoespacial <span className="opacity-50">MAP.001</span>
-          </h2>
-          
-          <div className="flex flex-col lg:flex-row border border-border bg-card shadow-sm rounded-sm overflow-hidden min-h-[600px]">
-            
-            {/* GRÁFICO / MAPA ESQUEMÁTICO (Visual Mock) */}
-            <div className="flex-1 border-r border-border p-6 relative bg-muted/5 flex items-center justify-center">
-              <div className="absolute top-4 left-4 text-[9px] font-bold uppercase tracking-widest text-muted-foreground bg-background px-2 py-1 border border-border">
-                MAPA ESQUEMÁTICO — ZL-001
-              </div>
-              
-              {/* Fake Map Grid & Points */}
-              <div className="w-[80%] h-[80%] border border-muted-foreground/20 rounded-full relative">
-                <svg className="absolute inset-0 w-full h-full text-muted-foreground/30" viewBox="0 0 100 100" preserveAspectRatio="none">
-                  <path d="M 0,50 Q 25,20 50,50 T 100,50" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                  <path d="M 0,80 Q 25,90 50,20 T 100,40" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                  <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2" />
-                </svg>
-                
-                {/* Points */}
-                <div className="absolute top-[30%] left-[20%] w-3 h-3 bg-blue-600 rounded-sm hover:scale-150 smooth-transition cursor-pointer shadow-md" title="IMV-001"></div>
-                <div className="absolute top-[60%] left-[30%] w-3 h-3 bg-emerald-500 rounded-sm hover:scale-150 smooth-transition cursor-pointer shadow-md" title="IMV-004"></div>
-                <div className="absolute top-[50%] left-[50%] w-3 h-3 bg-blue-600 rounded-sm hover:scale-150 smooth-transition cursor-pointer shadow-md" title="IMV-003"></div>
-                <div className="absolute top-[40%] left-[70%] w-3 h-3 bg-blue-600 rounded-sm hover:scale-150 smooth-transition cursor-pointer shadow-md" title="IMV-005"></div>
-                <div className="absolute top-[35%] left-[80%] w-3 h-3 bg-rose-500 rounded-sm hover:scale-150 smooth-transition cursor-pointer shadow-md animate-pulse" title="IMV-002"></div>
-                <div className="absolute top-[75%] left-[75%] w-3 h-3 bg-foreground rounded-sm hover:scale-150 smooth-transition cursor-pointer shadow-md" title="IMV-006"></div>
-              </div>
-
-              <div className="absolute bottom-4 right-4 text-[9px] font-bold uppercase tracking-widest text-muted-foreground bg-background px-2 py-1 border border-border">
-                NT — ESC. APROX.
-              </div>
+        <div className="flex-1 card overflow-hidden min-h-0 relative">
+          {/* Badge de contagem */}
+          <div className="absolute top-4 left-4 z-[1000] flex gap-2">
+            <div className="bg-white shadow-md rounded-lg px-3 py-1.5 flex items-center gap-2 border border-slate-200">
+              <MapPin className="w-3.5 h-3.5 text-blue-600" />
+              <span className="text-xs font-bold text-slate-700">{comCoordenadas.length} projetos</span>
             </div>
-
-            {/* LEGENDA E LISTA DE IMÓVEIS */}
-            <div className="w-full lg:w-96 flex flex-col">
-              <div className="p-6 border-b border-border">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Legenda</h3>
-                <ul className="space-y-3 text-xs font-medium text-foreground">
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-emerald-500 rounded-sm"></span> Regularizado
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-blue-600 rounded-sm"></span> Em análise
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-rose-500 rounded-sm"></span> Documento pendente
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-2 h-2 bg-foreground rounded-sm"></span> A iniciar
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="p-6 flex-1 overflow-y-auto">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-4">Imóveis no Mapa</h3>
-                <div className="space-y-3">
-                  <div className="border border-border p-3 rounded-sm bg-background hover:border-blue-600 smooth-transition cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-[9px] font-bold text-muted-foreground">IMV-001</span>
-                      <span className="border border-blue-600 text-blue-600 px-1.5 py-[1px] rounded-sm text-[8px] font-bold uppercase tracking-widest flex items-center gap-1"><span className="w-1 h-1 bg-blue-600 rounded-full"></span> EM ANÁLISE</span>
-                    </div>
-                    <div className="text-xs font-bold text-foreground truncate">Av. das Américas, 3301</div>
-                    <div className="text-[10px] text-muted-foreground truncate">Espólio de Mendonça</div>
-                  </div>
-                  
-                  <div className="border border-rose-500/50 bg-rose-500/5 p-3 rounded-sm hover:border-rose-500 smooth-transition cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-[9px] font-bold text-muted-foreground">IMV-002</span>
-                      <span className="border border-rose-500 text-rose-500 px-1.5 py-[1px] rounded-sm text-[8px] font-bold uppercase tracking-widest flex items-center gap-1"><span className="w-1 h-1 bg-rose-500 rounded-full"></span> DOCUMENTO PENDENTE</span>
-                    </div>
-                    <div className="text-xs font-bold text-foreground truncate">Rua Aurora, 102</div>
-                    <div className="text-[10px] text-muted-foreground truncate">Comercial Machado & Cia</div>
-                  </div>
-
-                  <div className="border border-border p-3 rounded-sm bg-background hover:border-blue-600 smooth-transition cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-[9px] font-bold text-muted-foreground">IMV-003</span>
-                      <span className="border border-blue-600 text-blue-600 px-1.5 py-[1px] rounded-sm text-[8px] font-bold uppercase tracking-widest flex items-center gap-1"><span className="w-1 h-1 bg-blue-600 rounded-full"></span> EM ANÁLISE</span>
-                    </div>
-                    <div className="text-xs font-bold text-foreground truncate">Cond. Vale Verde, Q3 — Lote 12</div>
-                    <div className="text-[10px] text-muted-foreground truncate">Cond. Jardins do Vale</div>
-                  </div>
-
-                  <div className="border border-border p-3 rounded-sm bg-background hover:border-blue-600 smooth-transition cursor-pointer">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-[9px] font-bold text-muted-foreground">IMV-004</span>
-                      <span className="border border-blue-600 text-blue-600 px-1.5 py-[1px] rounded-sm text-[8px] font-bold uppercase tracking-widest flex items-center gap-1"><span className="w-1 h-1 bg-blue-600 rounded-full"></span> EM ANÁLISE</span>
-                    </div>
-                    <div className="text-xs font-bold text-foreground truncate">Galpão Logístico — Av. Industrial, 4400</div>
-                    <div className="text-[10px] text-muted-foreground truncate">Fábrica Têxtil Aurora</div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
+            {(statusFilter || tipoFilter || search) && (
+              <button
+                onClick={() => { setStatusFilter(''); setTipoFilter(''); setSearch('') }}
+                className="bg-white shadow-md rounded-lg px-3 py-1.5 flex items-center gap-1.5 border border-slate-200 text-xs font-semibold text-red-500 hover:bg-red-50 transition-colors"
+              >
+                <X className="w-3 h-3" /> Limpar filtros
+              </button>
+            )}
           </div>
-        </section>
+
+          {loading ? (
+            <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '500px' }}>
+              <div className="text-center">
+                <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto mb-3" />
+                <p className="text-sm text-slate-500">Carregando projetos...</p>
+              </div>
+            </div>
+          ) : comCoordenadas.length === 0 ? (
+            <div className="w-full h-full flex items-center justify-center" style={{ minHeight: '500px' }}>
+              <div className="text-center max-w-xs">
+                <MapPin className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-base font-bold text-slate-700 mb-2">Nenhum projeto no mapa</h3>
+                <p className="text-sm text-slate-500 mb-4">
+                  {projetos.length === 0
+                    ? 'Cadastre processos com imóveis para visualizá-los no mapa.'
+                    : `${projetos.length} projeto(s) encontrado(s), mas sem coordenadas. Clique em "Geocodificar" para gerar automaticamente.`}
+                </p>
+                {projetos.length === 0 ? (
+                  <Link href="/processos/novo" className="btn-primary inline-flex">Criar Processo</Link>
+                ) : withoutCoords > 0 ? (
+                  <button onClick={handleAutoGeocode} disabled={geocoding} className="btn-primary inline-flex">
+                    <RefreshCw className={`w-4 h-4 ${geocoding ? 'animate-spin' : ''}`} />
+                    {geocoding ? 'Geocodificando...' : 'Geocodificar Endereços'}
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <MapView
+              key={`${mapKey}-${statusFilter}-${tipoFilter}-${search}`}
+              projetos={comCoordenadas}
+              center={center}
+            />
+          )}
+        </div>
       </div>
+
+      {/* Leaflet popup CSS customizado */}
+      <style>{`
+        .leaflet-popup-content-wrapper {
+          border-radius: 12px !important;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+          border: 1px solid #e2e8f0 !important;
+          padding: 0 !important;
+        }
+        .leaflet-popup-content { margin: 16px !important; }
+        .leaflet-popup-tip { background: white !important; }
+        .leaflet-container { font-family: Inter, system-ui, sans-serif; }
+        .leaflet-control-zoom { border: 1px solid #e2e8f0 !important; border-radius: 8px !important; overflow: hidden; }
+        .leaflet-control-zoom a { color: #475569 !important; }
+        .leaflet-control-zoom a:hover { background: #f1f5f9 !important; }
+      `}</style>
     </div>
   )
 }
