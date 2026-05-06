@@ -5,19 +5,127 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft, Info, Building2, FileText,
-  DollarSign, ListTodo, History,
+  DollarSign, ListTodo, History, GitBranch,
   MapPin, User, Calendar, Edit, X, Check,
-  Loader2, ChevronRight
+  Loader2, ChevronRight, CheckCircle2, Circle, Clock
 } from 'lucide-react'
 
 const TABS = [
   { id: 'geral',      label: 'Visão Geral',  icon: Info },
+  { id: 'timeline',   label: 'Timeline',     icon: GitBranch },
   { id: 'imovel',     label: 'Imóvel',       icon: Building2 },
   { id: 'documentos', label: 'Documentos',   icon: FileText },
   { id: 'financeiro', label: 'Financeiro',   icon: DollarSign },
   { id: 'tarefas',    label: 'Tarefas',      icon: ListTodo },
   { id: 'historico',  label: 'Histórico',    icon: History },
 ]
+
+// ── Timeline Component ───────────────────────────────────────────────────────
+const TIMELINE_STEPS = [
+  { id: 'cliente',        label: 'Cliente Cadastrado',      desc: 'Dados do cliente registrados no sistema' },
+  { id: 'imovel',         label: 'Imóvel Cadastrado',       desc: 'Imóvel vinculado ao processo' },
+  { id: 'documentos',     label: 'Documentos Enviados',     desc: 'Documentação técnica e legal anexada' },
+  { id: 'protocolo',      label: 'Protocolo Prefeitura',    desc: 'Processo protocolado no órgão competente' },
+  { id: 'analise',        label: 'Em Análise',              desc: 'Aguardando análise do setor responsável' },
+  { id: 'concluido',      label: 'Concluído',               desc: 'Processo aprovado e finalizado' },
+]
+
+function ProcessTimeline({ processo }: { processo: any }) {
+  const status = processo?.status || ''
+  const hasImovel = !!processo?.imovel
+  const hasDocumentos = (processo?.documentos?.length || 0) > 0
+  const hasProtocolo = status.includes('protocolo') || status.includes('aprovacao') || status === 'finalizado'
+  const hasAnalise = status.includes('analise') || status.includes('aprovacao') || status === 'finalizado'
+  const hasFinished = status === 'finalizado' || status === 'aprovado'
+
+  const stepStatus = [
+    true,          // cliente sempre cadastrado
+    hasImovel,
+    hasDocumentos,
+    hasProtocolo,
+    hasAnalise,
+    hasFinished,
+  ]
+
+  const currentStep = stepStatus.lastIndexOf(true)
+
+  return (
+    <div className="card p-8">
+      <h3 className="text-sm font-bold text-slate-800 mb-8">Progresso do Processo</h3>
+      <div className="relative">
+        {/* Vertical line */}
+        <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-slate-200" />
+        <div
+          className="absolute left-5 top-5 w-0.5 bg-blue-500 transition-all duration-1000"
+          style={{ height: `${(currentStep / (TIMELINE_STEPS.length - 1)) * 100}%` }}
+        />
+
+        <div className="space-y-8">
+          {TIMELINE_STEPS.map((step, i) => {
+            const done    = stepStatus[i] === true
+            const current = i === currentStep && done
+            const pending = !done
+
+            return (
+              <div key={step.id} className="flex items-start gap-6">
+                {/* Icon */}
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 z-10 transition-all ${
+                  done
+                    ? current
+                      ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-200'
+                      : 'bg-emerald-500 border-emerald-500'
+                    : 'bg-white border-slate-300'
+                }`}>
+                  {done
+                    ? current
+                      ? <Clock className="w-4 h-4 text-white" />
+                      : <CheckCircle2 className="w-4 h-4 text-white" />
+                    : <Circle className="w-4 h-4 text-slate-300" />
+                  }
+                </div>
+
+                {/* Content */}
+                <div className={`flex-1 pb-2 ${ pending ? 'opacity-40' : '' }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className={`text-sm font-bold ${ current ? 'text-blue-600' : done ? 'text-emerald-600' : 'text-slate-400' }`}>
+                      {step.label}
+                    </p>
+                    {current && <span className="badge badge-blue text-[10px]">Atual</span>}
+                    {done && !current && <span className="badge badge-green text-[10px]">Concluída</span>}
+                  </div>
+                  <p className="text-xs text-slate-500">{step.desc}</p>
+                  {done && (
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {i === 0 ? new Date(processo.createdAt).toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : ''}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-8 pt-6 border-t border-slate-100">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold text-slate-600">Progresso Geral</p>
+          <p className="text-xs font-bold text-blue-600">{Math.round(((currentStep + 1) / TIMELINE_STEPS.length) * 100)}%</p>
+        </div>
+        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 to-emerald-500 rounded-full transition-all duration-1000"
+            style={{ width: `${((currentStep + 1) / TIMELINE_STEPS.length) * 100}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-2">
+          <span className="text-[10px] text-slate-400">Início</span>
+          <span className="text-[10px] text-slate-400">Conclusão</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
   em_analise:            { label: "Análise Inicial",    className: "badge-blue" },
@@ -231,6 +339,11 @@ export default function ProcessoDetailPage() {
 
       {/* TAB CONTENT */}
       <div className="px-8 py-7 max-w-screen-xl mx-auto">
+        {tab === 'timeline' && (
+          <div className="max-w-xl animate-fade-up">
+            <ProcessTimeline processo={processo} />
+          </div>
+        )}
         {tab === 'geral' && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-in fade-in duration-300">
             <div className="xl:col-span-2 space-y-6">
