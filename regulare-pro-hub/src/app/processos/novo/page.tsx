@@ -288,6 +288,25 @@ export default function NovoProjetoWizard() {
     }
   }, [formData.financeiro])
 
+  // CRIAR NOVO SERVIÇO
+  const handleCreateService = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    try {
+      const res = await fetch('/api/servicos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newService)
+      })
+      if (res.ok) {
+        await fetchServicos()
+        setIsNewServiceModalOpen(false)
+        setNewService({ nome: '', sigla: '', categoria: 'Regularização', descricao: '' })
+      }
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
+  }
+
   // SALVAMENTO FINAL
   const handleFinalSubmit = async () => {
     setLoading(true)
