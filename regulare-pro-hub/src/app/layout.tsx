@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import 'leaflet/dist/leaflet.css'
 import AppShell from '@/components/AppShell'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
