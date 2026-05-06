@@ -79,15 +79,16 @@ model Processo {
   tipo_regularizacao String
   etapa_atual        String?
   status             String       @default("em_analise")
+  tags               String?      @default("[]") // JSON array de tags ex: ["#habite-se","#prefeitura"]
   data_inicio        DateTime     @default(now())
   data_previsao      DateTime?
   responsavel        String?
   observacoes        String?
   valor_total        Float?
   valor_pago         Float?       @default(0)
-  prioridade         String       @default("normal") // normal, urgente, critica
-  data_deadline      DateTime?    // Para o Deadline Intelligence
-  categoria          String?      // Tipo de projeto (Habite-se, Regularização, etc)
+  prioridade         String       @default("normal")
+  data_deadline      DateTime?
+  categoria          String?
   financeiro         Financeiro[]
   tarefas            Tarefa[]
   documentos         Documento[]

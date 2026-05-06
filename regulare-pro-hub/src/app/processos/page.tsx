@@ -1,19 +1,29 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, Filter } from 'lucide-react'
+import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, X, Tag } from 'lucide-react'
+import { TagChip } from '@/components/TagInput'
 
-const STATUS_OPTIONS = [
-  { value: '', label: 'Todos' },
-  { value: 'em_analise', label: 'Em Análise' },
-  { value: 'finalizado', label: 'Finalizado' },
-]
+// ─── Status config padronizado ────────────────────────────────────────────────
+export const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string }> = {
+  em_analise:           { label: 'Em Andamento',  dot: 'bg-amber-400',  badge: 'bg-amber-50 text-amber-700 border-amber-100' },
+  protocolo_prefeitura: { label: 'Protocolado',   dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 border-blue-100' },
+  pendente:             { label: 'Pendência',     dot: 'bg-red-500',    badge: 'bg-red-50 text-red-700 border-red-100' },
+  finalizado:           { label: 'Concluído',     dot: 'bg-emerald-500',badge: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  aprovado:             { label: 'Aprovado',      dot: 'bg-emerald-500',badge: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+  documentacao_pendente:{ label: 'Doc. Pendente', dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 border-orange-100' },
+  exigencia_tecnica:    { label: 'Exigência',     dot: 'bg-red-500',    badge: 'bg-red-50 text-red-700 border-red-100' },
+}
 
-const STATUS_MAP: Record<string, string> = {
-  em_analise: 'badge-amber',
-  finalizado: 'badge-green',
-  pendente: 'badge-red',
+export function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] || { label: status?.replace(/_/g, ' ') || '—', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600 border-slate-200' }
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.badge}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  )
 }
 
 export default function ProcessosPage() {
@@ -21,30 +31,50 @@ export default function ProcessosPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
+  const [allTags, setAllTags] = useState<string[]>([])
 
   useEffect(() => {
     fetch('/api/processos')
       .then(r => r.json())
-      .then(d => { setProcessos(Array.isArray(d) ? d : []); setLoading(false) })
+      .then(d => {
+        const list = Array.isArray(d) ? d : []
+        setProcessos(list)
+        // Extrai todas as tags únicas
+        const tags = [...new Set(list.flatMap((p: any) => {
+          try { return JSON.parse(p.tags || '[]') } catch { return [] }
+        }))] as string[]
+        setAllTags(tags)
+        setLoading(false)
+      })
       .catch(() => setLoading(false))
   }, [])
 
-  const filtered = processos.filter(p => {
-    const matchSearch = 
+  const filtered = useMemo(() => processos.filter(p => {
+    const matchSearch = !search ||
       p.cliente?.nome?.toLowerCase().includes(search.toLowerCase()) ||
       p.tipo_regularizacao?.toLowerCase().includes(search.toLowerCase()) ||
-      p.codigo_projeto?.toLowerCase().includes(search.toLowerCase())
+      p.codigo_projeto?.toLowerCase().includes(search.toLowerCase()) ||
+      p.imovel?.cidade?.toLowerCase().includes(search.toLowerCase())
     const matchStatus = !statusFilter || p.status === statusFilter
-    return matchSearch && matchStatus
-  })
+    const matchTag    = !tagFilter || (() => {
+      try { return (JSON.parse(p.tags || '[]') as string[]).includes(tagFilter) }
+      catch { return false }
+    })()
+    return matchSearch && matchStatus && matchTag
+  }), [processos, search, statusFilter, tagFilter])
 
   const getDays = (d: string) => {
     if (!d) return null
     return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
   }
 
+  const activeFilters = [statusFilter, tagFilter].filter(Boolean)
+
   return (
     <div className="space-y-6 animate-fade-up">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="page-title">Processos</h1>
@@ -55,109 +85,176 @@ export default function ProcessosPage() {
         </Link>
       </div>
 
-      {/* FILTERS */}
-      <div className="card p-4 flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            placeholder="Buscar por cliente, tipo ou código..."
-            className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      {/* Filters */}
+      <div className="card p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Busca */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              placeholder="Buscar por cliente, serviço, código, cidade..."
+              className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+              value={search} onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          {/* Status */}
+          <select
+            className="select-field sm:w-44"
+            value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+          >
+            <option value="">Todos os status</option>
+            {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+              <option key={v} value={v}>{c.label}</option>
+            ))}
+          </select>
         </div>
-        <select
-          className="select-field sm:w-44"
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+
+        {/* Tags filter */}
+        {allTags.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="text-xs text-slate-400">Filtrar por tag:</span>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
+                className={`transition-all ${tagFilter === tag ? 'ring-2 ring-blue-500 ring-offset-1 rounded-full' : 'opacity-70 hover:opacity-100'}`}
+              >
+                <TagChip tag={tag} size="sm" />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Active filters */}
+        {activeFilters.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400">Filtros ativos:</span>
+            {statusFilter && (
+              <button onClick={() => setStatusFilter('')}
+                className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors">
+                {STATUS_CONFIG[statusFilter]?.label} <X className="w-3 h-3" />
+              </button>
+            )}
+            {tagFilter && (
+              <button onClick={() => setTagFilter('')}
+                className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors">
+                {tagFilter} <X className="w-3 h-3" />
+              </button>
+            )}
+            <button onClick={() => { setStatusFilter(''); setTagFilter(''); setSearch('') }}
+              className="text-xs text-slate-400 hover:text-red-500 transition-colors ml-1">
+              Limpar tudo
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* TABLE */}
+      {/* Table */}
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/60">
-                <th className="px-6 py-3 text-left table-header">Código</th>
-                <th className="px-6 py-3 text-left table-header">Serviço</th>
-                <th className="px-6 py-3 text-left table-header">Cliente</th>
-                <th className="px-6 py-3 text-left table-header">Imóvel</th>
-                <th className="px-6 py-3 text-left table-header">Prazo</th>
-                <th className="px-6 py-3 text-left table-header">Status</th>
-                <th className="px-6 py-3" />
+                <th className="px-5 py-3 text-left table-header">Código</th>
+                <th className="px-5 py-3 text-left table-header">Serviço</th>
+                <th className="px-5 py-3 text-left table-header">Cliente</th>
+                <th className="px-5 py-3 text-left table-header hidden md:table-cell">Imóvel</th>
+                <th className="px-5 py-3 text-left table-header hidden lg:table-cell">Tags</th>
+                <th className="px-5 py-3 text-left table-header">Prazo</th>
+                <th className="px-5 py-3 text-left table-header">Status</th>
+                <th className="px-5 py-3" />
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="py-12 text-center text-sm text-slate-400">Carregando...</td></tr>
+                [...Array(5)].map((_, i) => (
+                  <tr key={i} className="border-b border-slate-50">
+                    {[...Array(8)].map((_, j) => (
+                      <td key={j} className="px-5 py-3.5">
+                        <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center">
-                    <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <td colSpan={8} className="py-16 text-center">
+                    <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-3" />
                     <p className="text-sm text-slate-500 mb-4">Nenhum processo encontrado</p>
                     <Link href="/processos/novo" className="btn-primary inline-flex">
-                      <Plus className="w-4 h-4" /> Criar primeiro processo
+                      <Plus className="w-4 h-4" /> Criar processo
                     </Link>
                   </td>
                 </tr>
-              ) : (
-                filtered.map(p => {
-                  const days = getDays(p.data_deadline)
-                  const isCritical = days !== null && days <= 3 && days >= 0
-                  return (
-                    <tr key={p.id} className="table-row">
-                      <td className="px-6 py-4">
-                        <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                          {p.codigo_projeto || '—'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-slate-800">{p.tipo_regularizacao}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-blue-600">{p.cliente?.nome?.charAt(0)}</span>
-                          </div>
-                          <p className="text-sm text-slate-700">{p.cliente?.nome || '—'}</p>
+              ) : filtered.map(p => {
+                const days = getDays(p.data_deadline)
+                const isCritical = days !== null && days <= 3 && days >= 0
+                let tags: string[] = []
+                try { tags = JSON.parse(p.tags || '[]') } catch {}
+
+                return (
+                  <tr key={p.id} className="table-row">
+                    <td className="px-5 py-3.5">
+                      <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        {p.codigo_projeto || '—'}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <p className="text-sm font-medium text-slate-800 max-w-[160px] truncate">{p.tipo_regularizacao}</p>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                          <span className="text-xs font-bold text-blue-600">{p.cliente?.nome?.charAt(0)}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-slate-600 max-w-xs truncate">{p.imovel?.endereco || '—'}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        {days !== null ? (
-                          <div className={`flex items-center gap-1.5 ${isCritical ? 'text-red-600' : 'text-slate-500'}`}>
-                            {isCritical && <AlertTriangle className="w-3.5 h-3.5" />}
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="text-xs font-semibold">
-                              {days < 0 ? 'Vencido' : `${days} dias`}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400">Sem prazo</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`badge ${STATUS_MAP[p.status] || 'badge-slate'}`}>
-                          {p.status?.replace('_', ' ') || '—'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <Link href={`/processos/${p.id}`} className="btn-ghost text-xs py-1.5 px-3">
-                          Abrir <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
+                        <p className="text-sm text-slate-700 max-w-[120px] truncate">{p.cliente?.nome || '—'}</p>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 hidden md:table-cell">
+                      <p className="text-xs text-slate-500 max-w-[140px] truncate">
+                        {p.imovel?.cidade ? `${p.imovel.cidade}` : '—'}
+                      </p>
+                    </td>
+                    <td className="px-5 py-3.5 hidden lg:table-cell">
+                      <div className="flex gap-1 flex-wrap max-w-[140px]">
+                        {tags.slice(0, 2).map((t: string) => <TagChip key={t} tag={t} size="sm" />)}
+                        {tags.length > 2 && <span className="text-[10px] text-slate-400">+{tags.length - 2}</span>}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      {days !== null ? (
+                        <div className={`flex items-center gap-1.5 ${isCritical ? 'text-red-600' : 'text-slate-500'}`}>
+                          {isCritical && <AlertTriangle className="w-3.5 h-3.5" />}
+                          <Clock className="w-3.5 h-3.5" />
+                          <span className="text-xs font-semibold">{days < 0 ? 'Vencido' : `${days}d`}</span>
+                        </div>
+                      ) : <span className="text-xs text-slate-400">—</span>}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <StatusBadge status={p.status} />
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <Link href={`/processos/${p.id}`} className="btn-ghost text-xs py-1.5 px-3">
+                        Abrir <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
+
+        {/* Footer count */}
+        {!loading && filtered.length > 0 && (
+          <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100">
+            <p className="text-xs text-slate-400">
+              Mostrando <strong>{filtered.length}</strong> de <strong>{processos.length}</strong> processos
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
