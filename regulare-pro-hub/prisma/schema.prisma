@@ -83,6 +83,8 @@ model Processo {
   data_previsao      DateTime?
   responsavel        String?
   observacoes        String?
+  valor_total        Float?
+  valor_pago         Float?       @default(0)
   financeiro         Financeiro[]
   tarefas            Tarefa[]
   documentos         Documento[]
