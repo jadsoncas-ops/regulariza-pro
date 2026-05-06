@@ -8,7 +8,7 @@ import {
   DollarSign, Check, ChevronRight, ChevronLeft, 
   Loader2, MapPin, Calculator, Info, Search,
   Copy, HelpCircle, Plus, X, ChevronDown, ChevronUp,
-  Briefcase, Trash2, Calendar, Wallet, TrendingUp, TrendingDown
+  Briefcase, Trash2, Calendar, Wallet, TrendingUp, TrendingDown, CheckCircle2
 } from 'lucide-react'
 
 // --- COMPONENTES UI AUXILIARES ---
@@ -75,6 +75,9 @@ function WizardContent() {
   const [isSearchingCep, setIsSearchingCep] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isNewServiceModalOpen, setIsNewServiceModalOpen] = useState(false)
+  const [isNewActivityModalOpen, setIsNewActivityModalOpen] = useState(false)
+  const [newActivityName, setNewActivityName] = useState('')
+  const [customAtividades, setCustomAtividades] = useState<string[]>([])
   
   const [servicosDisponiveis, setServicosDisponiveis] = useState<any[]>([])
   const [existingClientes, setExistingClientes] = useState<any[]>([])
@@ -615,23 +618,23 @@ function WizardContent() {
             </div>
           )}
 
-          {/* STEP 3: SERVIÇO */}
+          {/* STEP 3: NATUREZA E ATIVIDADES TÉCNICAS */}
           {step === 3 && (
             <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <div className="bg-blue-50 border border-blue-200 rounded-2xl overflow-hidden transition-all">
                  <button onClick={() => setIsHelpOpen(!isHelpOpen)} className="w-full flex items-center justify-between px-6 py-4 text-blue-700 font-bold text-sm">
-                   <div className="flex items-center gap-2"><HelpCircle className="w-4 h-4" /> Guia de Preenchimento</div>
+                   <div className="flex items-center gap-2"><HelpCircle className="w-4 h-4" /> Guia de Escopo Técnico</div>
                    {isHelpOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                  </button>
                  {isHelpOpen && (
                    <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-6 animate-in slide-in-from-top-2 duration-200">
                      <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-blue-900 uppercase">Tipo de Serviço</p>
-                       <p className="text-xs text-blue-700">Selecione primeiro a categoria e depois o serviço específico.</p>
+                       <p className="text-[10px] font-bold text-blue-900 uppercase">Natureza do Processo</p>
+                       <p className="text-xs text-blue-700">Define o objetivo principal do projeto.</p>
                      </div>
                      <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-blue-900 uppercase">Código do Projeto</p>
-                       <p className="text-xs text-blue-700">Identificador único gerado automaticamente.</p>
+                       <p className="text-[10px] font-bold text-blue-900 uppercase">Atividades Técnicas</p>
+                       <p className="text-xs text-blue-700">Tarefas específicas que compõem o escopo do serviço.</p>
                      </div>
                    </div>
                  )}
@@ -640,72 +643,102 @@ function WizardContent() {
                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <Label help="Escolha a categoria principal.">1. Categoria do Serviço</Label>
+                      <Label help="Selecione o tipo principal de processo.">Natureza do Processo</Label>
                       <select 
                         className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer"
-                        value={formData.processo.categoria} 
+                        value={formData.processo.tipo} 
                         onChange={e => {
-                          const cat = e.target.value
+                          const val = e.target.value
+                          const serv = servicosDisponiveis.find(s => s.nome === val)
                           setFormData((prev: any) => ({
                             ...prev, 
-                            processo: { ...prev.processo, categoria: cat, tipo: '' }
+                            processo: { 
+                              ...prev.processo, 
+                              tipo: val,
+                              subservicos: serv?.subservicos || [] // Sugestão automática
+                            }
                           }))
                         }}
                       >
-                        {CATEGORIAS_PADRAO.map(cat => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <Label help="Selecione o serviço específico.">2. Serviço Específico</Label>
-                      <select 
-                        className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer disabled:opacity-50"
-                        value={formData.processo.tipo} 
-                        disabled={!formData.processo.categoria}
-                        onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, tipo: e.target.value}}))}
-                      >
-                        <option value="">Selecione um serviço...</option>
-                        {(groupedServicos[formData.processo.categoria] || []).map((s: any) => (
+                        <option value="">Selecione a Natureza...</option>
+                        {servicosDisponiveis.map(s => (
                           <option key={s.id} value={s.nome}>{s.nome}</option>
                         ))}
                       </select>
                       <button onClick={() => setIsNewServiceModalOpen(true)} className="mt-3 flex items-center gap-1.5 text-[10px] font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest transition-colors">
-                        <Plus className="w-3.5 h-3.5" /> + Criar Novo Serviço em {formData.processo.categoria}
+                        <Plus className="w-3.5 h-3.5" /> + Criar Natureza de Processo
                       </button>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                      <Label help="Identificador único baseado no serviço.">Código do Projeto</Label>
+                      <Label help="Identificador único.">Código do Projeto</Label>
                       <Input value={formData.processo.codigo_projeto} readOnly className="bg-slate-50 font-mono font-bold text-blue-600 border-dashed" />
                     </div>
                   </div>
 
-                  {selectedServicoData?.subservicos?.length > 0 && (
-                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                      <Label help="Atividades específicas.">Subserviços Incluídos</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        {selectedServicoData.subservicos.map((sub: string) => (
-                          <label key={sub} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-blue-300 transition-colors">
-                            <input 
-                              type="checkbox" 
-                              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500" 
-                              checked={formData.processo.subservicos.includes(sub)} 
-                              onChange={e => { 
-                                const next = e.target.checked ? [...formData.processo.subservicos, sub] : formData.processo.subservicos.filter(s => s !== sub); 
-                                setFormData((prev: any) => ({...prev, processo: {...prev.processo, subservicos: next}})) 
-                              }} 
-                            />
-                            <span className="text-xs font-medium text-slate-700">{sub}</span>
-                          </label>
-                        ))}
+                  <div className="pt-6 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><CheckCircle2 className="w-5 h-5" /></div>
+                        <div>
+                          <h2 className="text-base font-bold text-slate-900">Atividades Técnicas</h2>
+                          <p className="text-xs text-slate-500">Selecione as atividades incluídas no escopo</p>
+                        </div>
                       </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsNewActivityModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-bold hover:bg-slate-200 transition-colors uppercase tracking-wider"
+                      >
+                         <Plus className="w-3 h-3" /> Nova Atividade Personalizada
+                      </button>
                     </div>
-                  )}
-                  <div><Label help="Detalhamento técnico.">Observações de Escopo</Label><textarea className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]" value={formData.processo.observacoes} onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))} /></div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* ATIVIDADES SUGERIDAS E GLOBAIS */}
+                      {Array.from(new Set([
+                        ...(selectedServicoData?.subservicos || []),
+                        ...customAtividades,
+                        "Levantamento Cadastral", "Memorial Descritivo", "Projeto As-Built", 
+                        "Projeto Arquitetônico", "Emissão de ART", "Análise Urbanística", 
+                        "Relatório Fotográfico", "Vistoria Técnica", "Protocolo na Prefeitura", 
+                        "Acompanhamento de Processo", "Entrega de Documentação"
+                      ])).map((ativ: string) => (
+                        <label 
+                          key={ativ} 
+                          className={`flex items-center gap-3 p-4 border-2 rounded-2xl cursor-pointer transition-all ${
+                            formData.processo.subservicos.includes(ativ) 
+                              ? 'border-blue-500 bg-blue-50 shadow-sm shadow-blue-100' 
+                              : 'border-slate-100 bg-slate-50/50 hover:border-slate-200'
+                          }`}
+                        >
+                          <input 
+                            type="checkbox" 
+                            className="w-5 h-5 rounded-lg text-blue-600 border-slate-300 focus:ring-blue-500 transition-all" 
+                            checked={formData.processo.subservicos.includes(ativ)} 
+                            onChange={e => {
+                              const next = e.target.checked 
+                                ? [...formData.processo.subservicos, ativ]
+                                : formData.processo.subservicos.filter(s => s !== ativ)
+                              setFormData((prev: any) => ({ ...prev, processo: { ...prev.processo, subservicos: next } }))
+                            }}
+                          />
+                          <span className={`text-xs font-bold ${formData.processo.subservicos.includes(ativ) ? 'text-blue-700' : 'text-slate-600'}`}>
+                            {ativ}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label help="Detalhamento técnico adicional.">Observações de Escopo</Label>
+                    <textarea 
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 min-h-[120px]" 
+                      value={formData.processo.observacoes} 
+                      onChange={e => setFormData((prev: any) => ({...prev, processo: {...prev.processo, observacoes: e.target.value}}))} 
+                    />
+                  </div>
                </div>
             </div>
           )}
@@ -868,6 +901,52 @@ function WizardContent() {
 
         </div>
       </div>
+
+      {/* MODAL NOVA ATIVIDADE */}
+      {isNewActivityModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-blue-600 text-white flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-blue-200" />
+                <h2 className="font-bold">Nova Atividade Técnica</h2>
+              </div>
+              <button onClick={() => setIsNewActivityModalOpen(false)} className="p-1 hover:bg-white/10 rounded-lg transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-8 space-y-6">
+              <div>
+                <Label>Nome da Atividade</Label>
+                <Input 
+                  placeholder="Ex: Consultoria Ambiental" 
+                  value={newActivityName} 
+                  onChange={e => setNewActivityName(e.target.value)} 
+                />
+              </div>
+              <button 
+                onClick={() => {
+                  if (newActivityName.trim()) {
+                    setCustomAtividades(prev => [...prev, newActivityName.trim()])
+                    setFormData((prev: any) => ({
+                      ...prev,
+                      processo: {
+                        ...prev.processo,
+                        subservicos: [...prev.processo.subservicos, newActivityName.trim()]
+                      }
+                    }))
+                    setNewActivityName('')
+                    setIsNewActivityModalOpen(false)
+                  }
+                }}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus className="w-5 h-5" /> Adicionar ao Escopo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER NAVIGATION */}
       <div className="bg-white border-t border-slate-200 px-8 py-6">
