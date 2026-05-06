@@ -85,6 +85,9 @@ model Processo {
   observacoes        String?
   valor_total        Float?
   valor_pago         Float?       @default(0)
+  prioridade         String       @default("normal") // normal, urgente, critica
+  data_deadline      DateTime?    // Para o Deadline Intelligence
+  categoria          String?      // Tipo de projeto (Habite-se, Regularização, etc)
   financeiro         Financeiro[]
   tarefas            Tarefa[]
   documentos         Documento[]
@@ -138,6 +141,8 @@ model Documento {
   tipo        String
   url         String
   tamanho     Int?
+  status      String    @default("pendente") // pendente, verificado, recusado
+  categoria   String?   // certidoes, art, projeto, alvara, habite_se
   responsavel String?
   observacoes String?
   createdAt   DateTime  @default(now())
