@@ -103,7 +103,7 @@ model Financeiro {
   processoId      String?
   processo        Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
   clienteId       String?
-  cliente         Cliente?  @relation(fields: [clienteId], references: [id])
+  cliente         Cliente?  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   descricao       String
   categoria       String?   // ex: Elaboração de Projeto, Comissão...
   valor           Float
