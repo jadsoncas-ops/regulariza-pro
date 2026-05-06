@@ -81,9 +81,7 @@ export default function NovoProjetoWizard() {
     },
     financeiro: { 
       valorTotal: '0', 
-      receitas: [
-        { id: '1', descricao: 'Entrada Contrato', valor: '0', data: new Date().toISOString().split('T')[0], status: 'pago' }
-      ],
+      receitas: [] as any[],
       despesas: [] as any[]
     }
   })
@@ -98,16 +96,37 @@ export default function NovoProjetoWizard() {
     try {
       const res = await fetch('/api/servicos')
       const data = await res.json()
-      setServicosDisponiveis(data)
-      if (data.length > 0 && !formData.processo.tipo) {
-        setFormData(prev => ({...prev, processo: {...prev.processo, tipo: data[0].nome}}))
+      
+      if (Array.isArray(data)) {
+        setServicosDisponiveis(data)
+        // Só define o tipo padrão se o usuário ainda não tiver selecionado nada e houver dados
+        if (data.length > 0 && !formData.processo.tipo) {
+          setFormData(prev => ({
+            ...prev, 
+            processo: { ...prev.processo, tipo: data[0].nome }
+          }))
+        }
       }
+    } catch (e) { 
+      console.error('Erro ao buscar serviços:', e) 
+    } finally {
       setLoadingServicos(false)
-    } catch (e) { console.error(e) }
+    }
   }
 
   useEffect(() => {
     fetchServicos()
+    
+    // Inicializa a primeira receita apenas no cliente para evitar erro de hidratação
+    setFormData(prev => ({
+      ...prev,
+      financeiro: {
+        ...prev.financeiro,
+        receitas: [
+          { id: '1', descricao: 'Entrada Contrato', valor: '0', data: new Date().toISOString().split('T')[0], status: 'pago' }
+        ]
+      }
+    }))
   }, [])
 
   // GERAÇÃO AUTOMÁTICA DE CÓDIGO
