@@ -541,13 +541,32 @@ function WizardContent() {
                     <div className="space-y-4">
                       {formData.financeiro.despesas.length === 0 && <p className="text-center py-8 text-slate-400 text-sm italic">Nenhuma despesa lançada.</p>}
                       {formData.financeiro.despesas.map((d: any) => (
-                        <div key={d.id} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 items-end group">
-                          <div><Label>Parceiro</Label><Input value={d.parceiro} onChange={e => updateFinanceiro(d.id, 'despesas', 'parceiro', e.target.value)} /></div>
-                          <div><Label>Serviço</Label><Input value={d.servico} onChange={e => updateFinanceiro(d.id, 'despesas', 'servico', e.target.value)} /></div>
-                          <div><Label>Valor</Label><Input type="number" value={d.valor} onChange={e => updateFinanceiro(d.id, 'despesas', 'valor', e.target.value)} /></div>
-                          <div><Label>Status</Label><select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white outline-none" value={d.status} onChange={e => updateFinanceiro(d.id, 'despesas', 'status', e.target.value)}><option value="pago">Pago</option><option value="pendente">Pendente</option></select></div>
-                          <div className="flex items-center gap-2">
-                             <button onClick={() => removeFinanceiro(d.id, 'despesas')} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4" /></button>
+                        <div key={d.id} className="grid grid-cols-1 md:grid-cols-6 gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 items-end group">
+                          <div className="md:col-span-1">
+                            <Label>Parceiro</Label>
+                            <Input value={d.parceiro} onChange={e => updateFinanceiro(d.id, 'despesas', 'parceiro', e.target.value)} />
+                          </div>
+                          <div className="md:col-span-1">
+                            <Label>Serviço</Label>
+                            <Input value={d.servico} onChange={e => updateFinanceiro(d.id, 'despesas', 'servico', e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>Valor (R$)</Label>
+                            <Input type="number" value={d.valor} onChange={e => updateFinanceiro(d.id, 'despesas', 'valor', e.target.value)} />
+                          </div>
+                          <div>
+                            <Label>Status</Label>
+                            <select className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white outline-none" value={d.status} onChange={e => updateFinanceiro(d.id, 'despesas', 'status', e.target.value)}>
+                              <option value="pago">Pago</option>
+                              <option value="pendente">Pendente</option>
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-2 md:col-span-2">
+                             <div className="flex-1">
+                               <Label>Data</Label>
+                               <Input type="date" value={d.data} onChange={e => updateFinanceiro(d.id, 'despesas', 'data', e.target.value)} />
+                             </div>
+                             <button onClick={() => removeFinanceiro(d.id, 'despesas')} className="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 mt-6"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </div>
                       ))}
