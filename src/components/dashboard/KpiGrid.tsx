@@ -70,14 +70,19 @@ export function KpiGrid() {
 function KpiCard({ data }: { data: any }) {
   const Icon = data.icon;
   return (
-    <motion.div variants={item} className="p-5 rounded-2xl border border-border bg-card hover:bg-muted/30 smooth-transition flex flex-col gap-3 shadow-sm hover:shadow-md cursor-pointer group">
+    <motion.div
+      variants={item}
+      className="relative overflow-hidden p-5 rounded-2xl border border-border/70 bg-card shadow-card hover-lift cursor-pointer group"
+    >
+      <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 smooth-transition" />
       <div className="flex justify-between items-start">
-        <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground smooth-transition">{data.label}</span>
-        <div className={`p-2 rounded-xl border shadow-sm ${data.bg} group-hover:scale-110 smooth-transition`}>
+        <span className="text-[12px] font-medium text-muted-foreground uppercase tracking-wider">{data.label}</span>
+        <div className={`h-9 w-9 grid place-items-center rounded-xl border ${data.bg} group-hover:scale-110 smooth-transition`}>
           <Icon className={`w-4 h-4 ${data.color}`} />
         </div>
       </div>
-      <div className="text-3xl font-bold tracking-tight text-foreground">{data.value}</div>
+      <div className="mt-4 text-[28px] font-bold tracking-tight text-foreground tabular-nums">{data.value}</div>
+      <div className="mt-1 text-[11px] text-muted-foreground">Atualizado agora</div>
     </motion.div>
   );
 }
