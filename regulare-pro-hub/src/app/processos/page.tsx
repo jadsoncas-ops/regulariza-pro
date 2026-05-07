@@ -27,6 +27,11 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 export default function ProcessosPage() {
+  const [processos, setProcessos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
   const [view, setView] = useState<'list' | 'board'>('list')
   const [allTags, setAllTags] = useState<string[]>([])
 
