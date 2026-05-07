@@ -24,7 +24,7 @@ const container = {
 
 const item = {
   hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
 };
 
 export function KpiGrid() {
@@ -82,10 +82,13 @@ function KpiCard({ data }: { data: any }) {
   );
 }
 
-export function SectionHeader({ title, action }: { title: string; action?: React.ReactNode }) {
+export function SectionHeader({ title, action, code }: { title: string; action?: React.ReactNode; code?: string }) {
   return (
     <div className="flex justify-between items-center mb-5">
-      <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+      <div className="flex items-baseline gap-3">
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+        {code && <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">{code}</span>}
+      </div>
       {action}
     </div>
   );
