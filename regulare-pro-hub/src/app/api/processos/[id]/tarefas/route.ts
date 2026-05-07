@@ -5,17 +5,13 @@ import { logAction } from '@/lib/logger'
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const processoId = (await params).id
-    const { titulo, descricao, data, responsavel, prioridade } = await req.json()
-
+    const data = await req.json()
+    
     const tarefa = await prisma.tarefa.create({
       data: {
+        ...data,
         processoId,
-        titulo,
-        descricao,
-        data: new Date(data),
-        responsavel,
-        prioridade,
-        status: 'pendente'
+        data: new Date(data.data)
       }
     })
 
@@ -23,7 +19,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       processoId,
       acao: `Tarefa Criada`,
       modulo: 'TAREFAS',
-      detalhe: titulo
+      detalhe: tarefa.titulo
     })
 
     return NextResponse.json(tarefa)
@@ -32,26 +28,47 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 }
 
-export async function PATCH(req: Request) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id, status, processoId } = await req.json()
+    const processoId = (await params).id
+    const { id, ...updates } = await req.json()
     
+    if (updates.data) updates.data = new Date(updates.data)
+
     const tarefa = await prisma.tarefa.update({
       where: { id },
-      data: { status }
+      data: updates
     })
 
-    if (status === 'concluido') {
-      await logAction({
-        processoId,
-        acao: `Tarefa Concluída`,
-        modulo: 'TAREFAS',
-        detalhe: tarefa.titulo
-      })
-    }
+    await logAction({
+      processoId,
+      acao: updates.status ? `Tarefa ${updates.status}` : `Tarefa Editada`,
+      modulo: 'TAREFAS',
+      detalhe: tarefa.titulo
+    })
 
     return NextResponse.json(tarefa)
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao atualizar tarefa' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const processoId = (await params).id
+    const { id, titulo } = await req.json()
+    
+    await prisma.tarefa.delete({ where: { id } })
+
+    await logAction({
+      processoId,
+      acao: `Tarefa Excluída`,
+      modulo: 'TAREFAS',
+      detalhe: titulo
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ error: 'Erro ao excluir tarefa' }, { status: 500 })
   }
 }
