@@ -6,7 +6,7 @@ import {
   Plus, Search, Briefcase, Clock, AlertTriangle, 
   ChevronRight, X, Tag, LayoutGrid, List, 
   Filter, MoreHorizontal, User, TrendingUp,
-  Activity, CheckCircle2, AlertCircle, Building2, MapPin, Users
+  Activity, CheckCircle2, AlertCircle, Building2, MapPin, Users, FileText, DollarSign
 } from 'lucide-react'
 import { TagChip } from '@/components/TagInput'
 
