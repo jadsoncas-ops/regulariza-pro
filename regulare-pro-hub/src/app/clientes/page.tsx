@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Filter, Users, Building2, Briefcase, Phone, Mail, MapPin, ChevronRight, MoreHorizontal, ArrowUpRight } from 'lucide-react'
+import { Plus, Search, Filter, Users, Building2, Briefcase, Phone, Mail, MapPin, ChevronRight, MoreHorizontal, ArrowUpRight, Trash2 } from 'lucide-react'
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
   ativo:    { label: 'Ativo',    class: 'badge-green' },
