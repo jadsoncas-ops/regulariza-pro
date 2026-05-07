@@ -1,25 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════
-   REGULARIZAPRO — DESIGN SYSTEM v7 (Modern Dark Tech)
+   REGULARIZAPRO — DESIGN SYSTEM v6 (SaaS Refined)
    ═══════════════════════════════════════════════════ */
 
 @theme {
   --color-primary: #2563EB;
-  --color-accent: #10B981;
-  --color-background: #020617; /* Slate-950 */
-  --color-surface: #0F172A;    /* Slate-900 */
-  --color-surface-hover: #1E293B;
-  --color-border-glass: rgba(255, 255, 255, 0.1);
+  --color-sidebar: #071026;
+  --color-bg-main: #F8FAFC;
+  --color-text-main: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-text-label: #94A3B8;
+  --color-border-subtle: #E2E8F0;
 }
 
 @layer base {
   *, *::before, *::after { 
     box-sizing: border-box; 
     margin: 0; 
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: #E2E8F0;
   }
   
   html { 
@@ -27,113 +29,149 @@
     -moz-osx-font-smoothing: grayscale; 
     text-rendering: optimizeLegibility; 
     scroll-behavior: smooth;
-    background-color: var(--color-background);
   }
 
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    background-color: var(--color-background);
-    color: #F8FAFC;
+    background-color: #F8FAFC;
+    color: #0F172A;
     overflow-x: hidden;
-    min-height: 100vh;
-    background-image: 
-      radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
-    background-size: 24px 24px;
   }
 
+  /* Typography Padronization */
   h1, h2, h3, h4, .font-title {
     font-family: 'Inter', sans-serif;
-    letter-spacing: -0.03em;
-    color: #F8FAFC;
-    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: #0F172A;
+    font-weight: 700;
   }
 
   .font-mono, .code-text, .protocol-id {
     font-family: 'JetBrains Mono', monospace;
-    letter-spacing: -0.02em;
-    font-size: 0.85em;
+    letter-spacing: -0.01em;
   }
 }
 
 @utility card {
-  @apply bg-slate-900/50 border border-white/10 rounded-lg transition-all duration-200 hover:border-blue-500/30 hover:bg-slate-900/80;
+  @apply bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all duration-200 hover:shadow-md hover:border-slate-300;
 }
 
-@utility glass {
-  @apply bg-slate-900/40 backdrop-blur-md border border-white/10;
+@utility premium-dark {
+  background: linear-gradient(135deg, #071226 0%, #0A1931 100%);
 }
 
-@utility bento-grid {
-  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
-}
-
-@utility hover-glow {
-  &:hover {
-    box-shadow: 0 0 15px rgba(37, 99, 235, 0.1);
-  }
+@utility glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
 }
 
 @layer components {
   .page-title {
-    @apply text-2xl font-bold text-white tracking-tight;
+    @apply text-xl font-bold text-slate-900 tracking-tight;
   }
   
   .page-subtitle {
-    @apply text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em];
+    @apply text-xs font-medium text-slate-500 uppercase tracking-wider;
+  }
+
+  .card-header {
+    @apply px-4 py-3 border-b border-slate-50 flex items-center justify-between;
+  }
+
+  .card-title {
+    @apply text-[11px] font-bold text-slate-900 uppercase tracking-wider;
+  }
+
+  .stat-card {
+    @apply card p-4 flex flex-col justify-between;
   }
 
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.2)] active:scale-[0.98] border border-blue-400/20;
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-sm active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply hover:bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5;
   }
 
   .btn-outline {
-    @apply border border-white/10 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 backdrop-blur-sm;
+    @apply border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-sm;
   }
 
   .badge {
-    @apply px-2 py-0.5 rounded-md text-[9px] font-bold uppercase border tracking-widest bg-white/5;
+    @apply px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border tracking-tight;
   }
 
-  .badge-blue { @apply text-blue-400 border-blue-500/30 bg-blue-500/10; }
-  .badge-green { @apply text-emerald-400 border-emerald-500/30 bg-emerald-500/10; }
-  .badge-amber { @apply text-amber-400 border-amber-500/30 bg-amber-500/10; }
-  .badge-red { @apply text-red-400 border-red-500/30 bg-red-500/10; }
-  .badge-slate { @apply text-slate-400 border-white/10 bg-white/5; }
-
-  .input-field {
-    @apply w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all placeholder:text-slate-600 text-white;
-  }
-
-  .select-field {
-    @apply bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all cursor-pointer text-white;
-  }
+  .badge-blue { @apply bg-blue-50 text-blue-700 border-blue-100; }
+  .badge-green { @apply bg-emerald-50 text-emerald-700 border-emerald-100; }
+  .badge-amber { @apply bg-amber-50 text-amber-700 border-amber-100; }
+  .badge-red { @apply bg-red-50 text-red-700 border-red-100; }
+  .badge-slate { @apply bg-slate-50 text-slate-600 border-slate-200; }
 
   .table-header {
-    @apply text-[10px] font-bold text-slate-500 uppercase tracking-widest px-6 py-4 border-b border-white/5;
+    @apply text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 py-2.5 bg-slate-50/50 border-b border-slate-100;
   }
 
   .table-row {
-    @apply border-b border-white/5 hover:bg-white/[0.02] transition-colors;
+    @apply border-b border-slate-50 hover:bg-blue-50/20 transition-colors;
+  }
+
+  .zebra-table tbody tr:nth-child(even) {
+    @apply bg-slate-50/30;
+  }
+
+  /* Operational Density Adjustments */
+  .dense-grid {
+    @apply gap-4;
+  }
+
+  .input-field {
+    @apply w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all placeholder:text-slate-400;
+  }
+
+  .select-field {
+    @apply bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all cursor-pointer;
   }
 }
 
-/* Animations & Effects */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
+/* Animations */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fade {
-  animation: fade-in 0.3s ease-out forwards;
+.animate-fade-up {
+  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Custom Scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 
-/* Bento specific heights */
-.bento-card {
-  @apply card p-6 flex flex-col justify-between hover-glow;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E2E8F0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #CBD5E1;
+}
+
+/* Fix for Contrast Issues */
+.text-label { @apply text-slate-400 font-bold uppercase text-[9px] tracking-widest; }
+.text-value { @apply text-slate-900 font-bold text-sm; }
+.text-subvalue { @apply text-slate-500 text-xs; }
+
+/* Kanban Styles */
+.kanban-column {
+  @apply flex flex-col gap-3 min-w-[280px] w-full;
+}
+
+.kanban-card {
+  @apply card p-3 space-y-3 cursor-grab active:cursor-grabbing hover:border-blue-400;
 }

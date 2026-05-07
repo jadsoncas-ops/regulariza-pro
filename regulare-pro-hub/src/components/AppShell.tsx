@@ -12,13 +12,25 @@ import {
 import GlobalSearch from '@/components/GlobalSearch'
 
 const NAV = [
-  { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/processos', label: 'Operations',  icon: Briefcase },
-  { href: '/clientes',  label: 'Clientes',    icon: Users },
-  { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
-  { href: '/financeiro',label: 'Financeiro',  icon: DollarSign },
-  { href: '/agenda',    label: 'Agenda',      icon: Calendar },
-  { href: '/mapa',      label: 'Mapa de Projetos', icon: MapPin },
+  {
+    section: 'Principal',
+    items: [
+      { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
+      { href: '/processos', label: 'Processos',   icon: Briefcase },
+      { href: '/clientes',  label: 'Clientes',    icon: Users },
+      { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
+    ]
+  },
+  {
+    section: 'Gestão',
+    items: [
+      { href: '/financeiro',  label: 'Financeiro',     icon: DollarSign },
+      { href: '/agenda',      label: 'Agenda',         icon: Calendar },
+      { href: '/documentos',  label: 'Documentos',     icon: FileText },
+      { href: '/mapa',        label: 'Mapa',           icon: MapPin },
+      { href: '/relatorios',  label: 'Relatórios',     icon: BarChart3 },
+    ]
+  },
 ]
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
@@ -26,164 +38,171 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <div className="bg-slate-950/80 backdrop-blur-xl h-full flex flex-col border-r border-white/5 shadow-2xl relative z-50">
+    <div className="bg-slate-900 h-full flex flex-col border-r border-slate-800 shadow-xl">
       
       {/* ── Logo ── */}
-      <div className="px-6 py-8 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.3)] group-hover:scale-105 transition-all duration-300">
-            <Zap size={18} className="text-white fill-white/20" strokeWidth={2} />
+      <div className="px-5 py-6 flex items-center justify-between">
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
+            <Zap size={16} className="text-white fill-white/20" strokeWidth={2.5} />
           </div>
           <div>
-            <div className="text-[15px] font-black text-white tracking-tighter leading-none uppercase">
+            <div className="text-[14px] font-black text-white tracking-tighter leading-none uppercase">
               Regulariza<span className="text-blue-500">Pro</span>
             </div>
-            <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1">Enterprise</div>
           </div>
         </Link>
         {onClose && (
-          <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors">
-            <X size={20} />
+          <button onClick={onClose} className="lg:hidden p-1.5 text-slate-400 hover:text-white">
+            <X size={18} />
           </button>
         )}
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1 scrollbar-hide">
-        {NAV.map(item => {
-          const active = isActive(item.href)
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onClose}
-              className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
-                active 
-                  ? 'bg-white/10 text-white shadow-sm' 
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
-              }`}
-            >
-              <item.icon size={18} strokeWidth={active ? 2 : 1.5} className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} />
-              <span className="flex-1">{item.label}</span>
-            </Link>
-          )
-        })}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-hide">
+        {NAV.map((section) => (
+          <div key={section.section} className="space-y-1">
+            <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">
+              {section.section}
+            </h3>
+            <div className="space-y-0.5">
+              {section.items.map(item => {
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
+                      active 
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/10' 
+                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    }`}
+                  >
+                    <item.icon size={16} strokeWidth={active ? 2.5 : 2} className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} />
+                    <span className="flex-1">{item.label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {/* ── User & Config ── */}
-      <div className="p-4 border-t border-white/5 space-y-2 bg-slate-950/40">
+      <div className="p-3 border-t border-slate-800 space-y-1">
         <Link 
           href="/configuracoes" 
-          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all ${
-            isActive('/configuracoes') ? 'bg-white/10 text-white' : 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
+            isActive('/configuracoes') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
           }`}
         >
-          <Settings size={18} strokeWidth={1.5} />
+          <Settings size={16} strokeWidth={2} />
           <span>Configurações</span>
         </Link>
         
-        <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 cursor-pointer transition-all group border border-transparent hover:border-white/5 mt-2">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-[12px] font-black text-white shrink-0 shadow-lg">
+        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 cursor-pointer transition-all group mt-2">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
             JC
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[13px] font-bold text-white tracking-tight truncate">
+            <div className="text-[12px] font-bold text-white tracking-tight truncate">
               Jadson Castro
             </div>
-            <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest">
-              Diretor Sênior
+            <div className="text-[9px] font-bold text-slate-500 uppercase">
+              Diretor
             </div>
           </div>
-          <ChevronDown size={14} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+          <ChevronDown size={12} className="text-slate-600 group-hover:text-slate-400" />
         </div>
       </div>
     </div>
   )
 }
 
-import RightPanel from '@/components/RightPanel';
-import CreateMenuDropdown from '@/components/CreateMenuDropdown';
-
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [rightOpen, setRightOpen] = useState(false)
+  const [dark, setDark] = useState(false)
   const pathname = usePathname()
 
+  useEffect(() => {
+    const saved = localStorage.getItem('darkMode') === 'true'
+    setDark(saved)
+    document.body.classList.toggle('dark', saved)
+  }, [])
+
+  const toggleDark = () => {
+    const next = !dark
+    setDark(next)
+    document.body.classList.toggle('dark', next)
+    localStorage.setItem('darkMode', String(next))
+  }
+
   const isFullPage = pathname === '/processos/novo'
-  if (isFullPage) return <div className="bg-slate-950 min-h-screen">{children}</div>
+  if (isFullPage) return <>{children}</>
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950 text-slate-200">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-[240px] flex-shrink-0 relative z-30">
+      <aside className="hidden lg:block w-[200px] flex-shrink-0">
         <SidebarContent />
       </aside>
 
       {/* Mobile sidebar */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-[100] flex lg:hidden">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileOpen(false)} />
-          <div className="relative w-[280px] h-full shadow-2xl animate-fade-up">
+          <div className="relative w-[260px] h-full shadow-2xl animate-fade-up">
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-950 relative overflow-hidden">
-        
-        {/* Background Gradients */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-600/5 blur-[100px] rounded-full pointer-events-none" />
+      {/* Main */}
+      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
 
         {/* ── Topbar ── */}
-        <header className="h-16 flex-shrink-0 bg-slate-950/40 backdrop-blur-md border-b border-white/5 flex items-center px-8 gap-6 sticky top-0 z-20">
+        <header className="h-14 flex-shrink-0 bg-white border-b border-slate-200 flex items-center px-6 gap-4 sticky top-0 z-20 shadow-sm">
 
           {/* Mobile menu toggle */}
-          <button className="lg:hidden p-2 text-slate-400 hover:bg-white/5 rounded-xl transition-all" onClick={() => setMobileOpen(true)}>
-            <Menu size={20} />
+          <button className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg" onClick={() => setMobileOpen(true)}>
+            <Menu size={18} />
           </button>
 
           {/* Global search */}
-          <div className="flex-1 max-w-xl">
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-              <input 
-                placeholder="Buscar em todo o ecossistema..."
-                className="w-full bg-white/5 border border-white/5 rounded-xl pl-11 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all placeholder:text-slate-600 text-white"
-              />
-            </div>
+          <div className="flex-1 max-w-md">
+            <GlobalSearch />
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center gap-3 ml-auto">
-            <button className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all relative border border-transparent hover:border-white/5">
-              <Bell size={18} strokeWidth={1.5} />
-              <span className="absolute top-3 right-3 w-2 h-2 bg-blue-500 rounded-full border-2 border-slate-950" />
+          <div className="flex items-center gap-1.5 ml-auto">
+            <button onClick={toggleDark} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all">
+              {dark ? <Sun size={16} /> : <Moon size={16} />}
             </button>
 
-            <div className="w-px h-6 bg-white/5 mx-2" />
-
-            <CreateMenuDropdown />
-
-            {/* Contextual panel toggle */}
-            <button onClick={() => setRightOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all relative border border-transparent hover:border-white/5">
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
+              <Bell size={16} />
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
             </button>
+
+            <div className="w-px h-5 bg-slate-200 mx-2" />
+
+            <Link href="/processos/novo" className="btn-primary py-1.5 px-3 text-xs gap-1.5">
+              <Plus size={14} strokeWidth={3} />
+              <span>Novo</span>
+            </Link>
           </div>
         </header>
 
         {/* ── Page Content ── */}
-        <main className="flex-1 overflow-y-auto scroll-smooth relative z-10 custom-scrollbar">
-          <div className="max-w-[1600px] mx-auto p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="max-w-[1400px] mx-auto p-6 lg:p-8">
             {children}
           </div>
         </main>
-
-        {/* Right contextual panel */}
-        <RightPanel isOpen={rightOpen} onClose={() => setRightOpen(false)} />
 
       </div>
     </div>

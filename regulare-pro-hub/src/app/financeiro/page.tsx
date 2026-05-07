@@ -1,7 +1,12 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
-import { DollarSign, TrendingUp, TrendingDown, Clock, Plus, Search, Filter, Edit, Trash2, X, Briefcase, CheckCircle2, ArrowRight } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import { 
+  DollarSign, TrendingUp, TrendingDown, Clock, Plus, Search, 
+  ArrowUpRight, ArrowDownRight, Filter, MoreHorizontal, 
+  Trash2, Edit, X, Calendar, User, Briefcase, CheckCircle2 
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export default function FinanceiroPage() {
@@ -43,31 +48,22 @@ export default function FinanceiroPage() {
     return matchSearch && matchTipo
   })
 
-  // Cálculos Automáticos solicitados
-  const totais = useMemo(() => {
-    const contratos = registros.filter(r => r.tipo === 'receita').reduce((s, r) => s + r.valor, 0)
-    const recebido = registros.filter(r => r.tipo === 'receita' && r.status === 'pago').reduce((s, r) => s + r.valor, 0)
-    const aReceber = contratos - recebido
-    
-    const despesasTotal = registros.filter(r => r.tipo === 'despesa').reduce((s, r) => s + r.valor, 0)
-    const despesasPagas = registros.filter(r => r.tipo === 'despesa' && r.status === 'pago').reduce((s, r) => s + r.valor, 0)
-    const despesasAPagar = despesasTotal - despesasPagas
-    
-    const lucroRealizado = recebido - despesasPagas
-    const lucroPrevisto = aReceber - despesasAPagar
+  const totais = useMemo(() => ({
+    receitas:  registros.filter(r => r.tipo === 'receita').reduce((s, r) => s + r.valor, 0),
+    pagas:     registros.filter(r => r.tipo === 'receita' && r.status === 'pago').reduce((s, r) => s + r.valor, 0),
+    pendentes: registros.filter(r => r.tipo === 'receita' && r.status !== 'pago').reduce((s, r) => s + r.valor, 0),
+    despesas:  registros.filter(r => r.tipo === 'despesa').reduce((s, r) => s + r.valor, 0),
+  }), [registros])
 
-    return {
-      contratos,
-      recebido,
-      aReceber,
-      despesasPagas,
-      despesasAPagar,
-      lucroRealizado,
-      lucroPrevisto
-    }
-  }, [registros])
+  const lucro = totais.pagas - totais.despesas
+  const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-  const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
+  const chartData = [
+    { name: 'Receitas', valor: totais.receitas, fill: '#3B82F6' },
+    { name: 'Recebido', valor: totais.pagas,    fill: '#10B981' },
+    { name: 'Pendente', valor: totais.pendentes, fill: '#F59E0B' },
+    { name: 'Despesas', valor: totais.despesas, fill: '#EF4444' },
+  ]
 
   const handleOpenModal = (reg: any = null) => {
     setSelectedReg(reg)
@@ -79,6 +75,8 @@ export default function FinanceiroPage() {
     setSaving(true)
     const formData = new FormData(e.currentTarget)
     const data = Object.fromEntries(formData.entries())
+    
+    // Preparar dados
     const payload = {
       ...data,
       valor: parseFloat(data.valor as string),
@@ -94,13 +92,14 @@ export default function FinanceiroPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
+
       if (res.ok) {
         setIsModalOpen(false)
         fetchData()
         router.refresh()
       }
     } catch (e) {
-      console.error('Erro ao salvar:', e)
+      console.error('Erro ao salvar registro financeiro:', e)
     } finally {
       setSaving(false)
     }
@@ -117,131 +116,147 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <div className="space-y-8 animate-fade h-full flex flex-col">
+    <div className="space-y-6 animate-fade-up">
       
       {/* HEADER */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Financeiro</h1>
-          <p className="text-xs text-slate-500 font-medium mt-2 tracking-wider uppercase">Receitas, Despesas e Lucro Líquido</p>
+          <h1 className="page-title text-2xl">Financeiro</h1>
+          <p className="text-xs text-slate-500 font-medium">Controle de receitas, despesas e fluxo de caixa</p>
         </div>
-        <div className="flex items-center gap-4">
-           <button onClick={() => handleOpenModal()} className="btn-primary py-2.5">
-             <Plus size={18} strokeWidth={3} /> NOVO LANÇAMENTO
-           </button>
-        </div>
+        <button onClick={() => handleOpenModal()} className="btn-primary">
+          <Plus size={16} strokeWidth={3} /> Novo Lançamento
+        </button>
       </div>
 
-      {/* INTELLIGENT CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        <div className="card p-5 bg-gradient-to-br from-blue-900/20 to-blue-900/5 border-blue-500/20">
-           <h3 className="text-[10px] font-black text-blue-500/70 uppercase tracking-widest mb-1">Valor Contratado</h3>
-           <p className="text-2xl font-black text-blue-400">{fmt(totais.contratos)}</p>
-        </div>
-        
-        <div className="card p-5 bg-gradient-to-br from-emerald-900/20 to-emerald-900/5 border-emerald-500/20">
-           <div className="flex justify-between items-start mb-2">
-             <div>
-                <h3 className="text-[10px] font-black text-emerald-500/70 uppercase tracking-widest mb-1">Lucro Realizado (Atual)</h3>
-                <p className="text-2xl font-black text-emerald-400">{fmt(totais.lucroRealizado)}</p>
-             </div>
-           </div>
-           <div className="flex items-center justify-between mt-4 pt-4 border-t border-emerald-500/10 text-xs">
-              <span className="text-emerald-500/70">Recebido: {fmt(totais.recebido)}</span>
-              <span className="text-red-500/70">Desp. Pagas: {fmt(totais.despesasPagas)}</span>
-           </div>
-        </div>
-        
-        <div className="card p-5 bg-gradient-to-br from-amber-900/20 to-amber-900/5 border-amber-500/20">
-           <div className="flex justify-between items-start mb-2">
-             <div>
-                <h3 className="text-[10px] font-black text-amber-500/70 uppercase tracking-widest mb-1">Lucro Previsto (Futuro)</h3>
-                <p className="text-2xl font-black text-amber-400">{fmt(totais.lucroPrevisto)}</p>
-             </div>
-           </div>
-           <div className="flex items-center justify-between mt-4 pt-4 border-t border-amber-500/10 text-xs">
-              <span className="text-amber-500/70">A Receber: {fmt(totais.aReceber)}</span>
-              <span className="text-red-500/70">A Pagar: {fmt(totais.despesasAPagar)}</span>
-           </div>
-        </div>
-
-        <div className="card p-5 flex flex-col justify-center items-center bg-slate-900/40 hover-glow cursor-pointer text-slate-500 hover:text-white transition-colors">
-           <TrendingUp size={24} className="mb-2" />
-           <span className="text-xs font-bold uppercase tracking-widest">Ver Relatório Completo</span>
-        </div>
-      </div>
-
-      {/* TRANSACTIONS LIST */}
-      <div className="flex-1 card overflow-hidden flex flex-col border-white/5 bg-slate-900/40">
-        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02] backdrop-blur-sm">
-          <div className="flex gap-4 flex-1 max-w-2xl">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-blue-500 transition-colors" />
-              <input placeholder="Buscar lançamentos..." className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm outline-none focus:border-blue-500/40 transition-all placeholder:text-slate-700 text-white" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* KPIs COMPACT */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Contratado', value: fmt(totais.receitas), icon: DollarSign, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Total Recebido', value: fmt(totais.pagas), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'A Receber', value: fmt(totais.pendentes), icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Lucro Realizado', value: fmt(lucro), icon: lucro >= 0 ? ArrowUpRight : ArrowDownRight, color: lucro >= 0 ? 'text-emerald-600' : 'text-red-600', bg: lucro >= 0 ? 'bg-emerald-50' : 'bg-red-50' },
+        ].map(k => (
+          <div key={k.label} className="stat-card">
+            <div className={`w-10 h-10 ${k.bg} rounded-xl flex items-center justify-center mb-3 border border-slate-100 shadow-sm`}>
+              <k.icon className={`w-5 h-5 ${k.color}`} />
             </div>
-            <select className="bg-slate-950/50 border border-white/10 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-400 outline-none" value={tipo} onChange={e => setTipo(e.target.value)}>
-              <option value="">Todos os Tipos</option>
+            <p className="text-2xl font-bold text-slate-900 tracking-tight">{k.value}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{k.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* CHART */}
+        <div className="card p-6 lg:col-span-2">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Resumo de Operações</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} barSize={40} margin={{ left: -20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => `${v/1000}k`} />
+              <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+              <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                {chartData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* STATUS PIE / LEGEND */}
+        <div className="card p-6">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6">Status dos Lançamentos</h3>
+          <div className="space-y-4">
+            {chartData.map(d => (
+              <div key={d.name} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center gap-3">
+                   <div className="w-2 h-2 rounded-full" style={{ background: d.fill }} />
+                   <span className="text-xs font-bold text-slate-600">{d.name}</span>
+                </div>
+                <span className="text-xs font-black text-slate-900">{fmt(d.valor)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* FILTER + TABLE */}
+      <div className="card overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+          <div className="flex gap-3 flex-1 max-w-xl">
+            <div className="relative flex-1 group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+              <input placeholder="Buscar descrição ou projeto..." className="input-field pl-9 py-2" value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+            <select className="select-field py-2 text-xs font-bold uppercase tracking-wider" value={tipo} onChange={e => setTipo(e.target.value)}>
+              <option value="">Todos Tipos</option>
               <option value="receita">Receitas</option>
               <option value="despesa">Despesas</option>
             </select>
           </div>
-          <button className="btn-outline py-2.5 text-[10px] font-black uppercase tracking-widest gap-2">
+          <button className="btn-outline py-2 text-xs font-bold uppercase tracking-widest gap-2">
             <Filter size={14} /> Filtros
           </button>
         </div>
 
-        <div className="overflow-x-auto flex-1">
+        <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-white/[0.01]">
-                <th className="px-6 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Descrição</th>
-                <th className="px-6 py-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">Projeto</th>
-                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-600 uppercase tracking-widest">Valor</th>
-                <th className="px-6 py-4 text-center text-[10px] font-black text-slate-600 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-right text-[10px] font-black text-slate-600 uppercase tracking-widest">Vencimento</th>
-                <th className="px-6 py-4" />
+              <tr className="table-header">
+                <th className="px-6 py-3">Descrição / Lançamento</th>
+                <th className="px-6 py-3">Tipo</th>
+                <th className="px-6 py-3">Projeto Vinculado</th>
+                <th className="px-6 py-3 text-right">Valor</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3 text-right">Vencimento</th>
+                <th className="px-6 py-3" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-50">
               {loading ? (
-                 <tr><td colSpan={6} className="py-20 text-center text-xs text-slate-500 italic">Carregando movimentações...</td></tr>
+                <tr><td colSpan={7} className="py-20 text-center text-sm text-slate-400 italic">Carregando registros financeiros...</td></tr>
               ) : filtered.length === 0 ? (
-                 <tr><td colSpan={6} className="py-20 text-center text-slate-600 text-sm">Nenhum lançamento encontrado.</td></tr>
+                <tr><td colSpan={7} className="py-20 text-center">
+                  <DollarSign size={48} className="mx-auto text-slate-200 mb-4" strokeWidth={1} />
+                  <p className="text-sm font-bold text-slate-900">Nenhum lançamento encontrado</p>
+                </td></tr>
               ) : filtered.map(r => (
-                <tr key={r.id} className="table-row group hover:bg-white/[0.02] transition-colors">
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-white">{r.descricao}</p>
-                    <span className={`mt-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase border inline-block ${r.tipo === 'receita' ? 'border-blue-500/30 text-blue-400 bg-blue-500/10' : 'border-red-500/30 text-red-400 bg-red-500/10'}`}>
-                      {r.tipo === 'receita' ? 'RECEITA' : 'DESPESA'}
+                <tr key={r.id} className="table-row group">
+                  <td className="px-6 py-3.5">
+                    <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{r.descricao}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID #{r.id.substring(0,6)}</p>
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <span className={`badge ${r.tipo === 'receita' ? 'badge-blue' : 'badge-red'} font-black`}>
+                      {r.tipo === 'receita' ? 'ENTRADA' : 'SAÍDA'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-6 py-3.5">
                     {r.processo ? (
-                      <div className="flex items-center gap-2 text-slate-400 text-xs font-bold">
-                        <Briefcase size={12} className="text-slate-600" />
-                        <span>{r.processo.codigo_projeto || `OP-${r.processo.id.substring(0,4).toUpperCase()}`}</span>
+                      <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
+                        <Briefcase size={12} className="text-slate-300" />
+                        {r.processo.codigo_projeto}
                       </div>
-                    ) : <span className="text-xs text-slate-700">—</span>}
+                    ) : <span className="text-xs text-slate-300">—</span>}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className={`text-sm font-black font-mono ${r.tipo === 'receita' ? 'text-emerald-500' : 'text-red-500'}`}>
+                  <td className="px-6 py-3.5 text-right">
+                    <span className={`text-sm font-black ${r.tipo === 'receita' ? 'text-emerald-600' : 'text-red-600'}`}>
                       {r.tipo === 'receita' ? '+' : '-'} {fmt(r.valor)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase border ${r.status === 'pago' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 'border-amber-500/30 text-amber-400 bg-amber-500/10'}`}>
-                      {r.status === 'pago' ? 'PAGO' : 'PENDENTE'}
-                    </span>
+                  <td className="px-6 py-3.5">
+                    <span className={`badge ${r.status === 'pago' ? 'badge-green' : 'badge-amber'}`}>{r.status === 'pago' ? 'Efetuado' : 'Pendente'}</span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <span className="text-[10px] font-mono text-slate-500 font-bold">
-                      {r.data_vencimento ? new Date(r.data_vencimento).toLocaleDateString('pt-BR') : '—'}
-                    </span>
+                  <td className="px-6 py-3.5 text-right font-bold text-xs text-slate-600">
+                    {r.data_vencimento ? new Date(r.data_vencimento).toLocaleDateString('pt-BR') : '—'}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-3.5 text-right">
                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => handleOpenModal(r)} className="p-1.5 text-slate-500 hover:text-blue-400 hover:bg-white/5 rounded-lg transition-all"><Edit size={14} /></button>
-                      <button onClick={() => handleDelete(r.id)} className="p-1.5 text-slate-500 hover:text-red-500 hover:bg-white/5 rounded-lg transition-all"><Trash2 size={14} /></button>
+                      <button onClick={() => handleOpenModal(r)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Edit size={14} /></button>
+                      <button onClick={() => handleDelete(r.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -251,65 +266,66 @@ export default function FinanceiroPage() {
         </div>
       </div>
 
-      {/* MODAL */}
+      {/* MODAL FINANCEIRO */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 overflow-y-auto animate-fade">
-          <div className="bg-slate-900 w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden border border-white/10">
-            <div className="px-8 py-6 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl animate-fade-up overflow-hidden border border-slate-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
               <div>
-                <h2 className="text-lg font-bold text-white tracking-tight">{selectedReg ? 'Modificar Registro' : 'Novo Lançamento'}</h2>
+                <h2 className="text-base font-bold text-slate-900">{selectedReg ? 'Editar Lançamento' : 'Novo Lançamento'}</h2>
+                <p className="text-xs font-medium text-slate-500 mt-0.5">Informe os detalhes da movimentação</p>
               </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white/5 text-slate-500 hover:text-white rounded-xl transition-all">
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-white hover:shadow-sm text-slate-400 hover:text-slate-900 rounded-xl transition-all">
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <form onSubmit={handleSave} className="p-8 space-y-5">
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Descrição</label>
-                <input name="descricao" defaultValue={selectedReg?.descricao || ''} placeholder="Ex: Recebimento Parcela 1" required className="input-field" />
+            <form onSubmit={handleSave} className="p-6 space-y-5">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Descrição *</label>
+                <input name="descricao" defaultValue={selectedReg?.descricao || ''} placeholder="Ex: Pagamento 1ª Parcela" required className="input-field" />
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Categoria</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Tipo *</label>
                   <select name="tipo" defaultValue={selectedReg?.tipo || 'receita'} className="select-field w-full" required>
-                    <option value="receita" className="bg-slate-900 text-white">RECEITA (+)</option>
-                    <option value="despesa" className="bg-slate-900 text-white">DESPESA (-)</option>
+                    <option value="receita">Receita (Entrada)</option>
+                    <option value="despesa">Despesa (Saída)</option>
                   </select>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Status</label>
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Status *</label>
                   <select name="status" defaultValue={selectedReg?.status || 'pendente'} className="select-field w-full" required>
-                    <option value="pendente" className="bg-slate-900 text-white">PENDENTE</option>
-                    <option value="pago" className="bg-slate-900 text-white">PAGO/RECEBIDO</option>
+                    <option value="pendente">Pendente</option>
+                    <option value="pago">Pago / Recebido</option>
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Valor (R$)</label>
-                  <input name="valor" type="number" step="0.01" defaultValue={selectedReg?.valor || ''} placeholder="0.00" required className="input-field font-mono font-bold" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Valor (R$) *</label>
+                  <input name="valor" type="number" step="0.01" defaultValue={selectedReg?.valor || ''} placeholder="0.00" required className="input-field" />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Vencimento</label>
-                  <input name="data_vencimento" type="date" defaultValue={selectedReg?.data_vencimento?.split('T')[0] || ''} required className="input-field font-mono" />
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Vencimento *</label>
+                  <input name="data_vencimento" type="date" defaultValue={selectedReg?.data_vencimento?.split('T')[0] || ''} required className="input-field" />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] block">Vincular Projeto</label>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 block">Vincular a Processo</label>
                 <select name="processoId" defaultValue={selectedReg?.processoId || ''} className="select-field w-full">
-                  <option value="" className="bg-slate-900 text-white">Sem vínculo</option>
+                  <option value="">Nenhum processo</option>
                   {processos.map(p => (
-                    <option key={p.id} value={p.id} className="bg-slate-900 text-white">{p.codigo_projeto || `OP-${p.id.substring(0,4).toUpperCase()}`} - {p.tipo_regularizacao}</option>
+                    <option key={p.id} value={p.id}>{p.codigo_projeto} - {p.tipo_regularizacao}</option>
                   ))}
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 pt-6">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-outline px-6">Cancelar</button>
+              <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn-ghost">Cancelar</button>
                 <button type="submit" disabled={saving} className="btn-primary min-w-[120px] justify-center">
                   {saving ? 'Salvando...' : 'Salvar'}
                 </button>

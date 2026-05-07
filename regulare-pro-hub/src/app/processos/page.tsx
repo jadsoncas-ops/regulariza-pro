@@ -1,201 +1,294 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Filter, Users, DollarSign, Clock, LayoutGrid, List } from 'lucide-react'
+import { 
+  Plus, Search, Briefcase, Clock, AlertTriangle, 
+  ChevronRight, X, Tag, LayoutGrid, List, 
+  Filter, MoreHorizontal, User, TrendingUp,
+  Activity, CheckCircle2, AlertCircle, Building2, MapPin, Users, FileText, DollarSign
+} from 'lucide-react'
+import { TagChip } from '@/components/TagInput'
 
-// Novas colunas solicitadas
-const KANBAN_COLUMNS: Record<string, { label: string; color: string; border: string; bg: string }> = {
-  proposta:      { label: 'Proposta',       color: 'text-amber-400', border: 'border-amber-500/30', bg: 'bg-amber-500/10' },
-  documentacao:  { label: 'Documentação',   color: 'text-blue-400',  border: 'border-blue-500/30',  bg: 'bg-blue-500/10' },
-  projeto:       { label: 'Projeto',        color: 'text-purple-400',border: 'border-purple-500/30',bg: 'bg-purple-500/10' },
-  protocolo:     { label: 'Protocolo',      color: 'text-indigo-400',border: 'border-indigo-500/30',bg: 'bg-indigo-500/10' },
-  finalizacao:   { label: 'Finalização',    color: 'text-emerald-400',border:'border-emerald-500/30',bg: 'bg-emerald-500/10' },
+// ─── Status config padronizado ────────────────────────────────────────────────
+export const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string; color: string }> = {
+  em_analise:           { label: 'Análise',       dot: 'bg-blue-400',   badge: 'badge-blue',   color: 'blue' },
+  levantamento:         { label: 'Levantamento',  dot: 'bg-amber-400',  badge: 'badge-amber',  color: 'amber' },
+  projeto:              { label: 'Projeto',       dot: 'bg-purple-400', badge: 'badge-purple', color: 'purple' },
+  protocolo_prefeitura: { label: 'Prefeitura',    dot: 'bg-indigo-400', badge: 'badge-indigo', color: 'indigo' },
+  exigencia_tecnica:    { label: 'Exigência',     dot: 'bg-red-500',    badge: 'badge-red',    color: 'red' },
+  finalizado:           { label: 'Concluído',     dot: 'bg-emerald-500',badge: 'badge-green',  color: 'emerald' },
 }
 
-const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
+export function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] || { label: status?.replace(/_/g, ' ') || '—', dot: 'bg-slate-400', badge: 'badge-slate' }
+  return (
+    <span className={`badge ${cfg.badge} inline-flex items-center gap-1.5 py-0.5`}>
+      <span className={`w-1 h-1 rounded-full shrink-0 ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  )
+}
 
 export default function ProcessosPage() {
   const [processos, setProcessos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [view, setView] = useState<'board' | 'list'>('board')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [tagFilter, setTagFilter] = useState('')
+  const [view, setView] = useState<'list' | 'board'>('board')
+  const [allTags, setAllTags] = useState<string[]>([])
 
   useEffect(() => {
     fetch('/api/processos')
       .then(r => r.json())
       .then(d => {
-        // Mapeia os status antigos para os novos temporariamente até atualizar o banco
-        const list = (Array.isArray(d) ? d : []).map(p => {
-           let newStatus = p.status
-           if (p.status === 'em_analise' || p.status === 'levantamento') newStatus = 'proposta'
-           else if (p.status === 'protocolo_prefeitura') newStatus = 'protocolo'
-           else if (p.status === 'finalizado') newStatus = 'finalizacao'
-           else if (p.status === 'exigencia_tecnica') newStatus = 'documentacao'
-           else if (!KANBAN_COLUMNS[newStatus]) newStatus = 'proposta'
-           return { ...p, status: newStatus }
-        })
+        const list = Array.isArray(d) ? d : []
         setProcessos(list)
+        const tags = [...new Set(list.flatMap((p: any) => {
+          try { return JSON.parse(p.tags || '[]') } catch { return [] }
+        }))] as string[]
+        setAllTags(tags)
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [])
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
-    setProcessos(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p))
     try {
-      await fetch(`/api/processos/${id}`, {
+      const res = await fetch(`/api/processos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
       })
+      if (res.ok) {
+        setProcessos(prev => prev.map(p => p.id === id ? { ...p, status: newStatus } : p))
+      } else {
+        const error = await res.json()
+        console.error('Falha ao atualizar status:', error)
+        alert('Erro ao atualizar status.')
+      }
     } catch (e) {
       console.error('Erro na requisição de status:', e)
     }
   }
 
-  const filtered = processos.filter(p =>
-    !search ||
-    p.cliente?.nome?.toLowerCase().includes(search.toLowerCase()) ||
-    p.tipo_regularizacao?.toLowerCase().includes(search.toLowerCase()) ||
-    p.codigo_projeto?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = useMemo(() => processos.filter(p => {
+    const matchSearch = !search ||
+      p.cliente?.nome?.toLowerCase().includes(search.toLowerCase()) ||
+      p.tipo_regularizacao?.toLowerCase().includes(search.toLowerCase()) ||
+      p.codigo_projeto?.toLowerCase().includes(search.toLowerCase()) ||
+      p.imovel?.cidade?.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = !statusFilter || p.status === statusFilter
+    const matchTag    = !tagFilter || (() => {
+      try { return (JSON.parse(p.tags || '[]') as string[]).includes(tagFilter) }
+      catch { return false }
+    })()
+    return matchSearch && matchStatus && matchTag
+  }), [processos, search, statusFilter, tagFilter])
+
+  const getDeadlineInfo = (date: string) => {
+    if (!date) return null
+    const diff = Math.ceil((new Date(date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    if (diff < 0) return { label: 'Atrasado', color: 'text-red-600', bg: 'bg-red-50', icon: AlertTriangle }
+    if (diff <= 5) return { label: `${diff} dias`, color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock }
+    return { label: `${diff} dias`, color: 'text-slate-500', bg: 'bg-slate-50', icon: Clock }
+  }
 
   return (
-    <div className="space-y-8 animate-fade h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-6">
+    <div className="space-y-6 animate-fade-up">
+
+      {/* Header compact */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Operations (Processos)</h1>
-          <p className="text-xs text-slate-500 font-medium mt-2 tracking-wider uppercase">Esteira de Produção & Entregas</p>
+          <h1 className="page-title">Processos</h1>
+          <p className="text-xs text-slate-500 font-medium">Gerencie sua esteira de regularização imobiliária</p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 shadow-inner">
-            <button onClick={() => setView('board')} className={`p-2 rounded-lg transition-all ${view === 'board' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-slate-200'}`}><LayoutGrid size={16}/></button>
-            <button onClick={() => setView('list')} className={`p-2 rounded-lg transition-all ${view === 'list' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-slate-200'}`}><List size={16}/></button>
+        <div className="flex items-center gap-2">
+          <div className="flex bg-white p-0.5 rounded-lg border border-slate-200 shadow-sm">
+            <button onClick={() => setView('board')} className={`p-1.5 rounded-md transition-all ${view === 'board' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={14}/></button>
+            <button onClick={() => setView('list')} className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}><List size={14}/></button>
           </div>
-          
-          <div className="relative group w-72 hidden md:block">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-            <input
-              placeholder="Pesquisar operação..."
-              className="w-full bg-slate-950/50 border border-white/10 rounded-xl pl-11 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/40 transition-all placeholder:text-slate-700 text-white"
-              value={search} onChange={e => setSearch(e.target.value)}
-            />
-          </div>
-          <Link href="/processos/novo" className="btn-primary py-2.5">
-            <Plus size={18} strokeWidth={3} /> NOVA OPERAÇÃO
+          <Link href="/processos/novo" className="btn-primary py-1.5">
+            <Plus size={16} /> Novo
           </Link>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex gap-6 overflow-hidden animate-pulse">
-           {[1,2,3,4,5].map(i => <div key={i} className="w-[300px] h-[600px] bg-white/5 rounded-2xl shrink-0" />)}
+      {/* Search & Filters compact */}
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500" />
+          <input
+            placeholder="Buscar processos..."
+            className="w-full pl-9 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-lg outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all shadow-sm"
+            value={search} onChange={e => setSearch(e.target.value)}
+          />
         </div>
-      ) : view === 'board' ? (
-        <div className="flex gap-6 overflow-x-auto pb-10 scrollbar-hide -mx-1 px-1 flex-1">
-          {Object.entries(KANBAN_COLUMNS).map(([statusId, config]) => {
-            const colProcs = filtered.filter(p => p.status === statusId)
+        <select
+          className="select-field py-2 text-xs font-bold uppercase tracking-wider"
+          value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+        >
+          <option value="">Todos Status</option>
+          {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+            <option key={v} value={v}>{c.label}</option>
+          ))}
+        </select>
+        <button className="btn-outline py-2 text-xs font-bold uppercase tracking-wider">
+          <Filter size={14} /> Filtros
+        </button>
+      </div>
+
+      {view === 'list' ? (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="table-header">
+                  <th className="px-6 py-2.5">Processo / Cliente</th>
+                  <th className="px-6 py-2.5">Endereço</th>
+                  <th className="px-6 py-2.5">Responsável</th>
+                  <th className="px-6 py-2.5">Prazo</th>
+                  <th className="px-6 py-2.5">Status</th>
+                  <th className="px-6 py-2.5"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filtered.map(p => {
+                  const deadline = getDeadlineInfo(p.data_deadline)
+                  return (
+                    <tr key={p.id} className="table-row group">
+                      <td className="px-6 py-3.5">
+                        <Link href={`/processos/${p.id}`} className="block">
+                          <p className="text-xs font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{p.tipo_regularizacao}</p>
+                          <p className="text-[10px] text-slate-500 font-medium">{p.cliente?.nome}</p>
+                        </Link>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-1.5 text-slate-500">
+                          <MapPin size={12} className="text-slate-300" />
+                          <span className="text-[11px] truncate max-w-[180px]">{p.imovel?.endereco}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <div className="flex items-center gap-2">
+                           <div className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-600 border border-slate-200">
+                             {p.responsavel?.charAt(0) || 'U'}
+                           </div>
+                           <span className="text-[11px] font-medium text-slate-600">{p.responsavel || 'Não definido'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3.5">
+                        {deadline ? (
+                          <div className={`flex items-center gap-1.5 ${deadline.color}`}>
+                             <deadline.icon size={12} />
+                             <span className="text-[11px] font-bold">{deadline.label}</span>
+                          </div>
+                        ) : <span className="text-[11px] text-slate-300">—</span>}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <select 
+                          className="bg-transparent border-none text-[11px] font-bold outline-none cursor-pointer hover:text-blue-600 transition-colors"
+                          value={p.status}
+                          onChange={(e) => handleUpdateStatus(p.id, e.target.value)}
+                        >
+                          {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+                            <option key={v} value={v}>{c.label}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-6 py-3.5 text-right">
+                         <Link href={`/processos/${p.id}`} className="p-1 text-slate-400 hover:text-slate-900 transition-all opacity-0 group-hover:opacity-100">
+                           <ChevronRight size={16} />
+                         </Link>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* Board View (Kanban) Refined */
+        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-hide -mx-2 px-2">
+          {Object.entries(STATUS_CONFIG).map(([statusId, config]) => {
+            const columnProcs = filtered.filter(p => p.status === statusId)
             return (
-              <div key={statusId} className="flex-shrink-0 w-[320px] flex flex-col gap-4">
-                <div className="flex items-center justify-between px-3">
-                  <div className="flex items-center gap-3">
-                    <h3 className={`text-[10px] font-black uppercase tracking-[0.25em] ${config.color}`}>{config.label}</h3>
-                    <span className="text-[10px] font-black text-slate-500 bg-white/5 border border-white/5 px-2 py-0.5 rounded-full">{colProcs.length}</span>
+              <div key={statusId} className="flex-shrink-0 w-[260px] flex flex-col gap-3">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
+                    <h3 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">{config.label}</h3>
+                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-md">{columnProcs.length}</span>
                   </div>
-                  <button className="text-slate-600 hover:text-white transition-colors"><Plus size={16}/></button>
+                  <button className="text-slate-300 hover:text-slate-600"><Plus size={14}/></button>
                 </div>
                 
-                <div className="flex-1 space-y-4 p-3 rounded-2xl bg-white/[0.01] border border-white/5 backdrop-blur-sm min-h-[500px]">
-                  {colProcs.map(p => {
-                    // Mocks de financeiro para o visual da startup
-                    const valorContrato = p.valor_contrato || 5000
-                    const pendente = Math.random() > 0.5
-                    
+                <div className="flex-1 space-y-2.5 p-1 rounded-xl bg-slate-100/40 border border-slate-200/50 min-h-[500px]">
+                  {columnProcs.map(p => {
+                    const deadline = getDeadlineInfo(p.data_deadline)
                     return (
-                      <div key={p.id} className="card p-5 hover-glow group cursor-grab active:cursor-grabbing border-white/10 hover:border-white/20 transition-all">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest px-2 py-1 bg-slate-900 rounded border border-white/5">
-                            {p.codigo_projeto || `OP-${p.id.substring(0,4).toUpperCase()}`}
-                          </span>
-                          
+                      <Link key={p.id} href={`/processos/${p.id}`} 
+                        className="block bg-white p-3 rounded-lg border border-slate-200 shadow-sm hover:border-blue-400 hover:shadow-md transition-all group animate-fade-up">
+                        
+                        <div className="flex items-center justify-between mb-2">
                           <select 
-                            className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-transparent border-none outline-none cursor-pointer hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                            className="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-transparent border-none outline-none cursor-pointer hover:text-blue-600"
                             value={p.status}
                             onChange={(e) => handleUpdateStatus(p.id, e.target.value)}
                           >
-                            {Object.entries(KANBAN_COLUMNS).map(([v, c]) => (
-                              <option key={v} value={v} className="bg-slate-900 text-white">{c.label.toUpperCase()}</option>
+                            {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+                              <option key={v} value={v}>{c.label}</option>
                             ))}
                           </select>
+                          {deadline && (
+                            <div className={`px-1.5 py-0.5 rounded-md flex items-center gap-1 ${deadline.bg} ${deadline.color}`}>
+                               <deadline.icon size={10} />
+                               <span className="text-[9px] font-bold">{deadline.label}</span>
+                            </div>
+                          )}
                         </div>
 
-                        <h4 className="text-sm font-bold text-white leading-snug mb-3 group-hover:text-blue-400 transition-colors">
+                        <h4 className="text-[12px] font-bold text-slate-900 leading-tight mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">
                           {p.tipo_regularizacao}
                         </h4>
 
-                        <div className="space-y-2 mb-4">
-                           <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400">
-                             <Users size={12} className="text-slate-600" />
-                             <span className="truncate">{p.cliente?.nome || 'Cliente não definido'}</span>
+                        <div className="space-y-2">
+                           <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                             <Users size={12} className="text-slate-300" />
+                             <span className="font-medium truncate">{p.cliente?.nome}</span>
+                           </div>
+                           <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                             <MapPin size={12} className="text-slate-300" />
+                             <span className="font-medium truncate">{p.imovel?.endereco}</span>
                            </div>
                         </div>
 
-                        <div className="pt-4 border-t border-white/5 flex items-center justify-between">
-                           <span className="text-xs font-bold text-slate-300">{fmt(valorContrato)}</span>
-                           <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase border ${pendente ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' : 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'}`}>
-                              {pendente ? 'Pendente' : 'Pago'}
-                           </span>
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-50">
+                           <div className="flex items-center gap-1.5">
+                              <div className="w-5 h-5 rounded-md bg-blue-600 flex items-center justify-center text-[9px] font-bold text-white shadow-sm">
+                                {p.responsavel?.charAt(0) || 'U'}
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-400">{p.responsavel || 'Equipe'}</span>
+                           </div>
+                           <div className="flex gap-1">
+                              {p.documentos?.length > 0 && <FileText size={12} className="text-slate-300" />}
+                              {p.financeiro?.length > 0 && <DollarSign size={12} className="text-slate-300" />}
+                           </div>
                         </div>
-                      </div>
+                      </Link>
                     )
                   })}
-                  {colProcs.length === 0 && (
-                    <div className="h-24 flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl text-slate-700">
-                      <span className="text-[9px] font-black uppercase tracking-[0.3em]">Drop Here</span>
+                  {columnProcs.length === 0 && (
+                    <div className="h-20 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-lg text-slate-300">
+                      <span className="text-[9px] font-bold uppercase tracking-widest">Vazio</span>
                     </div>
                   )}
                 </div>
               </div>
             )
           })}
-        </div>
-      ) : (
-        /* List View */
-        <div className="card overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-white/[0.02]">
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Código / Serviço</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cliente</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Valor</th>
-                <th className="px-8 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Fase</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {filtered.map(p => (
-                <tr key={p.id} className="table-row group">
-                  <td className="px-8 py-5">
-                    <p className="text-sm font-bold text-white group-hover:text-blue-400">{p.tipo_regularizacao}</p>
-                    <p className="text-[10px] font-mono text-slate-500 mt-1">{p.codigo_projeto || `OP-${p.id.substring(0,4).toUpperCase()}`}</p>
-                  </td>
-                  <td className="px-8 py-5 text-xs text-slate-300 font-bold">
-                    {p.cliente?.nome || '—'}
-                  </td>
-                  <td className="px-8 py-5 text-xs text-slate-300 font-bold">
-                    {fmt(p.valor_contrato || 5000)}
-                  </td>
-                  <td className="px-8 py-5">
-                    {(() => {
-                      const st = KANBAN_COLUMNS[p.status] || KANBAN_COLUMNS.proposta
-                      return <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${st.border} ${st.bg} ${st.color}`}>{st.label}</span>
-                    })()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       )}
     </div>
