@@ -33,7 +33,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     // 1. Primeiro, buscamos o processo para saber se ele já tem um imovelId
     const processoAtual = await prisma.processo.findUnique({
       where: { id },
-      select: { imovelId: true, clienteId: true }
+      select: { imovelId: true, clienteId: true, status: true }
     })
 
     if (!processoAtual) {
