@@ -6,7 +6,7 @@ import {
   Users, Building2, Briefcase, DollarSign, TrendingUp,
   Clock, CheckCircle2, ArrowRight, BarChart2, FileText,
   Wallet, Activity, ChevronRight, AlertCircle, Zap,
-  ArrowUpRight, Target, Calendar, ListTodo, AlertTriangle
+  ArrowUpRight, Target, Calendar, ListTodo, AlertTriangle, Plus
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
