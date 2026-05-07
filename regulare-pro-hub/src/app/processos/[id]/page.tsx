@@ -11,7 +11,8 @@ import {
   ExternalLink, ArrowUpRight, Wallet, Briefcase, 
   Search, Plus, Filter, LayoutGrid, List, TrendingUp,
   MoreVertical, Download, Trash2, RefreshCw, AlertCircle,
-  MoreHorizontal, Copy, Trash, Archive, ShieldAlert
+  MoreHorizontal, Copy, Trash, Archive, ShieldAlert,
+  Activity, Tag
 } from 'lucide-react'
 
 // --- Configuração de Status Padronizada ---
