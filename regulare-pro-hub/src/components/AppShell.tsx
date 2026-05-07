@@ -123,8 +123,11 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   )
 }
 
+import RightPanel from '@/components/RightPanel';
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [rightOpen, setRightOpen] = useState(false)
   const pathname = usePathname()
 
   const isFullPage = pathname === '/processos/novo'
@@ -184,10 +187,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="w-px h-6 bg-white/5 mx-2" />
 
-            <Link href="/processos/novo" className="btn-primary py-2.5 px-4 text-xs gap-2 font-black uppercase tracking-widest">
-              <Plus size={16} strokeWidth={3} />
-              <span>Novo Projeto</span>
-            </Link>
+            {/* Contextual panel toggle */}
+            <button onClick={() => setRightOpen(true)} className="btn-outline py-2.5 px-4 text-xs gap-2 font-black uppercase tracking-widest flex items-center">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>
+              <span>Info</span>
+            </button>
           </div>
         </header>
 
@@ -197,6 +201,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {children}
           </div>
         </main>
+
+        {/* Right contextual panel */}
+        <RightPanel isOpen={rightOpen} onClose={() => setRightOpen(false)} />
 
       </div>
     </div>
