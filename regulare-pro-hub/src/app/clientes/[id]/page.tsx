@@ -7,46 +7,26 @@ import {
   ArrowLeft, Users, Building2, DollarSign, FileText,
   TrendingUp, ChevronRight, Briefcase, Phone, Mail,
   MapPin, MessageSquare, Activity, Plus, Calendar, Clock,
-  Trash2, AlertTriangle, Loader2
+  Trash2, AlertTriangle, Loader2, Wallet, User, Info,
+  Smartphone, ExternalLink, Hash, CheckCircle2, History
 } from 'lucide-react'
 
 const TABS = [
-  { id: 'crm',       label: 'Painel CRM',     icon: Activity },
-  { id: 'imoveis',   label: 'Imóveis & Processos', icon: Building2 },
-  { id: 'dados',     label: 'Dados',           icon: Users },
-  { id: 'financeiro',label: 'Financeiro',      icon: DollarSign },
-  { id: 'obs',       label: 'Observações',     icon: MessageSquare },
+  { id: 'dashboard',   label: 'Visão CRM',      icon: Activity },
+  { id: 'processos',   label: 'Processos',      icon: Briefcase },
+  { id: 'imoveis',     label: 'Patrimônio',     icon: Building2 },
+  { id: 'crm',         label: 'Relacionamento', icon: MessageSquare },
+  { id: 'documentos',  label: 'Documentos',     icon: FileText },
+  { id: 'dados',       label: 'Ficha Cadastral', icon: Users },
 ]
-
-const PROCESS_STATUS: Record<string, { label: string; badge: string }> = {
-  em_analise:           { label: 'Em Análise',   badge: 'badge-amber' },
-  protocolo_prefeitura: { label: 'Protocolo',    badge: 'badge-blue' },
-  finalizado:           { label: 'Finalizado',   badge: 'badge-green' },
-  pendente:             { label: 'Pendente',      badge: 'badge-red' },
-}
-
-function InfoItem({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
-  return (
-    <div className="flex items-start gap-3 py-3 border-b border-slate-100 last:border-0">
-      <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="w-3.5 h-3.5 text-slate-500" />
-      </div>
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">{label}</p>
-        <p className="text-sm text-slate-800 font-medium mt-0.5">{value || '—'}</p>
-      </div>
-    </div>
-  )
-}
 
 export default function ClienteDetailPage() {
   const { id } = useParams()
   const [cliente, setCliente] = useState<any>(null)
-  const [tab, setTab] = useState('crm')
+  const [tab, setTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-
   const router = useRouter()
 
   useEffect(() => {
@@ -56,33 +36,19 @@ export default function ClienteDetailPage() {
       .catch(() => setLoading(false))
   }, [id])
 
-  const handleDeleteCliente = async () => {
-    setIsDeleting(true)
-    try {
-      const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' })
-      if (res.ok) {
-        router.push('/clientes')
-      } else {
-        alert('Erro ao excluir cliente.')
-        setIsDeleting(false)
-      }
-    } catch (e) {
-      alert('Erro ao excluir cliente.')
-      setIsDeleting(false)
-    }
-  }
-
   if (loading) return (
-    <div className="space-y-6 animate-fade-up">
-      <div className="flex items-center gap-4"><div className="w-8 h-8 bg-slate-100 rounded-lg animate-pulse"/><div className="h-8 w-48 bg-slate-100 rounded animate-pulse"/></div>
-      <div className="grid grid-cols-4 gap-4">{[...Array(4)].map((_,i) => <div key={i} className="card p-5 h-24 animate-pulse bg-slate-50"/>)}</div>
+    <div className="space-y-6 animate-fade-up p-8">
+      <div className="flex items-center gap-4"><div className="w-10 h-10 bg-slate-100 rounded-xl animate-pulse"/><div className="h-8 w-64 bg-slate-100 rounded animate-pulse"/></div>
+      <div className="grid grid-cols-4 gap-4">{[...Array(4)].map((_,i) => <div key={i} className="card p-6 h-28 animate-pulse bg-slate-50 border-0 shadow-sm"/>)}</div>
     </div>
   )
 
   if (!cliente) return (
-    <div className="card p-12 text-center">
-      <p className="text-slate-500">Cliente não encontrado.</p>
-      <Link href="/clientes" className="btn-primary mt-4 inline-flex">Voltar</Link>
+    <div className="max-w-md mx-auto mt-20 card p-12 text-center border-0 shadow-xl">
+      <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4"><Info size={32}/></div>
+      <h2 className="text-lg font-bold text-slate-800">Cliente não encontrado</h2>
+      <p className="text-slate-500 text-sm mt-2">O registro que você procura não existe ou foi removido.</p>
+      <Link href="/clientes" className="btn-primary mt-8 inline-flex px-8">Voltar para listagem</Link>
     </div>
   )
 
@@ -92,365 +58,490 @@ export default function ClienteDetailPage() {
 
   const totalReceita = financeiro.filter((f: any) => f.tipo === 'receita').reduce((s: number, f: any) => s + f.valor, 0)
   const totalRecebido = financeiro.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((s: number, f: any) => s + f.valor, 0)
+  const totalPendente = totalReceita - totalRecebido
+
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
 
-  // Activity feed: combine processos + financeiro ordenados por data
-  const activities = [
-    ...processos.map((p: any) => ({ date: p.createdAt, type: 'process', label: `Processo criado: ${p.tipo_regularizacao}`, sub: p.codigo_projeto || p.status, icon: Briefcase, color: '#2563eb', bg: '#eff6ff' })),
-    ...financeiro.map((f: any) => ({ date: f.createdAt, type: 'finance', label: f.descricao, sub: fmt(f.valor), icon: DollarSign, color: f.tipo === 'receita' ? '#10b981' : '#ef4444', bg: f.tipo === 'receita' ? '#ecfdf5' : '#fef2f2' })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10)
+  const handleDeleteCliente = async () => {
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' })
+      if (res.ok) router.push('/clientes')
+      else { alert('Erro ao excluir cliente.'); setIsDeleting(false); }
+    } catch (e) { alert('Erro ao excluir cliente.'); setIsDeleting(false); }
+  }
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="max-w-[1400px] mx-auto space-y-6 animate-fade-in p-2 md:p-6 pb-20">
 
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <Link href="/clientes" className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg border border-slate-200 transition-colors mt-1">
-          <ArrowLeft className="w-4 h-4" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h1 className="page-title">{cliente.nome}</h1>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <span className="badge badge-green">Ativo</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-xs text-slate-500">{processos.length} processo(s)</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-xs text-slate-500">{imoveis.length} imóvel(eis)</span>
-                {cliente.cidade && <><span className="text-slate-300">•</span><span className="text-xs text-slate-500">{cliente.cidade}/{cliente.estado}</span></>}
-              </div>
+      {/* HEADER PREMIUM (ESTILO CRM) */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-200">
+        <div className="flex items-start gap-5">
+          <Link href="/clientes" className="p-2.5 bg-white border border-slate-200 text-slate-400 hover:text-slate-900 rounded-xl transition-all shadow-sm group">
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-3 mb-1.5">
+              <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{cliente.nome}</h1>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${cliente.status === 'ativo' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-500 border border-slate-100'}`}>
+                {cliente.status || 'Ativo'}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setShowDeleteConfirm(true)}
-                className="flex items-center gap-2 px-4 py-2 text-red-500 hover:bg-red-50 rounded-xl text-xs font-bold transition-all"
-              >
-                <Trash2 className="w-4 h-4" />
-                Excluir Cliente
-              </button>
+            <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
+              <span className="flex items-center gap-1.5"><MapPin size={14} className="text-slate-400"/> {cliente.cidade || 'Cidade não inf.'} / {cliente.estado || 'UF'}</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full" />
+              <span className="flex items-center gap-1.5"><Phone size={14} className="text-slate-400"/> {cliente.telefone || '—'}</span>
+              <span className="w-1 h-1 bg-slate-300 rounded-full" />
+              <span className="flex items-center gap-1.5 font-mono text-[10px] tracking-widest">{cliente.cpf_cnpj || '000.000.000-00'}</span>
             </div>
           </div>
         </div>
+
+        <div className="flex items-center gap-3 self-end md:self-auto">
+          <div className="hidden lg:flex flex-col items-end mr-4">
+             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Desde</p>
+             <p className="text-xs font-bold text-slate-700">{new Date(cliente.createdAt).toLocaleDateString('pt-BR')}</p>
+          </div>
+          <button className="p-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all shadow-sm">
+             <Edit size={16}/>
+          </button>
+          <button 
+            onClick={() => setShowDeleteConfirm(true)}
+            className="p-2.5 bg-white border border-slate-200 text-red-500 hover:bg-red-50 rounded-xl transition-all shadow-sm"
+          >
+            <Trash2 size={16}/>
+          </button>
+        </div>
       </div>
 
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* KPI GRID - ENXUTO E ESTRATÉGICO */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[
-          { label: 'Imóveis',        value: imoveis.length,             icon: Building2, color: '#7c3aed', bg: '#f5f3ff' },
-          { label: 'Processos',      value: processos.length,           icon: Briefcase, color: '#2563eb', bg: '#eff6ff' },
-          { label: 'Receita Gerada', value: fmt(totalReceita),          icon: TrendingUp, color: '#10b981', bg: '#ecfdf5' },
-          { label: 'Valor Recebido', value: fmt(totalRecebido),         icon: DollarSign, color: '#f59e0b', bg: '#fffbeb' },
+          { label: 'Processos', value: processos.length, icon: Briefcase, color: '#3b82f6', bg: 'bg-blue-50/50' },
+          { label: 'Imóveis', value: imoveis.length, icon: Building2, color: '#8b5cf6', bg: 'bg-purple-50/50' },
+          { label: 'Receita Total', value: fmt(totalReceita), icon: Wallet, color: '#10b981', bg: 'bg-emerald-50/50' },
+          { label: 'Valor Recebido', value: fmt(totalRecebido), icon: DollarSign, color: '#10b981', bg: 'bg-emerald-50/50' },
+          { label: 'Pendente', value: fmt(totalPendente), icon: Clock, color: '#f59e0b', bg: 'bg-amber-50/50' },
         ].map(s => (
-          <div key={s.label} className="card p-4 flex items-center gap-3 hover:shadow-md transition-all">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: s.bg }}>
-              <s.icon className="w-5 h-5" style={{ color: s.color }} />
+          <div key={s.label} className="card p-5 border-0 shadow-sm bg-white hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
+              <div className={`p-1.5 rounded-lg ${s.bg}`}><s.icon size={14} style={{ color: s.color }} /></div>
             </div>
-            <div>
-              <p className="text-base font-bold text-slate-900">{s.value}</p>
-              <p className="text-[11px] text-slate-500">{s.label}</p>
-            </div>
+            <p className="text-lg font-bold text-slate-900 leading-none">{s.value}</p>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="border-b border-slate-200 -mb-2">
-        <div className="flex gap-0.5 overflow-x-auto">
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all whitespace-nowrap ${
-                tab === t.id ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}>
-              <t.icon className="w-3.5 h-3.5" />{t.label}
-            </button>
-          ))}
-        </div>
+      {/* NAV TABS */}
+      <div className="flex items-center gap-1 p-1 bg-slate-100/50 rounded-2xl w-fit overflow-x-auto no-scrollbar">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`flex items-center gap-2 px-5 py-2.5 text-xs font-bold transition-all rounded-xl ${
+              tab === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}>
+            <t.icon size={14} />{t.label}
+          </button>
+        ))}
       </div>
 
-      {/* ── CRM TAB ──────────────────────────────────────────────────── */}
-      {tab === 'crm' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-up">
+      {/* ── DASHBOARD CRM ───────────────────────────────────────────── */}
+      {tab === 'dashboard' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           
+           <div className="lg:col-span-2 space-y-6">
+              {/* HISTÓRICO DE RELACIONAMENTO RESUMIDO */}
+              <div className="card p-6 border-0 shadow-sm bg-white">
+                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
+                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><MessageSquare size={16} className="text-blue-500"/> Últimos Contatos</h3>
+                   <button className="text-[10px] font-bold text-blue-600 uppercase tracking-wider hover:underline" onClick={() => setTab('crm')}>Ver CRM completo</button>
+                </div>
+                <div className="space-y-6">
+                   {[
+                     { date: 'Hoje, 14:20', type: 'WhatsApp', text: 'Enviado link para assinatura do contrato de regularização.', user: 'Jadson' },
+                     { date: 'Ontem, 09:15', type: 'Ligação', text: 'Cliente ligou tirando dúvidas sobre prazo da prefeitura.', user: 'Jadson' },
+                     { date: '04 Mai 2026', type: 'E-mail', text: 'Recebida matrícula do imóvel central atualizada.', user: 'Automático' }
+                   ].map((item, i) => (
+                     <div key={i} className="flex gap-4">
+                        <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0 text-slate-400"><History size={14}/></div>
+                        <div>
+                           <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase">{item.date}</span>
+                              <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 text-[9px] font-bold uppercase">{item.type}</span>
+                           </div>
+                           <p className="text-sm text-slate-700 leading-snug">{item.text}</p>
+                           <p className="text-[10px] text-slate-400 mt-1.5">Registro por: <strong>{item.user}</strong></p>
+                        </div>
+                     </div>
+                   ))}
+                </div>
+              </div>
 
-          {/* Imóveis vinculados */}
-          <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">Imóveis Vinculados</h3>
-              <span className="badge badge-purple">{imoveis.length}</span>
-            </div>
-            <div className="p-3 space-y-2">
-              {imoveis.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-6">Nenhum imóvel</p>
-                ) : imoveis.map((im: any) => {
-                  const imProcesses = processos.filter((p: any) => p.imovelId === im.id)
-                  return (
-                    <Link key={im.id} href={`/imoveis/${im.id}`} className="block p-3 bg-slate-50 rounded-xl border border-slate-100 hover:border-blue-200 transition-all group">
-                      <p className="text-sm font-medium text-slate-800 group-hover:text-blue-600 transition-colors">{im.endereco}{im.numero ? `, ${im.numero}` : ''}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{im.bairro} · {im.cidade}/{im.estado}</p>
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        <span className="badge badge-purple text-[10px]">{imProcesses.length} processos</span>
-                        {im.area_construida && <span className="badge badge-blue text-[10px]">{im.area_construida} m²</span>}
-                      </div>
-                    </Link>
-                  )
-                })}
-            </div>
-          </div>
-
-          {/* Processos vinculados */}
-          <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-slate-800">Processos</h3>
-              <span className="badge badge-blue">{processos.length}</span>
-            </div>
-            <div className="p-3 space-y-2">
-              {processos.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-6">Nenhum processo</p>
-              ) : processos.map((p: any) => {
-                const st = PROCESS_STATUS[p.status] || { label: p.status, badge: 'badge-slate' }
-                return (
-                  <Link key={p.id} href={`/processos/${p.id}`}
-                    className="block p-3 bg-slate-50 rounded-xl hover:bg-blue-50 transition-colors group">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-mono font-bold text-blue-600">{p.codigo_projeto || '—'}</span>
-                      <span className={`badge ${st.badge} text-[10px]`}>{st.label}</span>
+              {/* DADOS DE CONTATO RÁPIDO */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="card p-6 border-0 shadow-sm bg-slate-900 text-white">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Informações de Contato</h3>
+                    <div className="space-y-4">
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-400">Celular</span>
+                          <span className="text-sm font-medium flex items-center gap-2">{cliente.telefone || '—'} <Smartphone size={14} className="text-blue-400"/></span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-400">E-mail</span>
+                          <span className="text-sm font-medium flex items-center gap-2 underline underline-offset-4 decoration-slate-700">{cliente.email || '—'}</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                          <span className="text-xs text-slate-400">Origem</span>
+                          <span className="px-2 py-0.5 rounded bg-white/10 text-white text-[10px] font-bold uppercase tracking-wider">Indicação</span>
+                       </div>
                     </div>
-                    <p className="text-sm font-medium text-slate-700 group-hover:text-blue-600 transition-colors">{p.tipo_regularizacao}</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</p>
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
+                    <button className="w-full mt-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2">
+                       <Smartphone size={14}/> Chamar no WhatsApp
+                    </button>
+                 </div>
+                 <div className="card p-6 border-0 shadow-sm bg-white">
+                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Anotação Fixada</h3>
+                    <p className="text-sm text-slate-600 italic leading-relaxed">
+                       {cliente.observacoes || 'Nenhuma nota fixada para este cliente. Adicione observações estratégicas para o relacionamento.'}
+                    </p>
+                 </div>
+              </div>
+           </div>
 
-          {/* Histórico de atividades */}
-          <div className="card overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-100">
-              <h3 className="text-sm font-bold text-slate-800">Histórico de Atividades</h3>
-            </div>
-            <div className="p-4">
-              {activities.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-6">Sem atividades</p>
-              ) : (
-                <div className="relative">
-                  {/* Timeline line */}
-                  <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-200" />
-                  <div className="space-y-5">
-                    {activities.map((a, i) => (
-                      <div key={i} className="flex items-start gap-4 pl-2">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-sm z-10" style={{ backgroundColor: a.bg }}>
-                          <a.icon className="w-3.5 h-3.5" style={{ color: a.color }} />
-                        </div>
-                        <div className="flex-1 min-w-0 pt-1">
-                          <p className="text-xs font-semibold text-slate-700 leading-tight">{a.label}</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            {a.sub} · {new Date(a.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: '2-digit' })}
-                          </p>
-                        </div>
+           <div className="space-y-6">
+              {/* RESUMO DO PATRIMÔNIO (IMÓVEIS) */}
+              <div className="card p-6 border-0 shadow-sm bg-white">
+                 <div className="flex items-center justify-between mb-6 pb-2 border-b border-slate-50">
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Building2 size={16} className="text-purple-500"/> Patrimônio</h3>
+                    <span className="badge badge-purple">{imoveis.length}</span>
+                 </div>
+                 <div className="space-y-3">
+                    {imoveis.slice(0, 3).map((im: any) => (
+                      <Link key={im.id} href={`/imoveis/${im.id}`} className="block p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-purple-200 transition-all">
+                         <p className="text-xs font-bold text-slate-800 truncate">{im.endereco}</p>
+                         <p className="text-[10px] text-slate-400 mt-0.5 font-bold uppercase">{im.bairro} · {im.cidade}</p>
+                      </Link>
+                    ))}
+                    {imoveis.length > 3 && (
+                      <button className="w-full py-2 text-[10px] font-bold text-slate-400 uppercase hover:text-purple-600 transition-colors" onClick={() => setTab('imoveis')}>
+                        + Ver outros {imoveis.length - 3} imóveis
+                      </button>
+                    )}
+                    {imoveis.length === 0 && <p className="text-xs text-slate-400 py-4 text-center">Nenhum imóvel vinculado</p>}
+                 </div>
+              </div>
+
+              {/* DOCUMENTOS PESSOAIS CHECKLIST */}
+              <div className="card p-6 border-0 shadow-sm bg-white">
+                 <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2"><FileText size={16} className="text-amber-500"/> Doc. Pessoais</h3>
+                 <div className="space-y-3">
+                    {[
+                      { label: 'RG / CNH', ok: true },
+                      { label: 'CPF / CNPJ', ok: true },
+                      { label: 'Comprovante Residência', ok: false },
+                      { label: 'Contrato Assinado', ok: false },
+                      { label: 'Procuração', ok: false },
+                    ].map(doc => (
+                      <div key={doc.label} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50">
+                         <span className="text-xs font-medium text-slate-600">{doc.label}</span>
+                         {doc.ok ? <CheckCircle2 size={14} className="text-emerald-500"/> : <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-200"/>}
                       </div>
                     ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+                 </div>
+              </div>
+           </div>
+
         </div>
       )}
 
-      {/* ── DADOS TAB ────────────────────────────────────────────────── */}
-      {tab === 'dados' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-up">
-          <div className="card p-6">
-            <h3 className="text-sm font-bold text-slate-700 mb-4">Informações Pessoais</h3>
-            <InfoItem icon={Users}  label="Nome Completo" value={cliente.nome} />
-            <InfoItem icon={Users}  label="CPF / CNPJ"    value={cliente.cpf_cnpj} />
-            <InfoItem icon={Phone}  label="Telefone"       value={cliente.telefone} />
-            <InfoItem icon={Mail}   label="E-mail"         value={cliente.email} />
-          </div>
-          <div className="card p-6">
-            <h3 className="text-sm font-bold text-slate-700 mb-4">Endereço</h3>
-            <InfoItem icon={MapPin} label="CEP"       value={cliente.cep} />
-            <InfoItem icon={MapPin} label="Endereço"  value={`${cliente.endereco || ''}${cliente.numero ? ', ' + cliente.numero : ''}`} />
-            <InfoItem icon={MapPin} label="Bairro"    value={cliente.bairro} />
-            <InfoItem icon={MapPin} label="Cidade/UF" value={`${cliente.cidade || ''} / ${cliente.estado || ''}`} />
-          </div>
+      {/* ── PROCESSOS TAB (TABELA SIMPLES) ─────────────────────────── */}
+      {tab === 'processos' && (
+        <div className="card overflow-hidden border-0 shadow-sm bg-white animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+              <h3 className="text-sm font-bold text-slate-800">Processos Contratados</h3>
+              <Link href="/processos/novo" className="btn-primary py-1.5 px-4 text-[11px]">Novo Processo</Link>
+           </div>
+           <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                 <thead>
+                    <tr className="border-b border-slate-50 bg-slate-50/50">
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Código</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tipo de Serviço</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Status</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Data</th>
+                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Investimento</th>
+                       <th className="px-6 py-4"></th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    {processos.length === 0 ? (
+                      <tr><td colSpan={6} className="px-6 py-12 text-center text-slate-400 text-sm">Nenhum processo iniciado</td></tr>
+                    ) : processos.map((p: any) => (
+                      <tr key={p.id} className="hover:bg-slate-50/80 transition-colors group">
+                         <td className="px-6 py-4 font-mono text-[10px] font-bold text-blue-600">{p.codigo_projeto || '—'}</td>
+                         <td className="px-6 py-4">
+                            <p className="text-xs font-bold text-slate-800">{p.tipo_regularizacao}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">{p.imovel?.endereco || 'Imóvel vincul.'}</p>
+                         </td>
+                         <td className="px-6 py-4">
+                            <div className="flex justify-center">
+                               <span className={`px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[9px] font-bold uppercase tracking-wider`}>{p.status}</span>
+                            </div>
+                         </td>
+                         <td className="px-6 py-4 text-[11px] text-slate-500">{new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
+                         <td className="px-6 py-4 text-right font-bold text-slate-700 text-xs">{fmt(p.valor_total || 0)}</td>
+                         <td className="px-6 py-4 text-right">
+                            <Link href={`/processos/${p.id}`} className="p-1.5 bg-slate-100 text-slate-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all inline-flex shadow-sm"><ExternalLink size={14}/></Link>
+                         </td>
+                      </tr>
+                    ))}
+                 </tbody>
+              </table>
+           </div>
         </div>
       )}
 
-      {/* ── IMÓVEIS & PROCESSOS TAB ──────────────────────────────────── */}
+      {/* ── IMÓVEIS TAB (CARDS) ────────────────────────────────────── */}
       {tab === 'imoveis' && (
-        <div className="space-y-6 animate-fade-up">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-800">Imóveis & Seus Processos</h3>
-            <Link href={`/imoveis/novo?clienteId=${cliente.id}`} className="btn-primary text-xs py-2">
-              <Plus className="w-3.5 h-3.5" /> Adicionar Novo Imóvel
-            </Link>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           {imoveis.length === 0 ? (
+             <div className="col-span-full py-20 text-center bg-white rounded-3xl border-2 border-dashed border-slate-100">
+                <Building2 size={40} className="text-slate-200 mx-auto mb-4"/>
+                <p className="text-slate-500 font-medium text-sm">Nenhum imóvel vinculado a este CPF/CNPJ</p>
+                <Link href={`/imoveis/novo?clienteId=${cliente.id}`} className="mt-6 inline-flex btn-primary px-8">Cadastrar Imóvel</Link>
+             </div>
+           ) : imoveis.map((im: any) => (
+             <div key={im.id} className="card p-6 border-0 shadow-sm bg-white hover:shadow-xl hover:-translate-y-1 transition-all group">
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-5 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                   <Building2 size={24} className="text-slate-400 group-hover:text-blue-600 transition-colors"/>
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 leading-tight mb-1">{im.endereco}{im.numero ? `, nº ${im.numero}` : ''}</h4>
+                <p className="text-[11px] text-slate-500 font-medium mb-6 uppercase tracking-wider">{im.bairro} · {im.cidade}/{im.estado}</p>
+                
+                <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50 mb-6">
+                   <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Área Constr.</p>
+                      <p className="text-xs font-bold text-slate-800">{im.area_construida ? `${im.area_construida} m²` : '—'}</p>
+                   </div>
+                   <div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Matrícula</p>
+                      <p className="text-xs font-bold text-slate-800">{im.num_matricula || '—'}</p>
+                   </div>
+                </div>
 
-          {imoveis.length === 0 ? (
-            <div className="card p-12 text-center">
-              <Building2 className="w-12 h-12 text-slate-200 mx-auto mb-4"/>
-              <p className="text-slate-500 font-medium">Este cliente ainda não possui imóveis cadastrados.</p>
-              <p className="text-sm text-slate-400 mt-1">Cadastre um imóvel para iniciar o fluxo de regularização.</p>
-              <Link href={`/imoveis/novo?clienteId=${cliente.id}`} className="btn-primary mt-6 inline-flex">
-                Cadastrar Primeiro Imóvel
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-6">
-              {imoveis.map((im: any) => {
-                const imProcesses = processos.filter((p: any) => p.imovelId === im.id)
-                return (
-                  <div key={im.id} className="card overflow-hidden border-l-4 border-l-blue-500">
-                    <div className="p-5 bg-slate-50/50 border-b border-slate-100 flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center shadow-sm shrink-0">
-                          <Building2 className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="text-base font-bold text-slate-900 leading-tight">
-                            {im.endereco}{im.numero ? `, nº ${im.numero}` : ''}
-                          </h4>
-                          <p className="text-sm text-slate-500 mt-1">{im.bairro} · {im.cidade}/{im.estado}</p>
-                          <div className="flex gap-2 mt-3">
-                            {im.area_construida && <span className="badge badge-blue">{im.area_construida} m²</span>}
-                            {im.num_matricula && <span className="badge badge-slate">Mat: {im.num_matricula}</span>}
-                            {im.zoneamento && <span className="badge badge-purple">Zona: {im.zoneamento}</span>}
-                          </div>
-                        </div>
+                <Link href={`/imoveis/${im.id}`} className="w-full py-2.5 bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-600 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-slate-100">
+                   Ver Ficha Técnica <ChevronRight size={14}/>
+                </Link>
+             </div>
+           ))}
+        </div>
+      )}
+
+      {/* ── RELACIONAMENTO TAB (CRM) ────────────────────────────────── */}
+      {tab === 'crm' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <div className="lg:col-span-2 space-y-6">
+              <div className="card p-6 border-0 shadow-sm bg-white">
+                 <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
+                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><History size={16} className="text-blue-500"/> Histórico de Contatos</h3>
+                    <button className="btn-primary py-1.5 px-4 text-[10px]">+ Novo Registro</button>
+                 </div>
+                 
+                 <div className="space-y-8 relative">
+                    <div className="absolute left-[15px] top-4 bottom-4 w-px bg-slate-100"/>
+                    {[
+                      { date: '06 Mai 2026', time: '14:20', type: 'WhatsApp', text: 'Enviado link para assinatura do contrato de regularização via Clicksign.', user: 'Jadson', icon: MessageSquare, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                      { date: '05 Mai 2026', time: '09:15', type: 'Ligação', text: 'Cliente ligou tirando dúvidas sobre prazo da prefeitura. Informado que processo está em análise na vigilância.', user: 'Jadson', icon: Phone, color: 'text-blue-500', bg: 'bg-blue-50' },
+                      { date: '04 Mai 2026', time: '18:00', type: 'WhatsApp', text: 'Cliente confirmou o pagamento da primeira parcela do projeto arquitetônico.', user: 'Automático', icon: Wallet, color: 'text-purple-500', bg: 'bg-purple-50' },
+                      { date: '02 Mai 2026', time: '10:30', type: 'Reunião', text: 'Visita técnica realizada no imóvel. Coletadas fotos e medidas iniciais para o projeto As-Built.', user: 'Técnico Bruno', icon: Users, color: 'text-orange-500', bg: 'bg-orange-50' },
+                    ].map((item, i) => (
+                      <div key={i} className="flex gap-6 relative z-10">
+                         <div className={`w-8 h-8 rounded-full border-2 border-white shadow-sm flex items-center justify-center shrink-0 ${item.bg} ${item.color}`}>
+                            <item.icon size={14}/>
+                         </div>
+                         <div className="flex-1 pb-8 border-b border-slate-50 last:border-0">
+                            <div className="flex items-center justify-between mb-2">
+                               <div className="flex items-center gap-2">
+                                  <span className="text-[10px] font-bold text-slate-900">{item.date} às {item.time}</span>
+                                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${item.bg} ${item.color}`}>{item.type}</span>
+                               </div>
+                               <span className="text-[10px] text-slate-400 font-medium">Por: {item.user}</span>
+                            </div>
+                            <p className="text-sm text-slate-600 leading-relaxed bg-slate-50/50 p-4 rounded-2xl border border-slate-100">{item.text}</p>
+                         </div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Link href={`/processos/novo?imovelId=${im.id}`} className="btn-primary text-xs py-2 px-4 shadow-blue-200 shadow-lg">
-                          <Plus className="w-3.5 h-3.5" /> Novo Processo
-                        </Link>
-                        <Link href={`/imoveis/editar/${im.id}`} className="btn-ghost text-xs py-2 px-4">
-                          Editar Imóvel
-                        </Link>
-                      </div>
-                    </div>
-
-                    <div className="p-5">
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Processos neste Imóvel</p>
-                      {imProcesses.length === 0 ? (
-                        <div className="bg-slate-50/50 rounded-xl p-6 text-center border-2 border-dashed border-slate-200">
-                          <p className="text-xs text-slate-400">Nenhum processo iniciado para este imóvel.</p>
-                          <button onClick={() => window.location.href=`/processos/novo?imovelId=${im.id}`} className="text-xs font-bold text-blue-600 hover:underline mt-2">
-                            + Iniciar primeiro processo
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {imProcesses.map((p: any) => {
-                            const st = PROCESS_STATUS[p.status] || { label: p.status, badge: 'badge-slate' }
-                            return (
-                              <Link key={p.id} href={`/processos/${p.id}`} className="group p-4 bg-white border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between">
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto || '—'}</span>
-                                    <span className={`badge ${st.badge} text-[10px]`}>{st.label}</span>
-                                  </div>
-                                  <p className="text-sm font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                                    {p.tipo_regularizacao}
-                                  </p>
-                                  <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> Atualizado em {new Date(p.updatedAt).toLocaleDateString('pt-BR')}
-                                  </p>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-400" />
-                              </Link>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── FINANCEIRO TAB ───────────────────────────────────────────── */}
-      {tab === 'financeiro' && (
-        <div className="space-y-3 animate-fade-up">
-          {financeiro.length === 0 ? (
-            <div className="card p-12 text-center">
-              <DollarSign className="w-8 h-8 text-slate-300 mx-auto mb-3"/>
-              <p className="text-sm text-slate-500">Nenhum registro financeiro</p>
-            </div>
-          ) : financeiro.map((f: any) => (
-            <div key={f.id} className="card p-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-800">{f.descricao}</p>
-                <p className="text-xs text-slate-500 mt-0.5 capitalize">{f.tipo} · {new Date(f.createdAt).toLocaleDateString('pt-BR')}</p>
+                    ))}
+                 </div>
               </div>
-              <div className="text-right">
-                <p className={`text-base font-bold ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {f.tipo === 'receita' ? '+' : '-'} {fmt(f.valor)}
-                </p>
-                <span className={`badge ${f.status === 'pago' ? 'badge-green' : 'badge-amber'} text-[10px]`}>{f.status}</span>
+           </div>
+
+           <div className="space-y-6">
+              <div className="card p-6 border-0 shadow-sm bg-white">
+                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2"><Smartphone size={14}/> Follow-ups Agendados</h3>
+                 <div className="space-y-4">
+                    <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100">
+                       <p className="text-xs font-bold text-amber-700 mb-1">Cobrar Documentos</p>
+                       <p className="text-[11px] text-amber-600 leading-snug mb-3">Ligar para o cliente para cobrar o comprovante de endereço atualizado.</p>
+                       <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1.5"><Calendar size={12}/> Amanhã, 10:00</span>
+                          <button className="text-[9px] font-bold text-amber-700 hover:underline">Resolver</button>
+                       </div>
+                    </div>
+                 </div>
               </div>
-            </div>
-          ))}
+
+              <div className="card p-6 border-0 shadow-sm bg-blue-600 text-white shadow-blue-100">
+                 <h3 className="text-xs font-bold text-blue-200 uppercase tracking-widest mb-4">Notas Internas</h3>
+                 <textarea 
+                    className="w-full bg-blue-500/30 border border-blue-400/30 rounded-xl p-3 text-sm placeholder:text-blue-300 outline-none focus:bg-blue-500/50 transition-all resize-none min-h-[120px]"
+                    placeholder="Escreva algo sobre este cliente..."
+                    defaultValue={cliente.observacoes}
+                 />
+                 <button className="w-full mt-4 py-2 bg-white text-blue-600 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-blue-50 transition-all">Salvar Notas</button>
+              </div>
+           </div>
         </div>
       )}
 
-      {/* ── OBSERVAÇÕES TAB ──────────────────────────────────────────── */}
-      {tab === 'obs' && (
-        <div className="card p-6 animate-fade-up">
-          <textarea className="input-field min-h-[200px] resize-none"
-            placeholder="Anotações internas sobre este cliente..."
-            defaultValue={cliente.observacoes || ''} />
-          <div className="flex justify-end mt-3">
-            <button className="btn-primary text-sm">Salvar Observações</button>
-          </div>
+      {/* ── DOCUMENTOS TAB (PESSOAIS) ─────────────────────────────── */}
+      {tab === 'documentos' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           {[
+             { label: 'RG / CNH', status: 'Enviado', date: '01/05/2026', size: '1.2 MB' },
+             { label: 'CPF / CNPJ', status: 'Enviado', date: '01/05/2026', size: '0.8 MB' },
+             { label: 'Comprovante Residência', status: 'Pendente', date: '—', size: '—' },
+             { label: 'Contrato Assinado', status: 'Aguardando', date: '—', size: '—' },
+             { label: 'Procuração', status: 'Pendente', date: '—', size: '—' },
+             { label: 'Certidão Casamento', status: 'Não Nec.', date: '—', size: '—' },
+           ].map(doc => (
+             <div key={doc.label} className="card p-5 border-0 shadow-sm bg-white hover:shadow-md transition-shadow group">
+                <div className="flex items-center justify-between mb-4">
+                   <div className={`p-2.5 rounded-xl ${doc.status === 'Enviado' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-400'}`}>
+                      <FileText size={20}/>
+                   </div>
+                   <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-widest ${doc.status === 'Enviado' ? 'bg-emerald-50 text-emerald-600' : doc.status === 'Pendente' ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-400'}`}>
+                      {doc.status}
+                   </span>
+                </div>
+                <h4 className="text-xs font-bold text-slate-800 mb-1">{doc.label}</h4>
+                <p className="text-[10px] text-slate-400">{doc.date !== '—' ? `${doc.date} · ${doc.size}` : 'Aguardando upload'}</p>
+                
+                <div className="mt-6 flex items-center gap-2">
+                   {doc.status === 'Enviado' ? (
+                     <>
+                       <button className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all">Ver</button>
+                       <button className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all text-red-500">Excluir</button>
+                     </>
+                   ) : (
+                     <button className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2">
+                        <Plus size={12}/> Upload
+                     </button>
+                   )}
+                </div>
+             </div>
+           ))}
         </div>
       )}
 
-      {/* Modal de Confirmação de Exclusão */}
+      {/* ── FICHA CADASTRAL TAB (DADOS) ────────────────────────────── */}
+      {tab === 'dados' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+           <div className="card p-8 border-0 shadow-sm bg-white">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 pb-4 border-b border-slate-50 flex items-center gap-2"><User size={14}/> Informações Cadastrais</h3>
+              <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-8">
+                    <DataField label="Nome Completo / Razão" value={cliente.nome} />
+                    <DataField label="CPF / CNPJ" value={cliente.cpf_cnpj} fontMono />
+                 </div>
+                 <div className="grid grid-cols-2 gap-8">
+                    <DataField label="Telefone / Celular" value={cliente.telefone} />
+                    <DataField label="E-mail Principal" value={cliente.email} />
+                 </div>
+                 <div className="grid grid-cols-2 gap-8">
+                    <DataField label="Origem do Cliente" value="Indicação Direta" />
+                    <DataField label="Tipo de Cliente" value="Pessoa Física" />
+                 </div>
+              </div>
+           </div>
+
+           <div className="card p-8 border-0 shadow-sm bg-white">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-8 pb-4 border-b border-slate-50 flex items-center gap-2"><MapPin size={14}/> Endereço de Correspondência</h3>
+              <div className="space-y-6">
+                 <div className="grid grid-cols-3 gap-8">
+                    <div className="col-span-2">
+                       <DataField label="Endereço / Logradouro" value={cliente.endereco} />
+                    </div>
+                    <DataField label="Número" value={cliente.numero || 'S/N'} />
+                 </div>
+                 <div className="grid grid-cols-2 gap-8">
+                    <DataField label="Bairro" value={cliente.bairro} />
+                    <DataField label="CEP" value={cliente.cep} fontMono />
+                 </div>
+                 <div className="grid grid-cols-3 gap-8">
+                    <div className="col-span-2">
+                       <DataField label="Cidade" value={cliente.cidade} />
+                    </div>
+                    <DataField label="Estado / UF" value={cliente.estado} />
+                 </div>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 bg-red-50 text-red-600 flex items-center gap-3 border-b border-red-100">
-              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <h2 className="font-bold text-lg">Excluir Cliente?</h2>
-                <p className="text-xs text-red-500 font-medium">Esta ação é irreversível.</p>
-              </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 pb-0 flex flex-col items-center text-center">
+               <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mb-6 border border-red-100 shadow-sm shadow-red-50">
+                  <AlertTriangle size={32} />
+               </div>
+               <h2 className="text-xl font-bold text-slate-900">Excluir {cliente.nome}?</h2>
+               <p className="text-sm text-slate-500 mt-2">Esta ação apagará permanentemente o cliente e todos os dados vinculados, incluindo processos e históricos.</p>
             </div>
-            <div className="p-8 space-y-6">
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Ao excluir <strong>{cliente.nome}</strong>, todos os dados vinculados serão apagados permanentemente:
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-xs text-slate-500"><div className="w-1.5 h-1.5 rounded-full bg-red-400" /> {processos.length} Processos ativos</li>
-                <li className="flex items-center gap-2 text-xs text-slate-500"><div className="w-1.5 h-1.5 rounded-full bg-red-400" /> {imoveis.length} Imóveis cadastrados</li>
-                <li className="flex items-center gap-2 text-xs text-slate-500"><div className="w-1.5 h-1.5 rounded-full bg-red-400" /> Histórico financeiro completo</li>
-              </ul>
-              <div className="flex items-center gap-3 pt-4">
-                <button 
-                  disabled={isDeleting}
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-bold text-sm transition-all"
-                >
-                  Cancelar
-                </button>
-                <button 
+            <div className="p-8 pt-10 space-y-3">
+               <button 
                   disabled={isDeleting}
                   onClick={handleDeleteCliente}
-                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-100 transition-all flex items-center justify-center gap-2"
-                >
-                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  Confirmar Exclusão
-                </button>
-              </div>
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-red-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+               >
+                  {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 size={18} />}
+                  Confirmar Exclusão Definitiva
+               </button>
+               <button 
+                  disabled={isDeleting}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="w-full py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-bold text-sm transition-all"
+               >
+                  Cancelar
+               </button>
             </div>
           </div>
         </div>
       )}
     </div>
+  )
+}
+
+function DataField({ label, value, fontMono }: { label: string; value?: string; fontMono?: boolean }) {
+  return (
+    <div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{label}</p>
+      <p className={`text-sm font-semibold text-slate-800 ${fontMono ? 'font-mono tracking-wider' : ''}`}>
+        {value || <span className="text-slate-300 font-normal italic">— Não informado</span>}
+      </p>
+    </div>
+  )
+}
+
+function Edit({ size }: { size: number }) {
+  return <EditIcon size={size} />
+}
+
+function EditIcon({ size }: { size: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+    </svg>
   )
 }
