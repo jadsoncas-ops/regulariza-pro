@@ -35,11 +35,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string; bg: string; b
   finalizado:           { label: 'Concluído',     color: '#059669', bg: '#ECFDF5', border: '#A7F3D0' },
 }
 
-const MOCK = [
-  { m: 'Jan', r: 8000, d: 2500 }, { m: 'Fev', r: 14000, d: 3800 },
-  { m: 'Mar', r: 11000, d: 3200 }, { m: 'Abr', r: 19000, d: 5100 },
-  { m: 'Mai', r: 16000, d: 4200 }, { m: 'Jun', r: 24000, d: 5900 },
-]
+// MOCK removido - dados calculados dinamicamente
 
 const PIE_CFG = [
   { id: 'finalizado', color: '#10B981' },
@@ -79,10 +75,35 @@ export default function DashboardPage() {
   const receitas = financeiro.filter((f: any) => f.tipo === 'receita')
   const despesas = financeiro.filter((f: any) => f.tipo === 'despesa')
   const totalRec = receitas.reduce((s: number, f: any) => s + f.valor, 0)
-  const recebido = receitas.filter((f: any) => f.status === 'pago').reduce((s: number, f: any) => s + f.valor, 0)
-  const aReceber = receitas.filter((f: any) => f.status !== 'pago').reduce((s: number, f: any) => s + f.valor, 0)
-  const lucro = recebido - despesas.filter((f: any) => f.status === 'pago').reduce((s: number, f: any) => s + f.valor, 0)
+  const recebido = receitas.filter((f: any) => f.status === 'pago' || f.status === 'recebido').reduce((s: number, f: any) => s + f.valor, 0)
+  const aReceber = receitas.filter((f: any) => f.status !== 'pago' && f.status !== 'recebido').reduce((s: number, f: any) => s + f.valor, 0)
+  const lucro = recebido - despesas.filter((f: any) => f.status === 'pago' || f.status === 'recebido').reduce((s: number, f: any) => s + f.valor, 0)
   const recent = [...processos].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 7)
+  
+  // Cálculo dinâmico do gráfico de área
+  const last6Months = Array.from({ length: 6 }).map((_, i) => {
+    const d = new Date()
+    d.setMonth(d.getMonth() - (5 - i))
+    return {
+      m: d.toLocaleDateString('pt-BR', { month: 'short' }),
+      monthNum: d.getMonth(),
+      year: d.getFullYear(),
+      r: 0,
+      d: 0
+    }
+  })
+
+  financeiro.forEach((f: any) => {
+    const date = new Date(f.createdAt)
+    const m = last6Months.find(l => l.monthNum === date.getMonth() && l.year === date.getFullYear())
+    if (m) {
+      if (f.tipo === 'receita') m.r += f.valor
+      else m.d += f.valor
+    }
+  })
+
+  const chartData = last6Months
+
   const pieData = PIE_CFG.map(c => ({
     name: STATUS_LABEL[c.id]?.label || c.id,
     value: processos.filter((p: any) => p.status === c.id).length,
@@ -198,7 +219,7 @@ export default function DashboardPage() {
             <span className="badge badge-green" style={{ fontSize: 11 }}>+18% este mês</span>
           </div>
           <ResponsiveContainer width="100%" height={170}>
-            <AreaChart data={MOCK} margin={{ left: -16, right: 0 }}>
+            <AreaChart data={chartData} margin={{ left: -16, right: 0 }}>
               <defs>
                 <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#2563EB" stopOpacity={0.12} />

@@ -22,3 +22,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Erro ao criar lançamento' }, { status: 500 })
   }
 }
+
+export async function GET() {
+  try {
+    const financeiro = await prisma.financeiro.findMany({
+      include: {
+        cliente: true,
+        processo: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+    return NextResponse.json(financeiro)
+  } catch (error) {
+    return NextResponse.json({ error: 'Erro ao buscar financeiro' }, { status: 500 })
+  }
+}

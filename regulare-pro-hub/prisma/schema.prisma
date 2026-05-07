@@ -94,6 +94,8 @@ model Processo {
   documentos         Documento[]
   checklists         Checklist[]
   eventos            Evento[]
+  protocolos         Protocolo[]
+  logs               Log[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 }
@@ -127,9 +129,36 @@ model Tarefa {
   data        DateTime
   hora        String?
   responsavel String?
+  prioridade  String    @default("normal") // baixa, normal, alta, urgente
   status      String    @default("pendente")
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model Protocolo {
+  id               String    @id @default(cuid())
+  processoId       String
+  processo         Processo  @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  orgao            String
+  numero_protocolo String
+  data             DateTime
+  prazo            DateTime?
+  status           String    @default("em_analise")
+  exigencia        String?
+  observacao       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model Log {
+  id         String    @id @default(cuid())
+  processoId String?
+  processo   Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  usuario    String
+  acao       String
+  modulo     String
+  detalhe    String?   // De: X -> Para: Y
+  createdAt  DateTime  @default(now())
 }
 
 model Documento {

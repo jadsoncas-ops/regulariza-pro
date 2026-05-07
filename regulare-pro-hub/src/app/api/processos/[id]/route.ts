@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { logAction } from '@/lib/logger'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -8,11 +9,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       include: { 
         cliente: true,
         imovel: true,
-        financeiro: true,
-        tarefas: true,
-        documentos: true,
-        checklists: true,
-        eventos: true
+        financeiro: { orderBy: { createdAt: 'desc' } },
+        tarefas: { orderBy: { createdAt: 'desc' } },
+        documentos: { orderBy: { createdAt: 'desc' } },
+        checklists: { orderBy: { createdAt: 'asc' } },
+        eventos: { orderBy: { createdAt: 'desc' } },
+        protocolos: { orderBy: { createdAt: 'desc' } },
+        logs: { orderBy: { createdAt: 'desc' } }
       }
     })
     if (!processo) return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 })
@@ -94,6 +97,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         imovelId: imovelId // Garante que o vínculo esteja atualizado
       }
     })
+
+    // LOGAR MUDANÇA DE STATUS SE HOUVER
+    if (data.status && data.status !== processoAtual.status) {
+      await logAction({
+        processoId: id,
+        acao: `Alteração de Status`,
+        modulo: 'PROCESSO',
+        detalhe: `De: ${processoAtual.status} → Para: ${data.status}`
+      })
+    }
 
     return NextResponse.json(processoAtualizado)
   } catch (error) {
