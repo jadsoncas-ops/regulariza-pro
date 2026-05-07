@@ -12,25 +12,13 @@ import {
 import GlobalSearch from '@/components/GlobalSearch'
 
 const NAV = [
-  {
-    section: 'Principal',
-    items: [
-      { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-      { href: '/processos', label: 'Processos',   icon: Briefcase },
-      { href: '/clientes',  label: 'Clientes',    icon: Users },
-      { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
-    ]
-  },
-  {
-    section: 'Gestão',
-    items: [
-      { href: '/financeiro',  label: 'Financeiro',     icon: DollarSign },
-      { href: '/agenda',      label: 'Agenda',         icon: Calendar },
-      { href: '/documentos',  label: 'Documentos',     icon: FileText },
-      { href: '/mapa',        label: 'Mapa',           icon: MapPin },
-      { href: '/relatorios',  label: 'Relatórios',     icon: BarChart3 },
-    ]
-  },
+  { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
+  { href: '/processos', label: 'Operations',  icon: Briefcase },
+  { href: '/clientes',  label: 'Clientes',    icon: Users },
+  { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
+  { href: '/financeiro',label: 'Financeiro',  icon: DollarSign },
+  { href: '/agenda',    label: 'Agenda',      icon: Calendar },
+  { href: '/mapa',      label: 'Mapa de Projetos', icon: MapPin },
 ]
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
@@ -61,35 +49,25 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-8 scrollbar-hide">
-        {NAV.map((section) => (
-          <div key={section.section} className="space-y-2">
-            <h3 className="px-4 text-[9px] font-black text-slate-600 uppercase tracking-[0.25em] mb-4">
-              {section.section}
-            </h3>
-            <div className="space-y-1">
-              {section.items.map(item => {
-                const active = isActive(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
-                      active 
-                        ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20' 
-                        : 'text-slate-400 hover:bg-white/5 hover:text-slate-100 border border-transparent'
-                    }`}
-                  >
-                    <item.icon size={18} strokeWidth={active ? 2 : 1.5} className={`${active ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                    <span className="flex-1">{item.label}</span>
-                    {active && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />}
-                  </Link>
-                )
-              })}
-            </div>
-          </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1 scrollbar-hide">
+        {NAV.map(item => {
+          const active = isActive(item.href)
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className={`group flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                active 
+                  ? 'bg-white/10 text-white shadow-sm' 
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-100'
+              }`}
+            >
+              <item.icon size={18} strokeWidth={active ? 2 : 1.5} className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} />
+              <span className="flex-1">{item.label}</span>
+            </Link>
+          )
+        })}
       </nav>
 
       {/* ── User & Config ── */}
@@ -124,6 +102,7 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 }
 
 import RightPanel from '@/components/RightPanel';
+import CreateMenuDropdown from '@/components/CreateMenuDropdown';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -187,10 +166,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
             <div className="w-px h-6 bg-white/5 mx-2" />
 
+            <CreateMenuDropdown />
+
             {/* Contextual panel toggle */}
-            <button onClick={() => setRightOpen(true)} className="btn-outline py-2.5 px-4 text-xs gap-2 font-black uppercase tracking-widest flex items-center">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>
-              <span>Info</span>
+            <button onClick={() => setRightOpen(true)} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-white/5 hover:text-white transition-all relative border border-transparent hover:border-white/5">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
             </button>
           </div>
         </header>
