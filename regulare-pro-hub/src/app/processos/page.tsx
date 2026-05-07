@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, X, Tag, LayoutGrid, List, Filter, MoreHorizontal, User } from 'lucide-react'
+import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, X, Tag, LayoutGrid, List, Filter, MoreHorizontal, User, Edit2, Trash2 } from 'lucide-react'
 import { TagChip } from '@/components/TagInput'
+import { EditProcessoModal } from '@/components/EditProcessoModal'
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 
 // ─── Status config padronizado ────────────────────────────────────────────────
 export const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string }> = {
@@ -34,14 +36,20 @@ export default function ProcessosPage() {
   const [tagFilter, setTagFilter] = useState('')
   const [view, setView] = useState<'list' | 'board'>('list')
   const [allTags, setAllTags] = useState<string[]>([])
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [processoToEdit, setProcessoToEdit] = useState<any>(null)
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [processoToDelete, setProcessoToDelete] = useState<any>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  useEffect(() => {
+  const fetchData = () => {
     fetch('/api/processos')
       .then(r => r.json())
       .then(d => {
         const list = Array.isArray(d) ? d : []
         setProcessos(list)
-        // Extrai todas as tags únicas
         const tags = [...new Set(list.flatMap((p: any) => {
           try { return JSON.parse(p.tags || '[]') } catch { return [] }
         }))] as string[]
@@ -49,7 +57,28 @@ export default function ProcessosPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
+
+  const handleDelete = async () => {
+    if (!processoToDelete) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/processos/${processoToDelete.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setIsDeleteModalOpen(false)
+        setProcessoToDelete(null)
+        fetchData()
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const filtered = useMemo(() => processos.filter(p => {
     const matchSearch = !search ||
@@ -244,9 +273,17 @@ export default function ProcessosPage() {
                         <StatusBadge status={p.status} />
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <Link href={`/processos/${p.id}`} className="btn-ghost text-xs py-1.5 px-3">
-                          Abrir <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Editar">
+                            <Edit2 size={16} />
+                          </button>
+                          <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors" title="Excluir">
+                            <Trash2 size={16} />
+                          </button>
+                          <Link href={`/processos/${p.id}`} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" title="Abrir">
+                            <ChevronRight size={16} />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -293,29 +330,37 @@ export default function ProcessosPage() {
                 
                 <div className="flex-1 space-y-3 p-1 rounded-2xl bg-slate-100/50 border border-slate-200/50 min-h-[400px]">
                   {columnProcs.map(p => (
-                    <Link key={p.id} href={`/processos/${p.id}`} 
-                      className="block bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
-                        <button className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-slate-500 transition-all"><MoreHorizontal size={14}/></button>
-                      </div>
-                      <h4 className="text-sm font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{p.tipo_regularizacao}</h4>
-                      <div className="flex items-center gap-2 mb-4">
-                         <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
-                           {p.cliente?.nome?.charAt(0)}
-                         </div>
-                         <span className="text-[11px] text-slate-500 font-medium truncate">{p.cliente?.nome}</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                        <div className="flex items-center gap-1.5 text-slate-400">
-                          <Clock size={11} />
-                          <span className="text-[10px] font-bold">{getDays(p.data_deadline) || '—'}</span>
+                      <div className="block bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
+                            <button onClick={(e) => { e.preventDefault(); setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Editar">
+                              <Edit2 size={14} />
+                            </button>
+                            <button onClick={(e) => { e.preventDefault(); setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1 text-slate-400 hover:text-red-600 rounded" title="Excluir">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex -space-x-1.5">
-                           <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-[8px] text-white font-bold"><User size={10}/></div>
-                        </div>
+                        <Link href={`/processos/${p.id}`}>
+                          <h4 className="text-sm font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{p.tipo_regularizacao}</h4>
+                          <div className="flex items-center gap-2 mb-4">
+                             <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
+                               {p.cliente?.nome?.charAt(0)}
+                             </div>
+                             <span className="text-[11px] text-slate-500 font-medium truncate">{p.cliente?.nome}</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <Clock size={11} />
+                              <span className="text-[10px] font-bold">{getDays(p.data_deadline) || '—'}</span>
+                            </div>
+                            <div className="flex -space-x-1.5">
+                               <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-[8px] text-white font-bold"><User size={10}/></div>
+                            </div>
+                          </div>
+                        </Link>
                       </div>
-                    </Link>
                   ))}
                   {columnProcs.length === 0 && (
                     <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-300">
@@ -328,6 +373,31 @@ export default function ProcessosPage() {
           })}
         </div>
       )}
+
+      <EditProcessoModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => { setIsEditModalOpen(false); setProcessoToEdit(null) }} 
+        processo={processoToEdit} 
+        onSuccess={fetchData} 
+      />
+
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => { setIsDeleteModalOpen(false); setProcessoToDelete(null) }}
+        onConfirm={handleDelete}
+        loading={isDeleting}
+        title="Tem certeza que deseja excluir este processo?"
+        description={
+          <>
+            <p>Essa ação removerá:</p>
+            <ul className="list-disc pl-5 mt-2 space-y-1">
+              <li>o processo <strong>{processoToDelete?.codigo_projeto}</strong></li>
+              <li>possíveis vínculos com imóvel e cliente</li>
+            </ul>
+            <p className="mt-4 font-semibold text-red-600">Essa ação não poderá ser desfeita.</p>
+          </>
+        }
+      />
     </div>
   )
 }

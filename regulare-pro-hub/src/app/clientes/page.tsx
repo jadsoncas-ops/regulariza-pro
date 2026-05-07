@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Filter, Users, Building2, Briefcase, Phone, Mail, MapPin, ChevronRight, MoreHorizontal } from 'lucide-react'
+import { Plus, Search, Filter, Users, Building2, Briefcase, Phone, Mail, MapPin, ChevronRight, MoreHorizontal, Edit2 } from 'lucide-react'
+import { EditClienteModal } from '@/components/EditClienteModal'
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
   ativo:    { label: 'Ativo',    class: 'badge-green' },
@@ -14,12 +15,18 @@ export default function ClientesPage() {
   const [clientes, setClientes] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [clienteToEdit, setClienteToEdit] = useState<any>(null)
 
-  useEffect(() => {
+  const fetchData = () => {
     fetch('/api/clientes')
       .then(r => r.json())
       .then(d => { setClientes(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   const filtered = clientes.filter(c =>
@@ -155,9 +162,14 @@ export default function ClientesPage() {
                         <span className={`badge ${st.class}`}>{st.label}</span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <Link href={`/clientes/${c.id}`} className="btn-ghost text-xs py-1.5 px-3">
-                          Abrir <ChevronRight className="w-3.5 h-3.5" />
-                        </Link>
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => { setClienteToEdit(c); setIsEditModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Editar">
+                            <Edit2 size={16} />
+                          </button>
+                          <Link href={`/clientes/${c.id}`} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" title="Abrir">
+                            <ChevronRight size={16} />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -167,6 +179,13 @@ export default function ClientesPage() {
           </table>
         </div>
       </div>
+      
+      <EditClienteModal
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setClienteToEdit(null) }}
+        cliente={clienteToEdit}
+        onSuccess={fetchData}
+      />
     </div>
   )
 }

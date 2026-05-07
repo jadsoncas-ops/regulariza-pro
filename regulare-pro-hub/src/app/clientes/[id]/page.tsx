@@ -8,8 +8,9 @@ import {
   TrendingUp, ChevronRight, Briefcase, Phone, Mail,
   MapPin, MessageSquare, Activity, Plus, Calendar, Clock,
   Trash2, AlertTriangle, Loader2, Wallet, User, Info,
-  Smartphone, ExternalLink, Hash, CheckCircle2, History
+  Smartphone, ExternalLink, Hash, CheckCircle2, History, Edit2
 } from 'lucide-react'
+import { EditClienteModal } from '@/components/EditClienteModal'
 
 const TABS = [
   { id: 'dashboard',   label: 'Visão CRM',      icon: Activity },
@@ -27,13 +28,18 @@ export default function ClienteDetailPage() {
   const [loading, setLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
+  const fetchCliente = () => {
     fetch(`/api/clientes/${id}`)
       .then(r => r.json())
       .then(d => { setCliente(d); setLoading(false) })
       .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchCliente()
   }, [id])
 
   if (loading) return (
@@ -102,8 +108,8 @@ export default function ClienteDetailPage() {
              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Desde</p>
              <p className="text-xs font-bold text-slate-700">{new Date(cliente.createdAt).toLocaleDateString('pt-BR')}</p>
           </div>
-          <button className="p-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all shadow-sm">
-             <Edit size={16}/>
+          <button onClick={() => setIsEditModalOpen(true)} className="p-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl transition-all shadow-sm">
+             <Edit2 size={16}/>
           </button>
           <button 
             onClick={() => setShowDeleteConfirm(true)}
@@ -519,6 +525,12 @@ export default function ClienteDetailPage() {
           </div>
         </div>
       )}
+      <EditClienteModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        cliente={cliente}
+        onSuccess={fetchCliente}
+      />
     </div>
   )
 }
@@ -531,17 +543,5 @@ function DataField({ label, value, fontMono }: { label: string; value?: string; 
         {value || <span className="text-slate-300 font-normal italic">— Não informado</span>}
       </p>
     </div>
-  )
-}
-
-function Edit({ size }: { size: number }) {
-  return <EditIcon size={size} />
-}
-
-function EditIcon({ size }: { size: number }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
-    </svg>
   )
 }

@@ -117,9 +117,50 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await prisma.processo.delete({ where: { id: (await params).id } })
+    const id = (await params).id
+    
+    // Buscar processo para pegar clienteId e imovelId
+    const processo = await prisma.processo.findUnique({
+      where: { id },
+      select: { clienteId: true, imovelId: true }
+    })
+
+    if (!processo) {
+      return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 })
+    }
+
+    // 1️⃣ Apagar o processo
+    await prisma.processo.delete({ where: { id } })
+
+    // 2️⃣ Verificar se o imóvel está vinculado a outros processos
+    if (processo.imovelId) {
+      const outrosProcessosImovel = await prisma.processo.count({
+        where: { imovelId: processo.imovelId }
+      })
+      if (outrosProcessosImovel === 0) {
+        // Excluir imóvel automaticamente se não estiver em outro processo
+        await prisma.imovel.delete({ where: { id: processo.imovelId } })
+      }
+    }
+
+    // 3️⃣ Verificar se o cliente possui mais imóveis ou processos
+    if (processo.clienteId) {
+      const outrosProcessosCliente = await prisma.processo.count({
+        where: { clienteId: processo.clienteId }
+      })
+      const outrosImoveisCliente = await prisma.imovel.count({
+        where: { clienteId: processo.clienteId }
+      })
+      
+      if (outrosProcessosCliente === 0 && outrosImoveisCliente === 0) {
+        // Excluir cliente automaticamente se não possuir mais nada
+        await prisma.cliente.delete({ where: { id: processo.clienteId } })
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Erro ao excluir processo' }, { status: 500 })
+    console.error('Erro na deleção em cascata:', error)
+    return NextResponse.json({ error: 'Erro ao excluir processo e vínculos' }, { status: 500 })
   }
 }

@@ -12,6 +12,8 @@ import {
   Search, Plus, Filter, LayoutGrid, List, TrendingUp,
   MoreVertical, Download, Trash2, RefreshCw
 } from 'lucide-react'
+import { EditProcessoModal } from '@/components/EditProcessoModal'
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 
 const TABS = [
   { id: 'visao',      label: 'Visão Geral',    icon: LayoutGrid },
@@ -29,10 +31,29 @@ export default function ProcessoDetailPage() {
   const [tab, setTab] = useState('visao')
   const [processo, setProcesso] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false) // Timeline custom edit
+  const [isEditProcessoModalOpen, setIsEditProcessoModalOpen] = useState(false) // Full edit
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   const [isUpdating, setIsUpdating] = useState(false)
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
   const [isProtocoloModalOpen, setIsProtocoloModalOpen] = useState(false)
+
+  const handleDeleteProcesso = async () => {
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/processos/${params.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        router.push('/processos')
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const handleAddDocument = async () => {
     // Simulação de upload para testes operacionais
@@ -167,13 +188,16 @@ export default function ProcessoDetailPage() {
                  </div>
               </div>
 
-              <div className="flex items-center gap-3 self-end md:self-auto">
+               <div className="flex items-center gap-3 self-end md:self-auto">
                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-right">
                     <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Status da Operação</p>
                     <p className="text-sm font-bold text-emerald-500">{processo.status?.replace(/_/g, ' ').toUpperCase() || 'ATIVO'}</p>
                  </div>
-                 <button onClick={() => setIsEditModalOpen(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10">
+                 <button onClick={() => setIsEditProcessoModalOpen(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10 text-white" title="Editar Processo">
                     <Edit size={18} />
+                 </button>
+                 <button onClick={() => setIsDeleteModalOpen(true)} className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all border border-red-500/20" title="Excluir Processo">
+                    <Trash2 size={18} />
                  </button>
               </div>
            </div>

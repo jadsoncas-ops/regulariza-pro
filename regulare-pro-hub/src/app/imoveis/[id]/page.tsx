@@ -10,6 +10,7 @@ import {
   Camera, Map, Layers, History, Info, Edit,
   ExternalLink, Globe, Landmark, ShieldCheck
 } from 'lucide-react'
+import { EditImovelModal } from '@/components/EditImovelModal'
 
 const TABS = [
   { id: 'tecnico',   label: 'Ficha Técnica',    icon: Ruler },
@@ -24,12 +25,17 @@ export default function ImovelDetailPage() {
   const [imovel, setImovel] = useState<any>(null)
   const [tab, setTab] = useState('tecnico')
   const [loading, setLoading] = useState(true)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
-  useEffect(() => {
+  const fetchImovel = () => {
     fetch(`/api/imoveis/${id}`)
       .then(r => r.json())
       .then(d => { setImovel(d); setLoading(false) })
       .catch(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    fetchImovel()
   }, [id])
 
   if (loading) return (
@@ -82,7 +88,7 @@ export default function ImovelDetailPage() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Responsável Atual</p>
                     <p className="text-sm font-bold text-slate-800">{cliente?.nome || 'Proprietário não inf.'}</p>
                  </div>
-                 <button className="p-3 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl transition-all shadow-sm">
+                 <button onClick={() => setIsEditModalOpen(true)} className="p-3 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-2xl transition-all shadow-sm">
                     <Edit size={18} />
                  </button>
                  <Link href={`/processos/novo?imovelId=${imovel.id}`} className="btn-primary px-6 py-3 rounded-2xl text-xs font-bold uppercase tracking-widest shadow-lg shadow-blue-100">
@@ -240,6 +246,13 @@ export default function ImovelDetailPage() {
         )}
 
       </div>
+
+      <EditImovelModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        imovel={imovel}
+        onSuccess={fetchImovel}
+      />
     </div>
   )
 }
