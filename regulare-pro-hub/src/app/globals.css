@@ -4,14 +4,24 @@
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════
-   REGULARIZAPRO — DESIGN SYSTEM v4 (Operational ERP)
+   REGULARIZAPRO — DESIGN SYSTEM v5 (Premium SaaS)
    ═══════════════════════════════════════════════════ */
+
+@theme {
+  --color-primary: #2563EB;
+  --color-sidebar: #071026;
+  --color-bg-main: #F4F7FB;
+  --color-text-main: #0F172A;
+  --color-text-secondary: #64748B;
+  --color-text-label: #94A3B8;
+  --color-border-subtle: #E2E8F0;
+}
 
 @layer base {
   *, *::before, *::after { 
     box-sizing: border-box; 
     margin: 0; 
-    border-color: var(--color-slate-200);
+    border-color: #E2E8F0;
   }
   
   html { 
@@ -23,8 +33,8 @@
 
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-    background-color: #F8FAFC;
-    color: #334155; /* slate-700 */
+    background-color: #F4F7FB;
+    color: #0F172A;
     overflow-x: hidden;
   }
 
@@ -32,47 +42,50 @@
   h1, h2, h3, h4, .font-title {
     font-family: 'Space Grotesk', sans-serif;
     letter-spacing: -0.02em;
-    color: #1E293B; /* slate-800 */
+    color: #0F172A;
   }
 
   .font-mono, .code-text, .protocol-id {
     font-family: 'JetBrains Mono', monospace;
     letter-spacing: -0.01em;
   }
-
-  .font-geist {
-    /* Geist fallback if not available */
-    font-family: 'Inter', sans-serif;
-  }
 }
 
 @utility card {
-  @apply bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all duration-200;
+  @apply bg-white border border-slate-200 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.05),0_4px_12px_rgba(0,0,0,0.02)] transition-all duration-200;
+}
+
+@utility premium-dark {
+  background: linear-gradient(135deg, #071226 0%, #0A1931 100%);
+}
+
+@utility glass-card {
+  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
 }
 
 @layer components {
   .page-title {
-    @apply text-2xl font-extrabold text-slate-800 tracking-tight mb-1;
+    @apply text-2xl font-extrabold text-slate-900 tracking-tight mb-1;
   }
   
   .page-subtitle {
-    @apply text-xs font-medium text-slate-500 uppercase tracking-widest;
+    @apply text-xs font-bold text-slate-500 uppercase tracking-widest;
   }
 
   .card-header {
-    @apply px-4 py-3 border-b border-slate-100 flex items-center justify-between;
+    @apply px-5 py-4 border-b border-slate-100 flex items-center justify-between;
   }
 
   .card-title {
-    @apply text-xs font-bold text-slate-800 uppercase tracking-wider;
+    @apply text-[11px] font-bold text-slate-900 uppercase tracking-wider;
   }
 
   .stat-card {
-    @apply card p-4 hover:border-blue-300 hover:shadow-md;
+    @apply card p-5 hover:border-blue-400 hover:shadow-lg transition-all;
   }
 
   .btn-primary {
-    @apply bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-sm active:scale-95;
+    @apply bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-md shadow-blue-600/10 active:scale-95;
   }
 
   .btn-ghost {
@@ -80,51 +93,65 @@
   }
 
   .badge {
-    @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-tight;
+    @apply px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase border tracking-tight;
   }
 
-  .badge-blue { @apply bg-blue-50 text-blue-700 border-blue-100; }
-  .badge-green { @apply bg-emerald-50 text-emerald-700 border-emerald-100; }
-  .badge-amber { @apply bg-amber-50 text-amber-700 border-amber-100; }
-  .badge-red { @apply bg-red-50 text-red-700 border-red-100; }
+  .badge-blue { @apply bg-blue-50 text-blue-700 border-blue-200; }
+  .badge-green { @apply bg-emerald-50 text-emerald-700 border-emerald-200; }
+  .badge-amber { @apply bg-amber-50 text-amber-700 border-amber-200; }
+  .badge-red { @apply bg-red-50 text-red-700 border-red-200; }
   .badge-slate { @apply bg-slate-50 text-slate-600 border-slate-200; }
 
   .table-header {
-    @apply text-[10px] font-bold text-slate-400 uppercase tracking-widest px-4 py-3 bg-slate-50/50;
+    @apply text-[10px] font-bold text-slate-400 uppercase tracking-widest px-6 py-4 bg-slate-50/80 backdrop-blur-sm;
   }
 
   .table-row {
-    @apply border-b border-slate-50 hover:bg-slate-50/30 transition-colors;
+    @apply border-b border-slate-100 hover:bg-blue-50/40 transition-colors;
+  }
+
+  .zebra-table tbody tr:nth-child(even) {
+    @apply bg-slate-50/30;
   }
 
   /* Operational Density Adjustments */
   .dense-grid {
-    @apply gap-4;
+    @apply gap-5;
   }
 
   .input-field {
-    @apply w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all placeholder:text-slate-400;
+    @apply w-full bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400;
   }
 
   .select-field {
-    @apply bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-400 transition-all cursor-pointer;
+    @apply bg-white border border-slate-200 rounded-lg px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all cursor-pointer;
   }
 }
 
 /* Animations */
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.4); }
+  100% { box-shadow: 0 0 5px rgba(37, 99, 235, 0.2); }
+}
+
 .animate-fade-up {
-  animation: fade-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fade-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.glow-blue {
+  animation: glow 3s infinite;
 }
 
 /* Custom Scrollbar for modern ERP feel */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -132,12 +159,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #E2E8F0;
-  border-radius: 10px;
+  background: #CBD5E1;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #CBD5E1;
+  background: #94A3B8;
 }
 
 /* Fix for Contrast Issues */

@@ -2,24 +2,29 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, X, Tag, LayoutGrid, List, Filter, MoreHorizontal, User } from 'lucide-react'
+import { 
+  Plus, Search, Briefcase, Clock, AlertTriangle, 
+  ChevronRight, X, Tag, LayoutGrid, List, 
+  Filter, MoreHorizontal, User, TrendingUp,
+  Activity, CheckCircle2, AlertCircle, Building2
+} from 'lucide-react'
 import { TagChip } from '@/components/TagInput'
 
 // ─── Status config padronizado ────────────────────────────────────────────────
 export const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string }> = {
-  em_analise:           { label: 'Em Andamento',  dot: 'bg-amber-400',  badge: 'bg-amber-50 text-amber-700 border-amber-100' },
-  protocolo_prefeitura: { label: 'Protocolado',   dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-700 border-blue-100' },
-  pendente:             { label: 'Pendência',     dot: 'bg-red-500',    badge: 'bg-red-50 text-red-700 border-red-100' },
-  finalizado:           { label: 'Concluído',     dot: 'bg-emerald-500',badge: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-  aprovado:             { label: 'Aprovado',      dot: 'bg-emerald-500',badge: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-  documentacao_pendente:{ label: 'Doc. Pendente', dot: 'bg-orange-400', badge: 'bg-orange-50 text-orange-700 border-orange-100' },
-  exigencia_tecnica:    { label: 'Exigência',     dot: 'bg-red-500',    badge: 'bg-red-50 text-red-700 border-red-100' },
+  em_analise:           { label: 'Em Andamento',  dot: 'bg-amber-400',  badge: 'badge-amber' },
+  protocolo_prefeitura: { label: 'Protocolado',   dot: 'bg-blue-500',   badge: 'badge-blue' },
+  pendente:             { label: 'Pendência',     dot: 'bg-red-500',    badge: 'badge-red' },
+  finalizado:           { label: 'Concluído',     dot: 'bg-emerald-500',badge: 'badge-green' },
+  aprovado:             { label: 'Aprovado',      dot: 'bg-emerald-500',badge: 'badge-green' },
+  documentacao_pendente:{ label: 'Doc. Pendente', dot: 'bg-orange-400', badge: 'badge-amber' },
+  exigencia_tecnica:    { label: 'Exigência',     dot: 'bg-red-500',    badge: 'badge-red' },
 }
 
 export function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] || { label: status?.replace(/_/g, ' ') || '—', dot: 'bg-slate-400', badge: 'bg-slate-100 text-slate-600 border-slate-200' }
+  const cfg = STATUS_CONFIG[status] || { label: status?.replace(/_/g, ' ') || '—', dot: 'bg-slate-400', badge: 'badge-slate' }
   return (
-    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${cfg.badge}`}>
+    <span className={`badge ${cfg.badge} inline-flex items-center gap-1.5`}>
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -41,7 +46,6 @@ export default function ProcessosPage() {
       .then(d => {
         const list = Array.isArray(d) ? d : []
         setProcessos(list)
-        // Extrai todas as tags únicas
         const tags = [...new Set(list.flatMap((p: any) => {
           try { return JSON.parse(p.tags || '[]') } catch { return [] }
         }))] as string[]
@@ -65,6 +69,16 @@ export default function ProcessosPage() {
     return matchSearch && matchStatus && matchTag
   }), [processos, search, statusFilter, tagFilter])
 
+  const stats = useMemo(() => {
+    return {
+      total: processos.length,
+      andamento: processos.filter(p => p.status === 'em_analise' || p.status === 'levantamento' || p.status === 'projeto').length,
+      pendentes: processos.filter(p => p.status === 'pendente' || p.status === 'exigencia_tecnica').length,
+      protocolados: processos.filter(p => p.status === 'protocolo_prefeitura').length,
+      concluidos: processos.filter(p => p.status === 'finalizado' || p.status === 'aprovado').length
+    }
+  }, [processos])
+
   const getDays = (d: string) => {
     if (!d) return null
     return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
@@ -73,127 +87,143 @@ export default function ProcessosPage() {
   const activeFilters = [statusFilter, tagFilter].filter(Boolean)
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-10 animate-fade-up">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header Premium */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h1 className="page-title">Processos</h1>
-          <p className="page-subtitle">{processos.length} processo(s) no sistema</p>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-6 bg-blue-600 rounded-full" />
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Gestão de Processos</h1>
+          </div>
+          <p className="text-slate-500 font-medium text-sm">Controle operacional e monitoramento de protocolos técnicos.</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button onClick={() => setView('list')} className={`p-1.5 rounded-lg transition-all ${view === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}><List size={16}/></button>
-            <button onClick={() => setView('board')} className={`p-1.5 rounded-lg transition-all ${view === 'board' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}><LayoutGrid size={16}/></button>
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200">
+            <button onClick={() => setView('list')} className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider ${view === 'list' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}>
+              <List size={14}/> Lista
+            </button>
+            <button onClick={() => setView('board')} className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider ${view === 'board' ? 'bg-slate-900 text-white' : 'text-slate-400 hover:text-slate-600'}`}>
+              <LayoutGrid size={14}/> Board
+            </button>
           </div>
           <Link href="/processos/novo" className="btn-primary">
-            <Plus className="w-4 h-4" /> Novo Processo
+            <Plus size={18} strokeWidth={3} /> Novo Processo
           </Link>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="card p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {[
+          { label: 'Total Geral', value: stats.total, icon: Briefcase, color: 'text-slate-900', bg: 'bg-white' },
+          { label: 'Em Andamento', value: stats.andamento, icon: Activity, color: 'text-blue-600', bg: 'bg-blue-50/50' },
+          { label: 'Pendências', value: stats.pendentes, icon: AlertCircle, color: 'text-red-600', bg: 'bg-red-50/50' },
+          { label: 'Protocolados', value: stats.protocolados, icon: Building2, color: 'text-purple-600', bg: 'bg-purple-50/50' },
+          { label: 'Concluídos', value: stats.concluidos, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50/50' },
+        ].map((s, i) => (
+          <div key={i} className={`card p-6 flex flex-col justify-between border-transparent shadow-sm ${s.bg}`}>
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center ${s.color}`}><s.icon size={20}/></div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{s.label}</p>
+            </div>
+            <p className={`text-2xl font-black tracking-tighter ${s.color}`}>{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Filters Card */}
+      <div className="card p-6 bg-white border-slate-200 shadow-xl shadow-slate-200/40">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Busca */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="relative flex-1 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
             <input
-              placeholder="Buscar por cliente, serviço, código, cidade..."
-              className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+              placeholder="Buscar por cliente, serviço, código de projeto..."
+              className="w-full pl-11 pr-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all"
               value={search} onChange={e => setSearch(e.target.value)}
             />
           </div>
 
-          {/* Status */}
-          <select
-            className="select-field sm:w-44"
-            value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          >
-            <option value="">Todos os status</option>
-            {Object.entries(STATUS_CONFIG).map(([v, c]) => (
-              <option key={v} value={v}>{c.label}</option>
-            ))}
-          </select>
-        </div>
+          <div className="flex gap-3">
+            {/* Status */}
+            <select
+              className="select-field min-w-[200px]"
+              value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">Todos os Status</option>
+              {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+                <option key={v} value={v}>{c.label}</option>
+              ))}
+            </select>
 
-        {/* Tags filter */}
-        {allTags.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="text-xs text-slate-400">Filtrar por tag:</span>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
-                className={`transition-all ${tagFilter === tag ? 'ring-2 ring-blue-500 ring-offset-1 rounded-full' : 'opacity-70 hover:opacity-100'}`}
-              >
-                <TagChip tag={tag} size="sm" />
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Active filters */}
-        {activeFilters.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Filtros ativos:</span>
-            {statusFilter && (
-              <button onClick={() => setStatusFilter('')}
-                className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors">
-                {STATUS_CONFIG[statusFilter]?.label} <X className="w-3 h-3" />
-              </button>
-            )}
-            {tagFilter && (
-              <button onClick={() => setTagFilter('')}
-                className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors">
-                {tagFilter} <X className="w-3 h-3" />
-              </button>
-            )}
-            <button onClick={() => { setStatusFilter(''); setTagFilter(''); setSearch('') }}
-              className="text-xs text-slate-400 hover:text-red-500 transition-colors ml-1">
-              Limpar tudo
+            <button className="btn-ghost border border-slate-200 bg-white">
+              <Filter size={16}/> Filtros Avançados
             </button>
           </div>
-        )}
+        </div>
+
+        {/* Tags & Active Filters */}
+        <div className="mt-6 pt-6 border-t border-slate-50 flex items-center justify-between">
+           <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                 <Tag size={14} className="text-slate-400"/>
+                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tags Populares:</span>
+              </div>
+              {allTags.slice(0, 8).map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
+                  className={`transition-all ${tagFilter === tag ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
+                >
+                  <TagChip tag={tag} size="sm" />
+                </button>
+              ))}
+           </div>
+
+           {activeFilters.length > 0 && (
+             <button onClick={() => { setStatusFilter(''); setTagFilter(''); setSearch('') }}
+               className="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">
+               Limpar Filtros ({activeFilters.length})
+             </button>
+           )}
+        </div>
       </div>
 
       {/* Views */}
       {view === 'list' ? (
-        <div className="card overflow-hidden">
+        <div className="card overflow-hidden shadow-2xl shadow-slate-200/50">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full zebra-table">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
-                  <th className="px-5 py-3 text-left table-header">Código</th>
-                  <th className="px-5 py-3 text-left table-header">Serviço</th>
-                  <th className="px-5 py-3 text-left table-header">Cliente</th>
-                  <th className="px-5 py-3 text-left table-header hidden md:table-cell">Imóvel</th>
-                  <th className="px-5 py-3 text-left table-header hidden lg:table-cell">Tags</th>
-                  <th className="px-5 py-3 text-left table-header">Prazo</th>
-                  <th className="px-5 py-3 text-left table-header">Status</th>
-                  <th className="px-5 py-3" />
+                <tr className="table-header border-b border-slate-100">
+                  <th className="px-8 py-5">Identificador</th>
+                  <th className="px-8 py-5">Tipo de Regularização</th>
+                  <th className="px-8 py-5">Contratante</th>
+                  <th className="px-8 py-5 hidden md:table-cell">Localidade</th>
+                  <th className="px-8 py-5 hidden lg:table-cell">Tags</th>
+                  <th className="px-8 py-5">Vencimento</th>
+                  <th className="px-8 py-5 text-center">Status</th>
+                  <th className="px-8 py-5" />
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-50">
                 {loading ? (
                   [...Array(5)].map((_, i) => (
-                    <tr key={i} className="border-b border-slate-50">
+                    <tr key={i} className="animate-pulse">
                       {[...Array(8)].map((_, j) => (
-                        <td key={j} className="px-5 py-3.5">
-                          <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
-                        </td>
+                        <td key={j} className="px-8 py-6"><div className="h-4 bg-slate-100 rounded w-full" /></td>
                       ))}
                     </tr>
                   ))
                 ) : filtered.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-16 text-center">
-                      <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm text-slate-500 mb-4">Nenhum processo encontrado</p>
-                      <Link href="/processos/novo" className="btn-primary inline-flex">
-                        <Plus className="w-4 h-4" /> Criar processo
-                      </Link>
+                    <td colSpan={8} className="py-24 text-center">
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100">
+                        <Briefcase size={32} className="text-slate-300" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-500 mb-6">Nenhum processo localizado nos critérios atuais.</p>
+                      <button onClick={() => { setSearch(''); setStatusFilter(''); setTagFilter('') }} className="btn-primary py-3 px-8 mx-auto">Limpar Buscas</button>
                     </td>
                   </tr>
                 ) : filtered.map(p => {
@@ -203,49 +233,56 @@ export default function ProcessosPage() {
                   try { tags = JSON.parse(p.tags || '[]') } catch {}
 
                   return (
-                    <tr key={p.id} className="table-row">
-                      <td className="px-5 py-3.5">
-                        <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                          {p.codigo_projeto || '—'}
+                    <tr key={p.id} className="table-row group">
+                      <td className="px-8 py-6">
+                        <span className="font-mono text-[11px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-lg border border-blue-100">
+                          {p.codigo_projeto || `#${p.id.substring(0,6).toUpperCase()}`}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-slate-800 max-w-[160px] truncate">{p.tipo_regularizacao}</p>
+                      <td className="px-8 py-6">
+                        <p className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors truncate max-w-[200px]">{p.tipo_regularizacao}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">ID: {p.id.substring(0,8)}</p>
                       </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-blue-600">{p.cliente?.nome?.charAt(0)}</span>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-[10px] font-black shadow-lg">
+                            {p.cliente?.nome?.substring(0, 2).toUpperCase()}
                           </div>
-                          <p className="text-sm text-slate-700 max-w-[120px] truncate">{p.cliente?.nome || '—'}</p>
+                          <div>
+                             <p className="text-xs font-black text-slate-800">{p.cliente?.nome || '—'}</p>
+                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{p.cliente?.tipo === 'PJ' ? 'Empresa' : 'Particular'}</p>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell">
-                        <p className="text-xs text-slate-500 max-w-[140px] truncate">
-                          {p.imovel?.cidade ? `${p.imovel.cidade}` : '—'}
-                        </p>
+                      <td className="px-8 py-6 hidden md:table-cell">
+                        <div className="flex items-center gap-2 text-slate-500 font-medium">
+                           <MapPin size={12} className="text-slate-300"/>
+                           <span className="text-xs">{p.imovel?.cidade || '—'}</span>
+                        </div>
                       </td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell">
-                        <div className="flex gap-1 flex-wrap max-w-[140px]">
+                      <td className="px-8 py-6 hidden lg:table-cell">
+                        <div className="flex gap-1.5 flex-wrap max-w-[160px]">
                           {tags.slice(0, 2).map((t: string) => <TagChip key={t} tag={t} size="sm" />)}
-                          {tags.length > 2 && <span className="text-[10px] text-slate-400">+{tags.length - 2}</span>}
+                          {tags.length > 2 && <span className="text-[9px] font-black text-slate-400">+{tags.length - 2}</span>}
                         </div>
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-8 py-6">
                         {days !== null ? (
-                          <div className={`flex items-center gap-1.5 ${isCritical ? 'text-red-600' : 'text-slate-500'}`}>
-                            {isCritical && <AlertTriangle className="w-3.5 h-3.5" />}
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="text-xs font-semibold">{days < 0 ? 'Vencido' : `${days}d`}</span>
+                          <div className={`flex flex-col ${isCritical ? 'text-red-600' : 'text-slate-600'}`}>
+                            <div className="flex items-center gap-1.5">
+                               <Clock size={14} strokeWidth={2.5}/>
+                               <span className="text-sm font-black tracking-tight">{days < 0 ? 'Vencido' : `${days} dias`}</span>
+                            </div>
+                            <p className="text-[9px] font-bold uppercase tracking-widest mt-0.5">{new Date(p.data_deadline).toLocaleDateString('pt-BR')}</p>
                           </div>
-                        ) : <span className="text-xs text-slate-400">—</span>}
+                        ) : <span className="text-xs text-slate-300 font-bold uppercase tracking-widest">Sem Prazo</span>}
                       </td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-8 py-6 text-center">
                         <StatusBadge status={p.status} />
                       </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <Link href={`/processos/${p.id}`} className="btn-ghost text-xs py-1.5 px-3">
-                          Abrir <ChevronRight className="w-3.5 h-3.5" />
+                      <td className="px-8 py-6 text-right">
+                        <Link href={`/processos/${p.id}`} className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all shadow-sm group/btn">
+                           <ChevronRight size={18} className="group-hover/btn:translate-x-0.5 transition-transform" />
                         </Link>
                       </td>
                     </tr>
@@ -255,71 +292,91 @@ export default function ProcessosPage() {
             </table>
           </div>
           {!loading && filtered.length > 0 && (
-            <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100">
-              <p className="text-xs text-slate-400">
-                Mostrando <strong>{filtered.length}</strong> de <strong>{processos.length}</strong> processos
+            <div className="px-8 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                Exibindo <span className="text-slate-900">{filtered.length}</span> resultados de <span className="text-slate-900">{processos.length}</span> registros ativos
               </p>
+              <div className="flex gap-2">
+                 <button className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all shadow-sm disabled:opacity-50" disabled><ChevronRight className="rotate-180" size={14}/></button>
+                 <button className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all shadow-sm"><ChevronRight size={14}/></button>
+              </div>
             </div>
           )}
         </div>
       ) : (
-        /* Board View (Kanban) */
-        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[500px] scrollbar-hide">
+        /* Board View (Kanban) Premium */
+        <div className="flex gap-8 overflow-x-auto pb-10 min-h-[600px] scrollbar-hide -mx-10 px-10">
           {[
-            { id: 'em_analise', label: 'Entrada / Análise' },
-            { id: 'levantamento', label: 'Levantamento' },
-            { id: 'projeto', label: 'Projeto Técnico' },
-            { id: 'protocolo_prefeitura', label: 'Prefeitura' },
-            { id: 'cartorio', label: 'Cartório' },
-            { id: 'finalizado', label: 'Finalização' }
+            { id: 'em_analise', label: 'Análise Técnica', color: 'blue' },
+            { id: 'levantamento', label: 'Levantamento', color: 'amber' },
+            { id: 'projeto', label: 'Projeto em Estudo', color: 'purple' },
+            { id: 'protocolo_prefeitura', label: 'Prefeitura', color: 'indigo' },
+            { id: 'exigencia_tecnica', label: 'Exigência', color: 'red' },
+            { id: 'finalizado', label: 'Concluídos', color: 'emerald' }
           ].map(column => {
-            const columnProcs = filtered.filter(p => {
-              if (column.id === 'levantamento' || column.id === 'projeto') {
-                 // Agrupamento lógico para simplificar o board se necessário, ou usar status exatos
-                 return p.status === column.id
-              }
-              return p.status === column.id
-            })
+            const columnProcs = filtered.filter(p => p.status === column.id)
 
             return (
-              <div key={column.id} className="flex-shrink-0 w-80 flex flex-col gap-3">
-                <div className="flex items-center justify-between px-2 mb-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{column.label}</h3>
-                    <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">{columnProcs.length}</span>
+              <div key={column.id} className="flex-shrink-0 w-[320px] flex flex-col gap-6">
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2 h-2 rounded-full bg-${column.color}-500 shadow-[0_0_8px] shadow-${column.color}-500/50`} />
+                    <h3 className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">{column.label}</h3>
+                    <span className="bg-white border border-slate-200 text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">{columnProcs.length}</span>
                   </div>
-                  <button className="text-slate-300 hover:text-slate-500 transition-colors"><Plus size={14}/></button>
                 </div>
                 
-                <div className="flex-1 space-y-3 p-1 rounded-2xl bg-slate-100/50 border border-slate-200/50 min-h-[400px]">
+                <div className="flex-1 space-y-4 p-2 rounded-[32px] bg-slate-200/30 border border-slate-200/50 min-h-[500px]">
                   {columnProcs.map(p => (
                     <Link key={p.id} href={`/processos/${p.id}`} 
-                      className="block bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group">
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
-                        <button className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-slate-500 transition-all"><MoreHorizontal size={14}/></button>
+                      className="block bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-2xl hover:border-blue-500 hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
+                      
+                      <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-all">
+                         <div className="w-8 h-8 bg-blue-600 text-white rounded-bl-xl flex items-center justify-center">
+                            <ChevronRight size={14}/>
+                         </div>
                       </div>
-                      <h4 className="text-sm font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{p.tipo_regularizacao}</h4>
-                      <div className="flex items-center gap-2 mb-4">
-                         <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
+
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-mono font-black text-blue-600 uppercase bg-blue-50 px-2 py-1 rounded-lg border border-blue-100">
+                          {p.codigo_projeto || `#${p.id.substring(0,4)}`}
+                        </span>
+                        <div className="flex items-center gap-1.5 text-slate-400">
+                           <Clock size={12} strokeWidth={2.5}/>
+                           <span className="text-[10px] font-black">{getDays(p.data_deadline) || '—'}d</span>
+                        </div>
+                      </div>
+
+                      <h4 className="text-[13px] font-black text-slate-900 leading-tight mb-4 group-hover:text-blue-600 transition-colors line-clamp-2 min-h-[2rem]">
+                        {p.tipo_regularizacao}
+                      </h4>
+
+                      <div className="flex items-center gap-3 mb-5 p-2 bg-slate-50 rounded-2xl border border-slate-100">
+                         <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-[10px] font-bold text-white shrink-0 shadow-lg">
                            {p.cliente?.nome?.charAt(0)}
                          </div>
-                         <span className="text-[11px] text-slate-500 font-medium truncate">{p.cliente?.nome}</span>
+                         <span className="text-[11px] text-slate-700 font-bold truncate">{p.cliente?.nome}</span>
                       </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 text-slate-400">
-                          <Clock size={11} />
-                          <span className="text-[10px] font-bold">{getDays(p.data_deadline) || '—'}</span>
+                           <MapPin size={12} />
+                           <span className="text-[10px] font-bold uppercase tracking-tight">{p.imovel?.cidade || '—'}</span>
                         </div>
-                        <div className="flex -space-x-1.5">
-                           <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-[8px] text-white font-bold"><User size={10}/></div>
+                        <div className="flex -space-x-2">
+                           {[...Array(1)].map((_, i) => (
+                             <div key={i} className="w-6 h-6 rounded-lg bg-blue-600 border-2 border-white flex items-center justify-center text-[8px] text-white font-black shadow-sm ring-1 ring-blue-500/10">
+                                JC
+                             </div>
+                           ))}
                         </div>
                       </div>
                     </Link>
                   ))}
                   {columnProcs.length === 0 && (
-                    <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-300">
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Sem processos</span>
+                    <div className="h-32 flex flex-col items-center justify-center border-2 border-dashed border-slate-300/50 rounded-[28px] text-slate-400 gap-2 opacity-50">
+                      <Briefcase size={20} strokeWidth={1.5}/>
+                      <span className="text-[9px] font-black uppercase tracking-widest">Sem Alocações</span>
                     </div>
                   )}
                 </div>

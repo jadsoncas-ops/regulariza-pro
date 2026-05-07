@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, Users, Briefcase, Building2, ArrowRight, X, Command } from 'lucide-react'
+import { Search, Users, Briefcase, Building2, ArrowRight, X, Command, Zap } from 'lucide-react'
 import Link from 'next/link'
 
-const STATUS_BADGE: Record<string, { label: string; color: string }> = {
-  em_analise:           { label: 'Em Análise',   color: 'bg-amber-100 text-amber-700' },
-  protocolo_prefeitura: { label: 'Protocolo',    color: 'bg-blue-100 text-blue-700' },
-  finalizado:           { label: 'Finalizado',   color: 'bg-green-100 text-green-700' },
-  pendente:             { label: 'Pendente',     color: 'bg-red-100 text-red-700' },
-  aprovado:             { label: 'Aprovado',     color: 'bg-emerald-100 text-emerald-700' },
+const STATUS_BADGE: Record<string, { label: string; badge: string }> = {
+  em_analise:           { label: 'Em Análise',   badge: 'badge-amber' },
+  protocolo_prefeitura: { label: 'Protocolo',    badge: 'badge-blue' },
+  finalizado:           { label: 'Finalizado',   badge: 'badge-green' },
+  pendente:             { label: 'Pendente',     badge: 'badge-red' },
+  aprovado:             { label: 'Aprovado',     badge: 'badge-green' },
 }
 
 export default function GlobalSearch() {
@@ -58,78 +58,90 @@ export default function GlobalSearch() {
 
   return (
     <>
-      {/* TRIGGER na Topbar */}
+      {/* TRIGGER na Topbar Premium */}
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:border-blue-300 hover:bg-white transition-all w-full max-w-md"
+        className="flex items-center gap-3 pl-11 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:border-blue-400 hover:bg-white hover:shadow-lg hover:shadow-blue-500/5 transition-all w-full max-w-md group relative"
       >
-        <Search className="absolute left-3 w-4 h-4 pointer-events-none text-slate-400" style={{ position: 'relative', marginLeft: '-1.25rem' }} />
-        <span className="flex-1 text-left">Buscar processos, clientes...</span>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <kbd className="bg-slate-200 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-mono">Ctrl</kbd>
-          <kbd className="bg-slate-200 text-slate-500 text-[10px] px-1.5 py-0.5 rounded font-mono">K</kbd>
+        <Search className="absolute left-4 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+        <span className="flex-1 text-left font-medium">Busca Global Inteligente...</span>
+        <div className="flex items-center gap-1 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity">
+          <kbd className="bg-slate-200 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded-lg uppercase">Cmd</kbd>
+          <kbd className="bg-slate-200 text-slate-600 text-[9px] font-black px-1.5 py-0.5 rounded-lg uppercase">K</kbd>
         </div>
       </button>
 
-      {/* MODAL */}
+      {/* MODAL PREMIUM */}
       {open && (
-        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-20 px-4">
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-24 px-4 overflow-hidden">
           {/* Backdrop */}
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300" onClick={() => setOpen(false)} />
 
           {/* Dialog */}
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-fade-up">
-            {/* Input */}
-            <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-              <Search className="w-5 h-5 text-slate-400 shrink-0" />
+          <div className="relative w-full max-w-2xl bg-white/90 backdrop-blur-xl rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] border border-white/20 overflow-hidden animate-fade-up">
+            
+            {/* Input Section */}
+            <div className="flex items-center gap-4 px-6 py-5 border-b border-slate-100 bg-white/50">
+              <Search className="w-5 h-5 text-blue-500 shrink-0" />
               <input
                 ref={inputRef}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Buscar por cliente, processo, imóvel, cidade, serviço..."
-                className="flex-1 text-sm text-slate-800 outline-none placeholder:text-slate-400 bg-transparent"
+                placeholder="O que você está procurando hoje?"
+                className="flex-1 text-base font-bold text-slate-900 outline-none placeholder:text-slate-400 bg-transparent tracking-tight"
               />
               {query && (
-                <button onClick={() => setQuery('')} className="p-1 text-slate-400 hover:text-slate-600 transition-colors">
+                <button onClick={() => setQuery('')} className="p-2 text-slate-400 hover:text-slate-900 transition-all bg-slate-100 rounded-xl">
                   <X className="w-4 h-4" />
                 </button>
               )}
-              <kbd className="text-[10px] bg-slate-100 text-slate-400 px-2 py-1 rounded font-mono shrink-0">ESC</kbd>
+              <div className="flex items-center gap-2">
+                 <div className="w-px h-4 bg-slate-200 mx-2" />
+                 <kbd className="text-[9px] font-black bg-slate-900 text-white px-2 py-1 rounded-lg uppercase tracking-widest shrink-0 shadow-lg">ESC</kbd>
+              </div>
             </div>
 
-            {/* Results */}
-            <div className="max-h-[60vh] overflow-y-auto">
+            {/* Content Area */}
+            <div className="max-h-[60vh] overflow-y-auto no-scrollbar bg-white/30 p-2">
               {query.length < 2 ? (
-                <div className="px-5 py-10 text-center">
-                  <Search className="w-8 h-8 text-slate-200 mx-auto mb-3" />
-                  <p className="text-sm text-slate-400">Digite ao menos 2 caracteres para buscar</p>
-                  <p className="text-xs text-slate-300 mt-1">Busca em clientes, processos e imóveis</p>
+                <div className="py-20 text-center space-y-4">
+                  <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-[24px] flex items-center justify-center mx-auto shadow-inner border border-blue-100">
+                    <Search className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Busca Instantânea RegularizaPro</p>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Sincronizado com Neon PostgreSQL</p>
+                  </div>
                 </div>
               ) : loading ? (
-                <div className="px-5 py-10 text-center">
-                  <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+                <div className="py-20 text-center">
+                  <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto" />
                 </div>
               ) : !hasResults ? (
-                <div className="px-5 py-10 text-center">
-                  <p className="text-sm text-slate-500">Nenhum resultado para <strong>&quot;{query}&quot;</strong></p>
+                <div className="py-20 text-center">
+                  <div className="w-16 h-16 bg-red-50 text-red-400 rounded-[24px] flex items-center justify-center mx-auto mb-4 border border-red-100">
+                    <Zap size={32} />
+                  </div>
+                  <p className="text-sm font-black text-slate-900">Nenhum registro para &quot;{query}&quot;</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Tente termos mais genéricos</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-100">
+                <div className="space-y-4 p-2">
                   {/* Clientes */}
                   {results.clientes?.length > 0 && (
-                    <div className="p-3">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Clientes</p>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-3">Relacionamento / Clientes</p>
                       {results.clientes.map((c: any) => (
                         <Link key={c.id} href={`/clientes/${c.id}`} onClick={() => setOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors group">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-blue-600">{c.nome?.charAt(0)}</span>
+                          className="flex items-center gap-4 px-4 py-3 rounded-[20px] bg-white border border-slate-100 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all group">
+                          <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/20">
+                            <span className="text-xs font-black">{c.nome?.charAt(0)}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors font-inter">{c.nome}</p>
-                            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-tight">{c.cidade || 'Sem cidade'}</p>
+                            <p className="text-[13px] font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight">{c.nome}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{c.cidade || 'Base Geral'}</p>
                           </div>
-                          <Users className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-400" />
+                          <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-all -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0" />
                         </Link>
                       ))}
                     </div>
@@ -137,24 +149,24 @@ export default function GlobalSearch() {
 
                   {/* Processos */}
                   {results.processos?.length > 0 && (
-                    <div className="p-3">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Processos</p>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-3">Operações / Processos</p>
                       {results.processos.map((p: any) => {
-                        const st = STATUS_BADGE[p.status] || { label: p.status, color: 'bg-slate-100 text-slate-600' }
+                        const st = STATUS_BADGE[p.status] || { label: p.status, badge: 'badge-slate' }
                         return (
                           <Link key={p.id} href={`/processos/${p.id}`} onClick={() => setOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors group">
-                            <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center shrink-0">
-                              <Briefcase className="w-4 h-4 text-purple-600" />
+                            className="flex items-center gap-4 px-4 py-3 rounded-[20px] bg-white border border-slate-100 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all group">
+                            <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-lg">
+                              <Briefcase className="w-5 h-5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate font-inter">{p.tipo_regularizacao}</p>
-                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0 ${st.color}`}>{st.label}</span>
+                              <div className="flex items-center gap-3 mb-1">
+                                <p className="text-[13px] font-black text-slate-900 group-hover:text-blue-600 transition-colors tracking-tight truncate">{p.tipo_regularizacao}</p>
+                                <span className={`badge ${st.badge} scale-90`}>{st.label}</span>
                               </div>
-                              <p className="text-[11px] text-slate-400 font-medium">{p.cliente?.nome} {p.codigo_projeto ? <span className="font-mono text-blue-500 ml-1">· {p.codigo_projeto}</span> : ''}</p>
+                              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{p.cliente?.nome} {p.codigo_projeto ? <span className="text-blue-500 ml-1">· {p.codigo_projeto}</span> : ''}</p>
                             </div>
-                            <Briefcase className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-400" />
+                            <ArrowRight className="w-4 h-4 text-slate-200 group-hover:text-blue-500 transition-all -translate-x-2 opacity-0 group-hover:opacity-100 group-hover:translate-x-0" />
                           </Link>
                         )
                       })}
@@ -163,19 +175,19 @@ export default function GlobalSearch() {
 
                   {/* Imóveis */}
                   {results.imoveis?.length > 0 && (
-                    <div className="p-3">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">Imóveis</p>
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-4 mb-3">Patrimônio / Imóveis</p>
                       {results.imoveis.map((im: any) => (
                         <div key={im.id}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-blue-50 transition-colors group cursor-default">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
-                            <Building2 className="w-4 h-4 text-emerald-600" />
+                          className="flex items-center gap-4 px-4 py-3 rounded-[20px] bg-white border border-slate-100 hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 transition-all group cursor-default">
+                          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                            <Building2 className="w-5 h-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 truncate">
+                            <p className="text-[13px] font-black text-slate-900 tracking-tight">
                               {im.endereco}{im.numero ? `, ${im.numero}` : ''}
                             </p>
-                            <p className="text-xs text-slate-400">{im.cidade} · {im.cliente?.nome}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">{im.cidade} · {im.cliente?.nome}</p>
                           </div>
                         </div>
                       ))}
@@ -185,14 +197,18 @@ export default function GlobalSearch() {
               )}
             </div>
 
-            {/* Footer */}
-            <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-xs text-slate-400">
-                {hasResults ? `${total} resultado(s) encontrado(s)` : ''}
+            {/* Footer Premium */}
+            <div className="px-8 py-4 bg-slate-900 text-white flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                {hasResults ? `${total} ENTRADAS LOCALIZADAS` : 'BUSCA OPERACIONAL'}
               </p>
-              <div className="flex items-center gap-3 text-[10px] text-slate-400">
-                <span className="flex items-center gap-1"><kbd className="bg-slate-200 px-1 rounded">↑↓</kbd> navegar</span>
-                <span className="flex items-center gap-1"><kbd className="bg-slate-200 px-1 rounded">Enter</kbd> abrir</span>
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <div className="bg-white/10 px-1.5 py-0.5 rounded-lg text-white">↑↓</div> Navegar
+                </span>
+                <span className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  <div className="bg-white/10 px-1.5 py-0.5 rounded-lg text-white">Enter</div> Selecionar
+                </span>
               </div>
             </div>
           </div>

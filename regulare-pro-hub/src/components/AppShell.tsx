@@ -44,98 +44,77 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <div className="sidebar h-full flex flex-col" style={{ width: 220 }}>
+    <div className="bg-[#071026] h-full flex flex-col border-r border-white/5 shadow-2xl relative z-10">
+      
+      {/* Glow Effect Top Left */}
+      <div className="absolute top-0 left-0 w-32 h-32 bg-blue-500/10 blur-[60px] pointer-events-none" />
 
       {/* ── Logo ── */}
-      <div style={{
-        padding: '16px 14px 14px',
-        borderBottom: '1px solid rgba(255,255,255,0.055)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32,
-            background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-            borderRadius: 9,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(37,99,235,0.35)',
-            flexShrink: 0,
-          }}>
-            <Zap size={15} color="#fff" strokeWidth={2.5} fill="rgba(255,255,255,0.3)" />
+      <div className="px-6 py-8 flex items-center justify-between border-b border-white/5">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 active:scale-95 transition-transform">
+            <Zap size={18} className="text-white fill-white/20" strokeWidth={2.5} />
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#E5E7EB', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              RegularizaPro
+            <div className="text-[14px] font-black text-white tracking-tight leading-none uppercase">
+              Regulariza<span className="text-blue-500">Pro</span>
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(107,114,128,0.7)', marginTop: 2, letterSpacing: '0.02em' }}>
+            <div className="text-[9px] font-bold text-slate-500 mt-1 uppercase tracking-widest">
               Hub Imobiliário
             </div>
           </div>
         </div>
         {onClose && (
-          <button onClick={onClose} style={{ color: '#4B5563', padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}>
-            <X size={14} />
+          <button onClick={onClose} className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors">
+            <X size={18} />
           </button>
         )}
       </div>
 
       {/* ── Nav ── */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 8px', scrollbarWidth: 'none' }}>
-        {NAV.map((section, si) => (
-          <div key={section.section}>
-            <span className="sidebar-section-label"
-              style={{ marginTop: si === 0 ? 12 : undefined }}>
+      <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-8 scrollbar-hide">
+        {NAV.map((section) => (
+          <div key={section.section} className="space-y-2">
+            <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">
               {section.section}
-            </span>
-            {section.items.map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={isActive(item.href) ? 'sidebar-item-active' : 'sidebar-item'}
-                style={{ display: 'flex' }}
-              >
-                <item.icon size={15} strokeWidth={isActive(item.href) ? 2.2 : 1.75} style={{ flexShrink: 0 }} />
-                <span style={{ flex: 1 }}>{item.label}</span>
-                {isActive(item.href) && (
-                  <ChevronRight size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
-                )}
-              </Link>
-            ))}
+            </h3>
+            <div className="space-y-1">
+              {section.items.map(item => {
+                const active = isActive(item.href)
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
+                    className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                      active 
+                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                        : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <item.icon size={18} strokeWidth={active ? 2.5 : 1.5} className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'}`} />
+                    <span className="flex-1">{item.label}</span>
+                    {active && <ChevronRight size={14} className="opacity-50" />}
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         ))}
       </nav>
 
       {/* ── User ── */}
-      <div style={{
-        padding: '10px 8px',
-        borderTop: '1px solid rgba(255,255,255,0.055)',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 9,
-          padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
-          transition: 'background 0.12s',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >
-          <div style={{
-            width: 28, height: 28,
-            background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
-            borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0,
-          }}>
+      <div className="p-4 border-t border-white/5">
+        <div className="flex items-center gap-3 p-3 rounded-2xl hover:bg-white/5 cursor-pointer transition-all group">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-[12px] font-bold text-white shadow-inner">
             JC
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] font-bold text-white tracking-tight truncate group-hover:text-blue-400 transition-colors">
               Jadson Castro
             </div>
-            <div style={{ fontSize: 10, color: '#4B5563', marginTop: 1 }}>
-              Engenheiro Civil
+            <div className="text-[10px] font-bold text-slate-500 mt-0.5 uppercase tracking-wider">
+              Diretor Técnico
             </div>
           </div>
         </div>
@@ -166,95 +145,64 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isFullPage) return <>{children}</>
 
   return (
-    <div style={{
-      display: 'flex', height: '100vh', overflow: 'hidden',
-      backgroundColor: dark ? '#080A0F' : '#F5F7FB',
-    }}>
+    <div className="flex h-screen overflow-hidden bg-[#F4F7FB]">
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block" style={{ width: 220, flexShrink: 0 }}>
+      <aside className="hidden lg:block w-[240px] flex-shrink-0">
         <SidebarContent />
       </aside>
 
       {/* Mobile sidebar */}
       {mobileOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => setMobileOpen(false)} />
-          <div style={{ position: 'relative', zIndex: 10, width: 220 }}>
+          <div className="relative w-[280px] h-full shadow-2xl animate-fade-up">
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div className="flex-1 flex flex-col min-w-0 relative">
 
         {/* ── Topbar ── */}
-        <header className="topbar" style={{ flexShrink: 0 }}>
+        <header className="h-16 flex-shrink-0 bg-white border-b border-slate-200 flex items-center px-6 gap-6 sticky top-0 z-20">
 
           {/* Mobile menu toggle */}
-          <button className="lg:hidden" onClick={() => setMobileOpen(true)}
-            style={{ padding: 6, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', marginRight: 4 }}>
-            <Menu size={18} />
+          <button className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors" onClick={() => setMobileOpen(true)}>
+            <Menu size={20} />
           </button>
 
           {/* Global search */}
-          <div style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
-            <Search size={14} style={{
-              position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
-              color: '#9CA3AF', pointerEvents: 'none',
-            }} />
+          <div className="flex-1 max-w-lg relative group">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
             <GlobalSearch />
           </div>
 
           {/* Right side actions */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-
-            {/* Dark mode */}
-            <button onClick={toggleDark}
-              style={{
-                width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
-                color: '#9CA3AF', transition: 'background 0.12s, color 0.12s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#374151' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF' }}
-            >
-              {dark ? <Sun size={15} strokeWidth={1.75} /> : <Moon size={15} strokeWidth={1.75} />}
+          <div className="flex items-center gap-2 ml-auto">
+            <button onClick={toggleDark} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all">
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            {/* Notifications */}
-            <button style={{
-              width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
-              color: '#9CA3AF', position: 'relative',
-              transition: 'background 0.12s, color 0.12s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#374151' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF' }}
-            >
-              <Bell size={15} strokeWidth={1.75} />
-              <span className="animate-pulse-dot" style={{
-                position: 'absolute', top: 8, right: 8,
-                width: 6, height: 6, background: '#EF4444', borderRadius: '50%',
-                border: '1.5px solid white',
-              }} />
+            <button className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
+              <Bell size={18} />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-500/20" />
             </button>
 
-            <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.08)', margin: '0 4px' }} />
+            <div className="w-px h-6 bg-slate-200 mx-2" />
 
-            {/* CTA */}
-            <Link href="/processos/novo" className="btn-primary" style={{ fontSize: 12, padding: '7px 13px' }}>
-              <Plus size={14} strokeWidth={2.5} />
-              Novo Processo
+            <Link href="/processos/novo" className="btn-primary py-2 px-4 text-xs">
+              <Plus size={16} strokeWidth={3} />
+              <span className="hidden sm:inline">Novo Processo</span>
             </Link>
           </div>
         </header>
 
         {/* ── Page Content ── */}
-        <main style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 28px' }}>
+        <main className="flex-1 overflow-y-auto bg-[#F4F7FB] scroll-smooth">
+          <div className="max-w-[1600px] mx-auto p-8 lg:p-10">
             {children}
           </div>
         </main>
