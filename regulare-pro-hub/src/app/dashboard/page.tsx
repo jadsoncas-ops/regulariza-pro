@@ -102,10 +102,10 @@ export default function DashboardPage() {
           <p style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
             Visão Executiva
           </p>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.3, marginBottom: 10, maxWidth: 600 }}>
-            {loading ? 'Carregando...' : (
-              <>Você possui <span style={{ color: '#93C5FD' }}>{ativos} processos ativos</span> e{' '}
-              <span style={{ color: '#86EFAC' }}>{fmt(aReceber)}</span> em recebimentos previstos.</>
+          <h1 className="font-geist" style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1.2, marginBottom: 10, maxWidth: 650 }}>
+            {loading ? 'Preparando cockpit...' : (
+              <>Você possui <span className="text-blue-400 font-space">{ativos} processos ativos</span> e{' '}
+              <span className="text-emerald-400 font-space">{fmt(aReceber)}</span> em recebimentos previstos.</>
             )}
           </h1>
           <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
@@ -128,27 +128,30 @@ export default function DashboardPage() {
         <p style={{ fontSize: 10.5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', marginBottom: 14 }}>
           Métricas Operacionais
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 14 }} className="stagger">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }} className="stagger">
           {[
-            { label: 'Clientes', value: clientes.length, icon: Users, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', glow: 'kpi-glow-blue' },
-            { label: 'Imóveis', value: imoveis.length, icon: Building2, color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', glow: 'kpi-glow-purple' },
-            { label: 'Processos Ativos', value: ativos, icon: Activity, color: '#0891B2', bg: '#ECFEFF', border: '#A5F3FC', glow: '' },
-            { label: 'Protocolados', value: protocolo, icon: FileText, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', glow: 'kpi-glow-amber' },
-            { label: 'Concluídos', value: concluidos, icon: CheckCircle2, color: '#059669', bg: '#ECFDF5', border: '#A7F3D0', glow: 'kpi-glow-green' },
+            { label: 'Clientes', value: clientes.length, icon: Users, color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE', glow: 'kpi-glow-blue', href: '/clientes' },
+            { label: 'Imóveis', value: imoveis.length, icon: Building2, color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', glow: 'kpi-glow-purple', href: '/imoveis' },
+            { label: 'Processos Ativos', value: ativos, icon: Activity, color: '#0891B2', bg: '#ECFEFF', border: '#A5F3FC', glow: '', href: '/processos' },
+            { label: 'Protocolados', value: protocolo, icon: FileText, color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', glow: 'kpi-glow-amber', href: '/processos?status=protocolo_prefeitura' },
+            { label: 'Concluídos', value: concluidos, icon: CheckCircle2, color: '#059669', bg: '#ECFDF5', border: '#A7F3D0', glow: 'kpi-glow-green', href: '/processos?status=finalizado' },
           ].map(k => (
-            <div key={k.label} className={`stat-card animate-fade-up ${k.glow}`}>
-              <div style={{
-                width: 36, height: 36, borderRadius: 10,
-                background: k.bg, border: `1px solid ${k.border}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14,
-              }}>
-                <k.icon size={17} color={k.color} strokeWidth={1.75} />
+            <Link key={k.label} href={k.href} className={`stat-card animate-fade-up ${k.glow} no-underline group`}>
+              <div className="flex items-center justify-between mb-4">
+                <div style={{
+                  width: 36, height: 36, borderRadius: 10,
+                  background: k.bg, border: `1px solid ${k.border}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <k.icon size={17} color={k.color} strokeWidth={1.75} />
+                </div>
+                <ArrowRight size={14} className="text-slate-300 group-hover:text-slate-600 transition-colors" />
               </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#111827', letterSpacing: '-0.04em', lineHeight: 1 }}>
+              <div className="font-space" style={{ fontSize: 32, fontWeight: 800, color: '#111827', letterSpacing: '-0.04em', lineHeight: 1 }}>
                 {loading ? skel('50%') : <AnimatedNumber value={k.value} />}
               </div>
-              <p style={{ fontSize: 12, color: '#6B7280', marginTop: 6, fontWeight: 500 }}>{k.label}</p>
-            </div>
+              <p style={{ fontSize: 12, color: '#6B7280', marginTop: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.02em' }}>{k.label}</p>
+            </Link>
           ))}
         </div>
       </div>
@@ -160,21 +163,24 @@ export default function DashboardPage() {
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }} className="stagger">
           {[
-            { label: 'Receita Total', value: totalRec, icon: BarChart2, color: '#2563EB', sub: 'Contrato acumulado' },
-            { label: 'Valor Recebido', value: recebido, icon: TrendingUp, color: '#059669', sub: 'Confirmado em conta' },
-            { label: 'A Receber', value: aReceber, icon: Clock, color: '#D97706', sub: 'Pagamentos pendentes' },
-            { label: 'Lucro Líquido', value: lucro, icon: Wallet, color: lucro >= 0 ? '#059669' : '#DC2626', sub: lucro >= 0 ? 'Resultado positivo' : 'Resultado negativo' },
+            { label: 'Receita Total', value: totalRec, icon: BarChart2, color: '#2563EB', sub: 'Contrato acumulado', href: '/financeiro' },
+            { label: 'Valor Recebido', value: recebido, icon: TrendingUp, color: '#059669', sub: 'Confirmado em conta', href: '/financeiro?status=recebido' },
+            { label: 'A Receber', value: aReceber, icon: Clock, color: '#D97706', sub: 'Pagamentos pendentes', href: '/financeiro?status=pendente' },
+            { label: 'Lucro Líquido', value: lucro, icon: Wallet, color: lucro >= 0 ? '#059669' : '#DC2626', sub: lucro >= 0 ? 'Resultado positivo' : 'Resultado negativo', href: '/financeiro' },
           ].map(f => (
-            <div key={f.label} className="card animate-fade-up" style={{ padding: '18px 20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <f.icon size={15} color={f.color} strokeWidth={1.75} />
-                <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 500 }}>{f.label}</span>
+            <Link key={f.label} href={f.href} className="card animate-fade-up no-underline group" style={{ padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <div className="flex items-center gap-2">
+                   <f.icon size={15} color={f.color} strokeWidth={1.75} />
+                   <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.01em' }}>{f.label}</span>
+                </div>
+                <ArrowRight size={12} className="text-slate-300 group-hover:text-slate-600 transition-colors" />
               </div>
-              <div style={{ fontSize: 21, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em' }}>
+              <div className="font-space" style={{ fontSize: 24, fontWeight: 800, color: '#111827', letterSpacing: '-0.03em' }}>
                 {loading ? skel('60%') : fmt(f.value)}
               </div>
-              <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 5 }}>{f.sub}</p>
-            </div>
+              <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 5, fontWeight: 500 }}>{f.sub}</p>
+            </Link>
           ))}
         </div>
       </div>

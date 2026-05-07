@@ -126,8 +126,8 @@ export default function GlobalSearch() {
                             <span className="text-xs font-bold text-blue-600">{c.nome?.charAt(0)}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-slate-800 group-hover:text-blue-600 transition-colors">{c.nome}</p>
-                            <p className="text-xs text-slate-400">{c.cidade || 'Sem cidade'}</p>
+                            <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors font-inter">{c.nome}</p>
+                            <p className="text-[11px] text-slate-400 font-medium uppercase tracking-tight">{c.cidade || 'Sem cidade'}</p>
                           </div>
                           <Users className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-400" />
                         </Link>
@@ -149,10 +149,10 @@ export default function GlobalSearch() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-medium text-slate-800 group-hover:text-blue-600 transition-colors truncate">{p.tipo_regularizacao}</p>
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${st.color}`}>{st.label}</span>
+                                <p className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate font-inter">{p.tipo_regularizacao}</p>
+                                <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded shrink-0 ${st.color}`}>{st.label}</span>
                               </div>
-                              <p className="text-xs text-slate-400">{p.cliente?.nome} {p.codigo_projeto ? `· ${p.codigo_projeto}` : ''}</p>
+                              <p className="text-[11px] text-slate-400 font-medium">{p.cliente?.nome} {p.codigo_projeto ? <span className="font-mono text-blue-500 ml-1">· {p.codigo_projeto}</span> : ''}</p>
                             </div>
                             <Briefcase className="w-3.5 h-3.5 text-slate-300 group-hover:text-blue-400" />
                           </Link>
