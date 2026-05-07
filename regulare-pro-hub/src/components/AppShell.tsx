@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Briefcase, Users, Building2, DollarSign,
   FileText, Calendar, Settings, Bell, Plus, MapPin,
   Moon, Sun, Menu, X, ChevronRight, BarChart3, Zap,
-  Search, LogOut, ChevronDown
+  BarChart2, Search
 } from 'lucide-react'
 import GlobalSearch from '@/components/GlobalSearch'
 
@@ -31,6 +31,12 @@ const NAV = [
       { href: '/relatorios',  label: 'Relatórios',     icon: BarChart3 },
     ]
   },
+  {
+    section: 'Sistema',
+    items: [
+      { href: '/configuracoes', label: 'Configurações', icon: Settings },
+    ]
+  },
 ]
 
 function SidebarContent({ onClose }: { onClose?: () => void }) {
@@ -38,83 +44,100 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <div className="bg-slate-900 h-full flex flex-col border-r border-slate-800 shadow-xl">
-      
+    <div className="sidebar h-full flex flex-col" style={{ width: 220 }}>
+
       {/* ── Logo ── */}
-      <div className="px-5 py-6 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-600/20 group-hover:scale-105 transition-transform">
-            <Zap size={16} className="text-white fill-white/20" strokeWidth={2.5} />
+      <div style={{
+        padding: '16px 14px 14px',
+        borderBottom: '1px solid rgba(255,255,255,0.055)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 32, height: 32,
+            background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+            borderRadius: 9,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(37,99,235,0.35)',
+            flexShrink: 0,
+          }}>
+            <Zap size={15} color="#fff" strokeWidth={2.5} fill="rgba(255,255,255,0.3)" />
           </div>
           <div>
-            <div className="text-[14px] font-black text-white tracking-tighter leading-none uppercase">
-              Regulariza<span className="text-blue-500">Pro</span>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#E5E7EB', letterSpacing: '-0.02em', lineHeight: 1 }}>
+              RegularizaPro
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(107,114,128,0.7)', marginTop: 2, letterSpacing: '0.02em' }}>
+              Hub Imobiliário
             </div>
           </div>
-        </Link>
+        </div>
         {onClose && (
-          <button onClick={onClose} className="lg:hidden p-1.5 text-slate-400 hover:text-white">
-            <X size={18} />
+          <button onClick={onClose} style={{ color: '#4B5563', padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}>
+            <X size={14} />
           </button>
         )}
       </div>
 
       {/* ── Nav ── */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-hide">
-        {NAV.map((section) => (
-          <div key={section.section} className="space-y-1">
-            <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 8px', scrollbarWidth: 'none' }}>
+        {NAV.map((section, si) => (
+          <div key={section.section}>
+            <span className="sidebar-section-label"
+              style={{ marginTop: si === 0 ? 12 : undefined }}>
               {section.section}
-            </h3>
-            <div className="space-y-0.5">
-              {section.items.map(item => {
-                const active = isActive(item.href)
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={onClose}
-                    className={`group flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 ${
-                      active 
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/10' 
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                    }`}
-                  >
-                    <item.icon size={16} strokeWidth={active ? 2.5 : 2} className={`${active ? 'text-white' : 'text-slate-500 group-hover:text-slate-300'}`} />
-                    <span className="flex-1">{item.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
+            </span>
+            {section.items.map(item => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={isActive(item.href) ? 'sidebar-item-active' : 'sidebar-item'}
+                style={{ display: 'flex' }}
+              >
+                <item.icon size={15} strokeWidth={isActive(item.href) ? 2.2 : 1.75} style={{ flexShrink: 0 }} />
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {isActive(item.href) && (
+                  <ChevronRight size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
+                )}
+              </Link>
+            ))}
           </div>
         ))}
       </nav>
 
-      {/* ── User & Config ── */}
-      <div className="p-3 border-t border-slate-800 space-y-1">
-        <Link 
-          href="/configuracoes" 
-          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
-            isActive('/configuracoes') ? 'bg-slate-800 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-          }`}
+      {/* ── User ── */}
+      <div style={{
+        padding: '10px 8px',
+        borderTop: '1px solid rgba(255,255,255,0.055)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 9,
+          padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+          transition: 'background 0.12s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
         >
-          <Settings size={16} strokeWidth={2} />
-          <span>Configurações</span>
-        </Link>
-        
-        <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800 cursor-pointer transition-all group mt-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-[11px] font-bold text-white shrink-0">
+          <div style={{
+            width: 28, height: 28,
+            background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
+            borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0,
+          }}>
             JC
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-bold text-white tracking-tight truncate">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               Jadson Castro
             </div>
-            <div className="text-[9px] font-bold text-slate-500 uppercase">
-              Diretor
+            <div style={{ fontSize: 10, color: '#4B5563', marginTop: 1 }}>
+              Engenheiro Civil
             </div>
           </div>
-          <ChevronDown size={12} className="text-slate-600 group-hover:text-slate-400" />
         </div>
       </div>
     </div>
@@ -143,63 +166,95 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   if (isFullPage) return <>{children}</>
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
+    <div style={{
+      display: 'flex', height: '100vh', overflow: 'hidden',
+      backgroundColor: dark ? '#080A0F' : '#F5F7FB',
+    }}>
 
       {/* Desktop sidebar */}
-      <aside className="hidden lg:block w-[200px] flex-shrink-0">
+      <aside className="hidden lg:block" style={{ width: 220, flexShrink: 0 }}>
         <SidebarContent />
       </aside>
 
       {/* Mobile sidebar */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
             onClick={() => setMobileOpen(false)} />
-          <div className="relative w-[260px] h-full shadow-2xl animate-fade-up">
+          <div style={{ position: 'relative', zIndex: 10, width: 220 }}>
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0 bg-slate-50">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* ── Topbar ── */}
-        <header className="h-14 flex-shrink-0 bg-white border-b border-slate-200 flex items-center px-6 gap-4 sticky top-0 z-20 shadow-sm">
+        <header className="topbar" style={{ flexShrink: 0 }}>
 
           {/* Mobile menu toggle */}
-          <button className="lg:hidden p-2 text-slate-500 hover:bg-slate-50 rounded-lg" onClick={() => setMobileOpen(true)}>
+          <button className="lg:hidden" onClick={() => setMobileOpen(true)}
+            style={{ padding: 6, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', marginRight: 4 }}>
             <Menu size={18} />
           </button>
 
           {/* Global search */}
-          <div className="flex-1 max-w-md">
+          <div style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
+            <Search size={14} style={{
+              position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
+              color: '#9CA3AF', pointerEvents: 'none',
+            }} />
             <GlobalSearch />
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center gap-1.5 ml-auto">
-            <button onClick={toggleDark} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all">
-              {dark ? <Sun size={16} /> : <Moon size={16} />}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+
+            {/* Dark mode */}
+            <button onClick={toggleDark}
+              style={{
+                width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
+                color: '#9CA3AF', transition: 'background 0.12s, color 0.12s',
+              }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#374151' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF' }}
+            >
+              {dark ? <Sun size={15} strokeWidth={1.75} /> : <Moon size={15} strokeWidth={1.75} />}
             </button>
 
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-all relative">
-              <Bell size={16} />
-              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border border-white" />
+            {/* Notifications */}
+            <button style={{
+              width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
+              color: '#9CA3AF', position: 'relative',
+              transition: 'background 0.12s, color 0.12s',
+            }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#374151' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF' }}
+            >
+              <Bell size={15} strokeWidth={1.75} />
+              <span className="animate-pulse-dot" style={{
+                position: 'absolute', top: 8, right: 8,
+                width: 6, height: 6, background: '#EF4444', borderRadius: '50%',
+                border: '1.5px solid white',
+              }} />
             </button>
 
-            <div className="w-px h-5 bg-slate-200 mx-2" />
+            <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.08)', margin: '0 4px' }} />
 
-            <Link href="/processos/novo" className="btn-primary py-1.5 px-3 text-xs gap-1.5">
-              <Plus size={14} strokeWidth={3} />
-              <span>Novo</span>
+            {/* CTA */}
+            <Link href="/processos/novo" className="btn-primary" style={{ fontSize: 12, padding: '7px 13px' }}>
+              <Plus size={14} strokeWidth={2.5} />
+              Novo Processo
             </Link>
           </div>
         </header>
 
         {/* ── Page Content ── */}
-        <main className="flex-1 overflow-y-auto scroll-smooth">
-          <div className="max-w-[1400px] mx-auto p-6 lg:p-8">
+        <main style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 28px' }}>
             {children}
           </div>
         </main>

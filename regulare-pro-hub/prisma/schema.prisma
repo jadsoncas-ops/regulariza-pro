@@ -36,7 +36,6 @@ model Cliente {
   financeiro  Financeiro[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  deletedAt   DateTime?
 }
 
 model Imovel {
@@ -68,7 +67,6 @@ model Imovel {
   documentos            Documento[]
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
-  deletedAt             DateTime?
 }
 
 model Processo {
@@ -100,7 +98,6 @@ model Processo {
   logs               Log[]
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
-  deletedAt          DateTime?
 }
 
 model Financeiro {
@@ -119,10 +116,8 @@ model Financeiro {
   data_pagamento  DateTime?
   forma_pagamento String?
   status          String    @default("pendente")
-  comprovante     String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
 }
 
 model Tarefa {
@@ -153,7 +148,6 @@ model Protocolo {
   observacao       String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  deletedAt        DateTime?
 }
 
 model Log {

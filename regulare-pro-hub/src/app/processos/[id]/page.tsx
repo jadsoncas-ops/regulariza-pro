@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -10,31 +10,17 @@ import {
   Loader2, ChevronRight, CheckCircle2, Circle, Clock,
   ExternalLink, ArrowUpRight, Wallet, Briefcase, 
   Search, Plus, Filter, LayoutGrid, List, TrendingUp,
-  MoreVertical, Download, Trash2, RefreshCw, AlertCircle,
-  MoreHorizontal, Copy, Trash, Archive, ShieldAlert,
-  Activity, Tag
+  MoreVertical, Download, Trash2, RefreshCw
 } from 'lucide-react'
-
-// --- Configuração de Status Padronizada ---
-const STATUS_OPTIONS = [
-  { value: 'em_analise',           label: 'Análise Inicial',      color: 'blue' },
-  { value: 'levantamento',         label: 'Levantamento Técnico', color: 'amber' },
-  { value: 'projeto',              label: 'Projeto em Estudo',    color: 'purple' },
-  { value: 'protocolo_prefeitura', label: 'Protocolo Prefeitura', color: 'blue' },
-  { value: 'exigencia_tecnica',    label: 'Exigência Técnica',    color: 'red' },
-  { value: 'em_aprovacao',         label: 'Em Aprovação',         color: 'emerald' },
-  { value: 'cartorio',             label: 'Trâmite Cartorial',    color: 'indigo' },
-  { value: 'finalizado',           label: 'Finalizado',           color: 'emerald' },
-]
 
 const TABS = [
   { id: 'visao',      label: 'Visão Geral',    icon: LayoutGrid },
-  { id: 'timeline',   label: 'Timeline',       icon: GitBranch },
+  { id: 'timeline',   label: 'Timeline Operac.', icon: GitBranch },
   { id: 'financeiro', label: 'Financeiro',     icon: DollarSign },
-  { id: 'documentos', label: 'Documentos',     icon: FileText },
+  { id: 'documentos', label: 'Docs Técnicos',   icon: FileText },
   { id: 'tarefas',    label: 'Tarefas',        icon: ListTodo },
-  { id: 'prefeitura', label: 'Prefeitura',     icon: Building2 },
-  { id: 'historico',  label: 'Auditoria',      icon: History },
+  { id: 'prefeitura', label: 'Prefeitura/Órgãos', icon: Building2 },
+  { id: 'historico',  label: 'Histórico Log',  icon: History },
 ]
 
 export default function ProcessoDetailPage() {
@@ -43,16 +29,46 @@ export default function ProcessoDetailPage() {
   const [tab, setTab] = useState('visao')
   const [processo, setProcesso] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  
-  // Modais
-  const [activeModal, setActiveModal] = useState<string | null>(null)
-  const [editData, setEditData] = useState<any>(null)
-  const [isActionLoading, setIsActionLoading] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
+  const [isProtocoloModalOpen, setIsProtocoloModalOpen] = useState(false)
+
+  const handleAddDocument = async () => {
+    // Simulação de upload para testes operacionais
+    const nome = prompt('Nome do Documento:')
+    if (!nome) return
+    const tipo = prompt('Tipo do Arquivo (PDF, DWG, PNG):', 'PDF')
+    
+    try {
+      await fetch(`/api/processos/${params.id}/documentos`, {
+        method: 'POST',
+        body: JSON.stringify({
+          nome,
+          tipo: tipo || 'PDF',
+          tamanho: Math.floor(Math.random() * 5000000), // Simula tamanho aleatório
+          categoria: 'técnico',
+          responsavel: 'JADSON CASTRO SANTANA'
+        })
+      })
+      await fetchProcesso()
+    } catch (e) { console.error(e) }
+  }
+
+  const handleDeleteDocument = async (docId: string, nome: string) => {
+    if (!confirm(`Deseja remover o documento "${nome}"?`)) return
+    try {
+      await fetch(`/api/processos/${params.id}/documentos`, {
+        method: 'DELETE',
+        body: JSON.stringify({ id: docId, processoId: params.id, nome })
+      })
+      await fetchProcesso()
+    } catch (e) { console.error(e) }
+  }
 
   const fetchProcesso = async () => {
     try {
       const r = await fetch(`/api/processos/${params.id}`)
-      if (!r.ok) throw new Error()
       const d = await r.json()
       setProcesso(d)
     } catch (e) {
@@ -62,120 +78,117 @@ export default function ProcessoDetailPage() {
     }
   }
 
-  useEffect(() => { fetchProcesso() }, [params.id])
+  useEffect(() => {
+    fetchProcesso()
+  }, [params.id])
 
-  // --- Helpers Operacionais ---
-  const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-  
-  const getStatusLabel = (val: string) => STATUS_OPTIONS.find(o => o.value === val)?.label || val
-  
-  const getTaskStatus = (t: any) => {
-    if (t.status === 'concluido') return 'concluido'
-    if (new Date(t.data) < new Date() && t.status !== 'concluido') return 'atrasada'
-    return t.status
-  }
-
-  // --- CRUD Actions ---
-  const handleAction = async (method: string, endpoint: string, body: any) => {
-    setIsActionLoading(true)
+  const handleUpdateStatus = async (newStatus: string, observacao?: string) => {
+    setIsUpdating(true)
     try {
-      const r = await fetch(`/api/processos/${params.id}/${endpoint}`, {
-        method,
-        body: JSON.stringify(body)
+      await fetch(`/api/processos/${params.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus, observacoes: observacao })
       })
-      if (r.ok) {
-        await fetchProcesso()
-        setActiveModal(null)
-        setEditData(null)
-      }
+      await fetchProcesso()
+      setIsEditModalOpen(false)
     } catch (e) {
       console.error(e)
     } finally {
-      setIsActionLoading(false)
+      setIsUpdating(false)
+    }
+  }
+
+  const handleToggleTarefa = async (taskId: string, currentStatus: string) => {
+    const nextStatus = currentStatus === 'concluido' ? 'pendente' : 'concluido'
+    try {
+      await fetch(`/api/processos/${params.id}/tarefas`, {
+        method: 'PATCH',
+        body: JSON.stringify({ id: taskId, status: nextStatus, processoId: params.id })
+      })
+      await fetchProcesso()
+    } catch (e) {
+      console.error(e)
     }
   }
 
   if (loading && !processo) return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-3">
-      <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Sincronizando Módulos...</p>
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
+      <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Sincronizando Operação...</p>
     </div>
   )
 
   if (!processo) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="card p-10 text-center max-w-sm">
-         <ShieldAlert size={40} className="text-red-500 mx-auto mb-4"/>
-         <h2 className="text-lg font-bold text-slate-900">Operação não localizada</h2>
-         <p className="text-xs text-slate-500 mt-2">O identificador informado não corresponde a nenhum processo ativo no banco Neon.</p>
-         <Link href="/processos" className="btn-primary mt-6 w-full justify-center">Voltar para Listagem</Link>
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="card p-12 text-center border-0 shadow-xl max-w-md">
+         <X size={48} className="text-red-500 mx-auto mb-4"/>
+         <h2 className="text-xl font-bold text-slate-900">Processo não encontrado</h2>
+         <p className="text-sm text-slate-500 mt-2">O código de rastreio não corresponde a nenhum processo ativo.</p>
+         <Link href="/processos" className="btn-primary mt-8 inline-flex px-8">Voltar para Central</Link>
       </div>
     </div>
   )
 
-  return (
-    <div className="min-h-screen -mt-10 -mx-10 bg-[#F4F7FB]">
-      
-      {/* HEADER PREMIUM DARK */}
-      <div className="premium-dark text-white relative overflow-hidden">
-        {/* Glow Effects */}
-        <div className="absolute top-[-50px] left-[-50px] w-64 h-64 bg-blue-500/20 blur-[100px] pointer-events-none" />
-        <div className="absolute bottom-[-50px] right-[-50px] w-64 h-64 bg-indigo-500/10 blur-[100px] pointer-events-none" />
+  const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-        <div className="max-w-[1600px] mx-auto px-8 pt-10 pb-16">
-           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-              <div className="flex items-center gap-6">
-                 <Link href="/processos" className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all border border-white/10 backdrop-blur-md">
-                    <ArrowLeft size={20} className="text-white"/>
+  return (
+    <div className="min-h-screen bg-[#F8FAFC]">
+      
+      {/* HEADER OPERACIONAL PREMIUM */}
+      <div className="bg-slate-900 text-white border-b border-white/5 pb-0">
+        <div className="max-w-[1500px] mx-auto px-6 py-6">
+           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+              <div className="flex items-start gap-4">
+                 <Link href="/processos" className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10">
+                    <ArrowLeft size={16} />
                  </Link>
                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                       <span className="font-mono text-[11px] font-bold text-blue-400 bg-blue-400/10 px-3 py-1 rounded-lg border border-blue-400/20 backdrop-blur-md">
+                    <div className="flex items-center gap-2 mb-2">
+                       <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded uppercase tracking-wider font-mono">
                           {processo.codigo_projeto || `#${processo.id.substring(0,8).toUpperCase()}`}
                        </span>
-                       <span className="text-white/20 font-light">|</span>
-                       <div className="flex items-center gap-1.5">
-                          <Activity size={14} className="text-blue-400"/>
-                          <span className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{processo.categoria || 'Regularização'}</span>
+                       <span className="text-white/20">•</span>
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Criado em {new Date(processo.createdAt).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <h1 className="text-2xl font-bold tracking-tight mb-2">{processo.tipo_regularizacao}</h1>
+                    <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-400">
+                       <Link href={`/clientes/${processo.clienteId}`} className="flex items-center gap-2 hover:text-white transition-colors group">
+                          <User size={14} className="group-hover:text-blue-400"/> {processo.cliente?.nome}
+                       </Link>
+                       <span className="text-white/10">|</span>
+                       <div className="flex items-center gap-2">
+                          <MapPin size={14}/> {processo.imovel?.endereco}, {processo.imovel?.numero}
+                       </div>
+                       <span className="text-white/10">|</span>
+                       <div className="flex items-center gap-2">
+                          <User size={14}/> Resp: <span className="text-blue-400 font-bold uppercase text-[10px] tracking-widest">{processo.responsavel || 'Não Atribuído'}</span>
                        </div>
                     </div>
-                    <h1 className="text-3xl font-black text-white tracking-tight mb-1">{processo.tipo_regularizacao}</h1>
-                    <p className="text-slate-400 text-sm font-medium flex items-center gap-2">
-                       <MapPin size={14} className="text-slate-500"/> {processo.imovel?.endereco}, {processo.imovel?.cidade}
-                    </p>
                  </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                 <div className="bg-white/5 border border-white/10 rounded-2xl p-4 pr-10 backdrop-blur-sm">
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.1em] mb-1">Status Atual</p>
-                    <div className="flex items-center gap-3">
-                       <div className={`w-2 h-2 rounded-full animate-pulse bg-${STATUS_OPTIONS.find(o => o.value === processo.status)?.color}-500`} />
-                       <p className="text-lg font-black text-white">{getStatusLabel(processo.status)}</p>
-                    </div>
+              <div className="flex items-center gap-3 self-end md:self-auto">
+                 <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-2 text-right">
+                    <p className="text-[9px] font-bold text-emerald-400 uppercase tracking-widest">Status da Operação</p>
+                    <p className="text-sm font-bold text-emerald-500">{processo.status?.replace(/_/g, ' ').toUpperCase() || 'ATIVO'}</p>
                  </div>
-                 <button 
-                   onClick={() => { setEditData(processo); setActiveModal('processo') }}
-                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center gap-3"
-                 >
-                    <Edit size={16} /> Editar
+                 <button onClick={() => setIsEditModalOpen(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/10">
+                    <Edit size={18} />
                  </button>
               </div>
            </div>
-        </div>
 
-        {/* NAVEGAÇÃO DE ABAS PREMIUM */}
-        <div className="max-w-[1600px] mx-auto px-8 -mt-8 relative z-20">
-           <div className="bg-white/5 border border-white/10 rounded-2xl backdrop-blur-xl p-1 flex items-center gap-1 overflow-x-auto no-scrollbar shadow-2xl">
+           {/* PROCESS TABS */}
+           <div className="flex items-center gap-1 mt-10 overflow-x-auto no-scrollbar">
               {TABS.map(t => (
                 <button 
                   key={t.id} 
                   onClick={() => setTab(t.id)}
-                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-[12px] font-bold transition-all whitespace-nowrap ${
-                    tab === t.id ? 'bg-white text-slate-900 shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  className={`flex items-center gap-2 px-6 py-4 text-xs font-bold transition-all border-b-2 whitespace-nowrap ${
+                    tab === t.id ? 'border-blue-500 text-blue-400 bg-blue-500/5' : 'border-transparent text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  <t.icon size={15} strokeWidth={tab === t.id ? 2.5 : 1.5} />
+                  <t.icon size={14} />
                   {t.label}
                 </button>
               ))}
@@ -183,463 +196,264 @@ export default function ProcessoDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-8 py-10">
+      {/* CONTENT AREA */}
+      <div className="max-w-[1500px] mx-auto px-6 py-10">
         
-        {/* --- VISÃO GERAL --- */}
+        {/* ── VISÃO GERAL ───────────────────────────────────────────── */}
         {tab === 'visao' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 animate-fade-up">
-             
-             {/* SITUAÇÃO DA OPERAÇÃO */}
-             <div className="lg:col-span-3 space-y-8">
-                <div className="card group">
-                   <div className="card-header">
-                      <h3 className="flex items-center gap-3 text-sm font-black text-slate-900">
-                         <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                            <Activity size={18}/>
-                         </div>
-                         Monitoramento em Tempo Real
-                      </h3>
-                      <button onClick={() => fetchProcesso()} className="p-2 hover:bg-slate-50 rounded-lg transition-colors text-slate-400 hover:text-blue-600"><RefreshCw size={16}/></button>
-                   </div>
-                   <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-10">
-                      <div className="space-y-6">
-                         <div>
-                            <p className="text-label mb-2">Última Movimentação</p>
-                            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                               <p className="text-sm font-bold text-slate-800 leading-snug mb-2">
-                                  {processo.logs?.[0] ? `${processo.logs[0].acao}` : 'Aguardando início operacional.'}
-                               </p>
-                               <p className="text-xs text-slate-500 line-clamp-2">{processo.logs?.[0]?.detalhe}</p>
-                               <p className="text-[10px] font-bold text-blue-600 mt-3 flex items-center gap-1.5 uppercase tracking-wider">
-                                  <Clock size={12}/> {processo.logs?.[0] ? new Date(processo.logs[0].createdAt).toLocaleString('pt-BR') : '—'}
-                               </p>
-                            </div>
-                         </div>
-                         <div className="pt-6 border-t border-slate-100">
-                            <p className="text-label mb-3">Responsável Técnico</p>
-                            <div className="flex items-center gap-3">
-                               <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-xs text-white font-bold shadow-lg">JC</div>
-                               <div>
-                                  <p className="text-sm font-bold text-slate-900">{processo.responsavel || 'Não Atribuído'}</p>
-                                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sócio-Engenheiro</p>
-                               </div>
-                            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="lg:col-span-2 space-y-8">
+                
+                {/* RESUMO EXECUTIVO */}
+                <div className="card p-8 border-0 shadow-sm bg-white overflow-hidden relative">
+                   <div className="absolute right-0 top-0 w-32 h-32 bg-blue-50/50 rounded-bl-full -mr-10 -mt-10" />
+                   <h3 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2"><LayoutGrid size={18} className="text-blue-500"/> Situação da Operação</h3>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                      <div>
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Última Atualização</p>
+                         <p className="text-sm font-medium text-slate-700">
+                            {processo.logs?.[0] ? `${processo.logs[0].acao}: ${processo.logs[0].detalhe || 'Sem detalhes'}` : 'Nenhuma movimentação registrada.'}
+                         </p>
+                         <div className="mt-4 flex items-center gap-2 text-[10px] font-bold text-slate-400">
+                            <Clock size={12}/> {processo.logs?.[0] ? `${new Date(processo.logs[0].createdAt).toLocaleDateString('pt-BR')} às ${new Date(processo.logs[0].createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} por ${processo.logs[0].usuario}` : 'Aguardando início'}
                          </div>
                       </div>
-
-                      <div className="bg-slate-900 rounded-3xl p-6 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20">
-                         <div className="absolute top-0 right-0 p-4 opacity-10"><AlertCircle size={60}/></div>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Pendências Críticas</p>
-                         <div className="space-y-4">
-                            {/* Tarefas Atrasadas/Pendentes */}
-                            {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 3).map((t: any) => (
-                               <div key={t.id} className="flex items-start gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 hover:bg-white/10 transition-all cursor-pointer">
-                                  <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${getTaskStatus(t) === 'atrasada' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-amber-500'}`}/>
-                                  <div>
-                                     <p className="text-[12px] font-bold text-white line-clamp-1">{t.titulo}</p>
-                                     <p className="text-[10px] text-slate-500 font-medium">Até {new Date(t.data).toLocaleDateString('pt-BR')}</p>
-                                  </div>
-                               </div>
-                            ))}
-                            {processo.tarefas?.length === 0 && (
-                               <p className="text-[12px] italic text-slate-500 py-4 text-center">Nenhuma pendência crítica identificada.</p>
+                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Principais Pendências</p>
+                         <div className="space-y-3">
+                            {processo.tarefas?.filter((t: any) => t.status === 'pendente').length === 0 ? (
+                               <p className="text-[10px] text-slate-400 italic">Nenhuma pendência operacional.</p>
+                            ) : (
+                               processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 3).map((t: any, i: number) => (
+                                 <div key={i} className="flex items-center gap-3">
+                                    <div className={`w-1.5 h-1.5 rounded-full ${t.prioridade === 'urgente' ? 'bg-red-500' : 'bg-amber-500'}`}/>
+                                    <span className="text-xs font-bold text-slate-600 truncate">{t.titulo}</span>
+                                 </div>
+                               ))
                             )}
                          </div>
                       </div>
-
-                      <div className="flex flex-col justify-between">
-                         <div>
-                            <p className="text-label mb-3">Situação em Órgãos</p>
-                            {processo.protocolos?.[0] ? (
-                               <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-                                  <div className="flex items-center justify-between mb-2">
-                                     <span className="text-[12px] font-bold text-slate-900">{processo.protocolos[0].orgao}</span>
-                                     <span className="badge badge-blue">{processo.protocolos[0].status}</span>
-                                  </div>
-                                  <p className="font-mono text-[10px] text-slate-400"># {processo.protocolos[0].numero_protocolo}</p>
-                               </div>
-                            ) : <div className="text-center py-6 border-2 border-dashed border-slate-100 rounded-2xl text-[11px] text-slate-400 font-medium italic">Nenhum trâmite registrado.</div>}
-                         </div>
-                         <div className="pt-6 flex gap-3">
-                            <button onClick={() => setTab('timeline')} className="flex-1 py-3 bg-white hover:bg-slate-900 hover:text-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 transition-all uppercase tracking-[0.1em]">Ver Timeline</button>
-                            <button onClick={() => setTab('prefeitura')} className="flex-1 py-3 bg-white hover:bg-slate-900 hover:text-white border border-slate-200 rounded-xl text-[10px] font-black text-slate-600 transition-all uppercase tracking-[0.1em]">Protocolos</button>
-                         </div>
-                      </div>
                    </div>
                 </div>
 
-                {/* MARCOS OPERACIONAIS */}
-                <div className="card overflow-hidden">
-                   <div className="card-header">
-                      <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Principais Marcos Operacionais</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Checklist de Aprovação</p>
-                   </div>
-                   <div className="p-2 bg-slate-50 grid grid-cols-1 md:grid-cols-4 gap-2">
-                      {processo.tarefas?.filter((t: any) => t.status === 'pendente').sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime()).slice(0, 4).map((m: any) => (
-                         <div key={m.id} className="p-5 bg-white rounded-2xl border border-slate-200 group hover:border-blue-500 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                            <div className="flex items-center justify-between mb-4">
-                               <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                  <ListTodo size={14}/>
-                               </div>
-                               <span className="text-[10px] font-mono font-bold text-slate-400">{new Date(m.data).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                            <p className="text-sm font-black text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">{m.titulo}</p>
-                            <div className="flex items-center gap-2">
-                               <span className={`w-1.5 h-1.5 rounded-full ${m.prioridade === 'alta' ? 'bg-red-500' : 'bg-slate-300'}`} />
-                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{m.prioridade}</span>
-                            </div>
-                         </div>
-                      ))}
-                   </div>
-                </div>
-             </div>
-
-             {/* SIDEBAR OPERACIONAL */}
-             <div className="space-y-8">
-                {/* Entidades Relacionadas */}
-                <div className="card p-6 space-y-6">
-                   <div>
-                      <p className="text-label mb-4">Contratante Principal</p>
-                      <Link href={`/clientes/${processo.clienteId}`} className="flex items-center gap-4 group p-3 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
-                         <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                            <User size={20}/>
-                         </div>
-                         <div className="min-w-0">
-                            <p className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors truncate">{processo.cliente?.nome}</p>
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{processo.cliente?.cidade}</p>
-                         </div>
-                      </Link>
-                   </div>
-                   <div className="pt-6 border-t border-slate-100">
-                      <p className="text-label mb-4">Objeto da Operação</p>
-                      <Link href={`/imoveis/${processo.imovelId}`} className="flex items-center gap-4 group p-3 rounded-2xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
-                         <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                            <Building2 size={20}/>
-                         </div>
-                         <div className="min-w-0">
-                            <p className="text-sm font-black text-slate-900 group-hover:text-indigo-600 transition-colors truncate">{processo.imovel?.endereco}</p>
-                            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{processo.imovel?.bairro}</p>
-                         </div>
-                      </Link>
-                   </div>
-                </div>
-
-                {/* KPI Financeiro Sidebar */}
-                <div className="premium-dark rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl shadow-blue-900/20">
-                   <div className="absolute top-[-20px] left-[-20px] w-40 h-40 bg-blue-500/20 blur-[60px] pointer-events-none" />
-                   
+                {/* PRÓXIMAS AÇÕES */}
+                <div className="card p-8 border-0 shadow-sm bg-white">
                    <div className="flex items-center justify-between mb-8">
-                      <div>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Contrato Bruto</p>
-                        <p className="text-3xl font-black tracking-tighter text-white">{fmt(processo.valor_total)}</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center border border-white/10 backdrop-blur-md">
-                        <Wallet size={20} className="text-blue-400"/>
-                      </div>
+                      <h3 className="text-sm font-bold text-slate-800">Próximos Marcos do Projeto</h3>
+                      <button onClick={() => setTab('tarefas')} className="text-blue-600 font-bold text-[10px] uppercase tracking-widest hover:underline">+ Adicionar Marco</button>
                    </div>
-                   
-                   <div className="space-y-6">
-                      <div>
-                         <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest mb-3">
-                            <span className="text-blue-400">Eficiência de Recebimento</span>
-                            <span className="text-white">{Math.round((processo.valor_pago / processo.valor_total) * 100) || 0}%</span>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {processo.eventos?.length === 0 ? (
+                         <div className="col-span-3 py-10 text-center border-2 border-dashed border-slate-100 rounded-3xl">
+                            <p className="text-xs text-slate-400 italic">Nenhum evento agendado para este processo.</p>
                          </div>
-                         <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden p-0.5">
-                            <div 
-                              className="h-full bg-gradient-to-r from-blue-600 to-indigo-500 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(37,99,235,0.5)]" 
-                              style={{ width: `${(processo.valor_pago / processo.valor_total) * 100 || 0}%` }} 
-                            />
-                         </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                         <div>
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Recebido</p>
-                            <p className="text-sm font-black text-emerald-400">{fmt(processo.valor_pago)}</p>
-                         </div>
-                         <div className="text-right">
-                            <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Saldo Aberto</p>
-                            <p className="text-sm font-black text-amber-400">{fmt(processo.valor_total - processo.valor_pago)}</p>
-                         </div>
-                      </div>
-                      <button onClick={() => setTab('financeiro')} className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Gerenciar Financeiro</button>
-                   </div>
-                </div>
-             </div>
-
-          </div>
-        )}
-
-        {/* --- TIMELINE --- */}
-        {tab === 'timeline' && (
-          <div className="max-w-4xl mx-auto animate-fade-up">
-             <div className="card overflow-hidden">
-                <div className="card-header">
-                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Histórico de Movimentações</h3>
-                   <div className="flex items-center gap-3">
-                      <button className="btn-ghost text-[10px]"><Filter size={14}/> Filtrar</button>
-                      <button onClick={() => setActiveModal('log_manual')} className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg">+ Lançamento</button>
-                   </div>
-                </div>
-                <div className="p-10 relative">
-                   {/* Linha da Timeline - Premium Style */}
-                   <div className="absolute left-[47px] top-10 bottom-10 w-[2px] bg-gradient-to-b from-blue-500 via-slate-200 to-transparent" />
-                   
-                   <div className="space-y-10 relative">
-                      {processo.logs?.length === 0 ? (
-                         <div className="py-20 text-center italic text-slate-400 text-sm">Nenhum evento registrado nesta jornada.</div>
-                      ) : processo.logs.map((log: any, i: number) => {
-                        const isFin = log.modulo === 'FINANCEIRO'
-                        const isDoc = log.modulo === 'DOCUMENTOS'
-                        const isTask = log.modulo === 'TAREFAS'
-                        
-                        const Icon = isFin ? DollarSign : isTask ? ListTodo : isDoc ? FileText : GitBranch
-                        const colorClass = isFin ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : isTask ? 'bg-blue-50 text-blue-600 border-blue-100' : isDoc ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-slate-50 text-slate-600 border-slate-100'
-
-                        return (
-                           <div key={log.id} className="flex gap-8 group">
-                              <div className="w-16 text-right shrink-0 pt-2">
-                                 <p className="text-[11px] font-black text-slate-900 uppercase leading-none">{new Date(log.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</p>
-                                 <p className="text-[10px] text-slate-400 font-mono mt-1 font-bold">{new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                      ) : (
+                        processo.eventos.slice(0, 3).map((m: any, i: number) => (
+                           <div key={i} className={`p-4 rounded-2xl border-2 transition-all border-slate-50 bg-slate-50/30`}>
+                              <div className="flex items-center justify-between mb-3">
+                                 <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded bg-slate-200 text-slate-500`}>{m.status}</span>
+                                 <span className="text-[10px] font-bold text-slate-400 font-mono">{new Date(m.data_inicio).toLocaleDateString('pt-BR')}</span>
                               </div>
-                              <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 relative z-10 transition-all shadow-sm ${colorClass} group-hover:scale-110 group-hover:shadow-lg`}>
-                                 <Icon size={18} strokeWidth={2.5}/>
-                              </div>
-                              <div className="flex-1 bg-white border border-slate-100 rounded-3xl p-6 shadow-sm group-hover:border-blue-200 transition-all hover:shadow-md">
-                                 <div className="flex items-center gap-3 mb-2">
-                                    <h4 className="text-sm font-black text-slate-900 tracking-tight">{log.acao}</h4>
-                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-widest ${colorClass}`}>{log.modulo}</span>
-                                 </div>
-                                 <p className="text-sm text-slate-500 leading-relaxed font-medium">{log.detalhe}</p>
-                                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-50">
-                                    <div className="w-5 h-5 rounded-full bg-slate-900 flex items-center justify-center text-[8px] text-white font-bold">JC</div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operador: {log.usuario}</p>
-                                 </div>
-                              </div>
+                              <p className="text-xs font-bold text-slate-800 truncate">{m.titulo}</p>
                            </div>
-                        )
-                      })}
-                   </div>
-                </div>
-             </div>
-          </div>
-        )}
-
-        {/* --- TAREFAS --- */}
-        {tab === 'tarefas' && (
-          <div className="max-w-5xl mx-auto space-y-6 animate-fade-up">
-             <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <div className="flex items-center gap-6">
-                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Checklist Operacional</h3>
-                   <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-                      <button className="px-4 py-2 text-[10px] font-black uppercase bg-white shadow-lg rounded-lg text-blue-600 transition-all">Pendentes</button>
-                      <button className="px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-slate-600">Concluídas</button>
-                   </div>
-                </div>
-                <button 
-                  onClick={() => { setEditData(null); setActiveModal('tarefa') }}
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center gap-2"
-                >
-                   <Plus size={16} strokeWidth={3}/> Nova Tarefa
-                </button>
-             </div>
-
-             <div className="grid grid-cols-1 gap-4">
-                {processo.tarefas?.length === 0 ? (
-                   <div className="py-24 text-center border-3 border-dashed border-slate-200 rounded-[32px] text-slate-300 font-bold italic text-sm">Nenhuma tarefa registrada.</div>
-                ) : processo.tarefas.sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime()).map((t: any) => {
-                   const status = getTaskStatus(t)
-                   const isDone = status === 'concluido'
-                   return (
-                      <div key={t.id} className={`flex items-center gap-6 p-5 bg-white border border-slate-200 rounded-3xl hover:border-blue-500 hover:shadow-xl transition-all duration-300 group ${isDone ? 'opacity-60 grayscale' : ''}`}>
-                         <button 
-                           onClick={() => handleAction('PATCH', 'tarefas', { id: t.id, status: isDone ? 'pendente' : 'concluido' })}
-                           className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center shrink-0 transition-all ${isDone ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-slate-200 bg-slate-50 hover:border-blue-500'}`}
-                         >
-                            {isDone && <Check size={18} className="text-white" strokeWidth={3}/>}
-                         </button>
-                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3 mb-1">
-                               <p className={`text-sm font-black tracking-tight ${isDone ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{t.titulo}</p>
-                               {status === 'atrasada' && <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-red-50 text-red-600 border border-red-100 uppercase tracking-widest animate-pulse">Atrasada</span>}
-                               {isDone && <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase tracking-widest">Concluída</span>}
-                            </div>
-                            <div className="flex items-center gap-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                               <div className="flex items-center gap-1.5"><Calendar size={14} className="text-slate-300"/> {new Date(t.data).toLocaleDateString('pt-BR')}</div>
-                               <div className="flex items-center gap-1.5"><User size={14} className="text-slate-300"/> {t.responsavel || 'Equipe Técnica'}</div>
-                               <div className="flex items-center gap-1.5"><Tag size={14} className="text-slate-300"/> {t.prioridade}</div>
-                            </div>
-                         </div>
-                         <div className="flex items-center gap-1">
-                            <button 
-                              onClick={() => { setEditData(t); setActiveModal('tarefa') }}
-                              className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-300 hover:bg-blue-50 hover:text-blue-600 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                               <Edit size={16}/>
-                            </button>
-                            <button 
-                              onClick={() => { if(confirm('Excluir tarefa?')) handleAction('DELETE', 'tarefas', { id: t.id, titulo: t.titulo }) }}
-                              className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-300 hover:bg-red-50 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                            >
-                               <Trash2 size={16}/>
-                            </button>
-                         </div>
-                      </div>
-                   )
-                })}
-             </div>
-          </div>
-        )}
-
-        {/* --- PREFEITURA --- */}
-        {tab === 'prefeitura' && (
-          <div className="max-w-6xl mx-auto space-y-8 animate-fade-up">
-             <div className="flex items-center justify-between">
-                <div>
-                   <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight">Status em Órgãos Públicos</h3>
-                   <p className="text-xs text-slate-500 font-medium">Acompanhamento centralizado de protocolos e exigências.</p>
-                </div>
-                <button 
-                  onClick={() => { setEditData(null); setActiveModal('protocolo') }}
-                  className="btn-primary py-3 px-6 rounded-2xl"
-                >
-                   <Plus size={18} strokeWidth={3}/> Novo Protocolo
-                </button>
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {processo.protocolos?.length === 0 ? (
-                   <div className="col-span-full py-32 text-center border-3 border-dashed border-slate-200 rounded-[40px] bg-white shadow-inner">
-                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-300">
-                         <Building2 size={32}/>
-                      </div>
-                      <p className="text-slate-400 font-bold italic text-sm">Aguardando registro de protocolos.</p>
-                   </div>
-                ) : processo.protocolos.map((p: any) => (
-                   <div key={p.id} className="card p-6 group hover:border-blue-500 transition-all duration-300 relative overflow-hidden">
-                      <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <div className="flex flex-col gap-1 p-2 bg-slate-900 rounded-bl-2xl">
-                            <button onClick={() => { setEditData(p); setActiveModal('protocolo') }} className="p-2 text-white hover:text-blue-400 transition-colors"><Edit size={14}/></button>
-                            <button onClick={() => { if(confirm('Remover?')) handleAction('DELETE', 'protocolos', { id: p.id, orgao: p.orgao }) }} className="p-2 text-white hover:text-red-400 transition-colors"><Trash2 size={14}/></button>
-                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-4 mb-6">
-                         <div className="w-14 h-14 rounded-[20px] bg-slate-900 text-white flex items-center justify-center font-black text-lg shadow-xl shadow-slate-900/20">
-                            {p.orgao.substring(0, 2).toUpperCase()}
-                         </div>
-                         <div>
-                            <h4 className="text-sm font-black text-slate-900 leading-tight mb-1">{p.orgao}</h4>
-                            <div className="flex items-center gap-2">
-                               <span className="font-mono text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">#{p.numero_protocolo}</span>
-                            </div>
-                         </div>
-                      </div>
-
-                      <div className="space-y-4 mb-6">
-                         <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</p>
-                            <span className={`badge ${p.status === 'aprovado' || p.status === 'concluido' ? 'badge-green' : p.status === 'exigencia' ? 'badge-red' : 'badge-blue'}`}>
-                               {p.status.replace(/_/g, ' ')}
-                            </span>
-                         </div>
-                         <div className="grid grid-cols-2 gap-4">
-                            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Abertura</p>
-                               <p className="text-[11px] font-black text-slate-800">{new Date(p.data).toLocaleDateString('pt-BR')}</p>
-                            </div>
-                            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Prazo / Revisão</p>
-                               <p className="text-[11px] font-black text-slate-800">{p.prazo ? new Date(p.prazo).toLocaleDateString('pt-BR') : '—'}</p>
-                            </div>
-                         </div>
-                      </div>
-
-                      {p.observacao && (
-                         <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                            <p className="text-[10px] text-blue-700 font-bold italic line-clamp-2 leading-relaxed">"{p.observacao}"</p>
-                         </div>
+                        ))
                       )}
                    </div>
-                ))}
+                </div>
+
+             </div>
+
+             <div className="space-y-8">
+                {/* ENTIDADES VINCULADAS */}
+                <div className="card p-6 border-0 shadow-sm bg-white">
+                   <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-6">Base da Operação</h3>
+                   <div className="space-y-6">
+                      <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <User size={20}/>
+                         </div>
+                         <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">Contratante</p>
+                            <Link href={`/clientes/${processo.clienteId}`} className="text-sm font-bold text-slate-800 hover:text-blue-600 transition-colors">{processo.cliente?.nome}</Link>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+                            <Building2 size={20}/>
+                         </div>
+                         <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">Objeto / Imóvel</p>
+                            <Link href={`/imoveis/${processo.imovelId}`} className="text-sm font-bold text-slate-800 hover:text-purple-600 transition-colors line-clamp-1">{processo.imovel?.endereco}</Link>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+
+                {/* KPI RÁPIDO FINANCEIRO */}
+                <div className="card p-6 border-0 shadow-sm bg-slate-900 text-white">
+                   <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Financeiro</h3>
+                      <button onClick={() => setTab('financeiro')} className="text-blue-400"><ArrowUpRight size={16}/></button>
+                   </div>
+                   <div className="space-y-4">
+                      <div>
+                         <p className="text-2xl font-bold tracking-tight">{fmt(processo.valor_total)}</p>
+                         <p className="text-[10px] text-slate-500 font-bold uppercase">Valor do Contrato</p>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                         <div 
+                           className="h-full bg-blue-500 transition-all duration-1000" 
+                           style={{ width: `${(processo.valor_pago / processo.valor_total) * 100 || 0}%` }} 
+                         />
+                      </div>
+                      <div className="flex items-center justify-between">
+                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                            Recebido ({Math.round((processo.valor_pago / processo.valor_total) * 100) || 0}%)
+                         </span>
+                         <span className="text-xs font-bold">{fmt(processo.valor_pago)}</span>
+                      </div>
+                   </div>
+                </div>
              </div>
           </div>
         )}
 
-        {/* --- FINANCEIRO --- */}
-        {tab === 'financeiro' && (
-          <div className="space-y-8 animate-fade-up">
-             
-             {/* INDICADORES PREMIUM */}
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[
-                   { label: 'Valor do Contrato', value: fmt(processo.valor_total), icon: Wallet, color: 'text-slate-900', bg: 'bg-white shadow-xl shadow-slate-200/50' },
-                   { label: 'Total Recebido', value: fmt(processo.valor_pago), icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50/50 border-emerald-100' },
-                   { label: 'Saldo devedor', value: fmt(processo.valor_total - processo.valor_pago), icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50/50 border-amber-100' },
-                   { label: 'Margem Líquida', value: `${Math.round((processo.valor_pago / processo.valor_total) * 100) || 0}%`, icon: ArrowUpRight, color: 'text-blue-600', bg: 'bg-blue-50/50 border-blue-100' },
-                ].map((k, i) => (
-                   <div key={i} className={`p-8 rounded-[32px] border flex flex-col justify-between h-44 ${k.bg}`}>
-                      <div className="flex items-center justify-between">
-                         <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-400 border border-slate-100"><k.icon size={22}/></div>
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{k.label}</p>
-                      </div>
-                      <p className={`text-2xl font-black tracking-tighter ${k.color}`}>{k.value}</p>
+        {/* ── TIMELINE OPERACIONAL ─────────────────────────────────── */}
+        {tab === 'timeline' && (
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="card p-10 border-0 shadow-sm bg-white relative">
+                <div className="flex items-center justify-between mb-12">
+                   <div>
+                      <h3 className="text-lg font-bold text-slate-900">Jornada da Operação</h3>
+                      <p className="text-sm text-slate-500">Log inteligente de todas as movimentações técnicas</p>
                    </div>
-                ))}
+                   <button onClick={() => setIsEditModalOpen(true)} className="btn-primary py-2 px-6 text-xs shadow-lg shadow-blue-100">Atualizar Status</button>
+                </div>
+
+                <div className="relative space-y-12 pl-10">
+                   <div className="absolute left-[59px] top-4 bottom-4 w-0.5 bg-slate-100" />
+                   
+                   {processo.eventos?.length === 0 ? (
+                      <div className="py-20 text-center italic text-slate-400">Nenhum evento registrado na timeline.</div>
+                   ) : processo.eventos.map((item: any, i: number) => {
+                      const Icon = item.tipo === 'tarefas' ? ListTodo : item.tipo === 'financeiro' ? DollarSign : GitBranch
+                      return (
+                        <div key={i} className="flex gap-8 relative z-10">
+                           <div className="w-10 text-right shrink-0 pt-2">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                 {new Date(item.data_inicio).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                              </p>
+                           </div>
+                           <div className={`w-10 h-10 rounded-2xl border-4 border-white shadow-md flex items-center justify-center shrink-0 bg-slate-50 text-slate-600`}>
+                              <Icon size={16} />
+                           </div>
+                           <div className="bg-slate-50/50 border border-slate-100 p-6 rounded-[24px] flex-1 hover:bg-white hover:shadow-xl transition-all group">
+                              <h4 className="text-sm font-bold text-slate-800 group-hover:text-blue-600 transition-colors mb-1">{item.titulo}</h4>
+                              <p className="text-xs text-slate-500 leading-relaxed">{item.descricao}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase mt-2">Por: {item.responsavel}</p>
+                           </div>
+                        </div>
+                      )
+                   })}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* ── FINANCEIRO OPERACIONAL ───────────────────────────────── */}
+        {tab === 'financeiro' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             
+             {/* FINANCE OVERVIEW */}
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="card p-8 border-0 shadow-lg bg-blue-600 text-white">
+                   <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center"><Wallet size={20}/></div>
+                      <div><h3 className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Receitas do Contrato</h3></div>
+                   </div>
+                   <div className="space-y-4">
+                      <div><p className="text-3xl font-bold tracking-tight">{fmt(processo.valor_total)}</p><p className="text-[10px] text-blue-200 font-bold uppercase mt-1">Valor Bruto Contratado</p></div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                         <div><p className="text-sm font-bold text-emerald-300">{fmt(processo.valor_pago)}</p><p className="text-[9px] text-blue-200 font-bold uppercase">Já Recebido</p></div>
+                         <div><p className="text-sm font-bold text-amber-300">{fmt(processo.valor_total - processo.valor_pago)}</p><p className="text-[9px] text-blue-200 font-bold uppercase">Pendente</p></div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="card p-8 border-0 shadow-sm bg-white">
+                   <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center"><Users size={20}/></div>
+                      <div><h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Custo com Parceiros</h3></div>
+                   </div>
+                   <div className="space-y-4">
+                      {/* Simulação de custos com base em 25% se não houver dados reais */}
+                      <div><p className="text-3xl font-bold tracking-tight text-slate-800">{fmt(processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)}</p><p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Total de Despesas Lançadas</p></div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+                         <div><p className="text-sm font-bold text-red-500">{fmt(processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status === 'pago').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Pago</p></div>
+                         <div><p className="text-sm font-bold text-slate-700">{fmt(processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status === 'pendente').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">A Pagar</p></div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="card p-8 border-0 shadow-lg bg-slate-900 text-white relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-8 opacity-10"><TrendingUp size={120}/></div>
+                   <div className="flex items-center gap-3 mb-6 relative z-10">
+                      <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center text-blue-400 border border-white/10"><TrendingUp size={20}/></div>
+                      <div><h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Resultado do Processo</h3></div>
+                   </div>
+                   <div className="space-y-4 relative z-10">
+                      <div>
+                         <p className="text-3xl font-bold tracking-tight text-blue-400">
+                            {fmt(processo.valor_total - (processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0))}
+                         </p>
+                         <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Margem Líquida Estimada</p>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5 mt-4">
+                         <span className="text-xs font-bold text-slate-400">Eficiência Financeira</span>
+                         <span className="text-sm font-bold text-blue-400">
+                            {Math.round(((processo.valor_total - (processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)) / processo.valor_total) * 100) || 0}%
+                         </span>
+                      </div>
+                   </div>
+                </div>
              </div>
 
-             {/* FLUXO DE CAIXA */}
-             <div className="card overflow-hidden">
-                <div className="card-header bg-white border-b-2 border-slate-50">
-                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Fluxo de Caixa Operacional</h3>
-                   <div className="flex gap-3">
-                      <button className="btn-ghost text-[10px]"><Download size={16}/> Relatório</button>
-                      <button 
-                        onClick={() => { setEditData(null); setActiveModal('financeiro') }}
-                        className="bg-slate-900 hover:bg-slate-800 text-white py-3 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl transition-all"
-                      >
-                         + Novo Lançamento
-                      </button>
+             {/* DETALHAMENTO TABLE */}
+             <div className="card border-0 shadow-sm bg-white overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+                   <h3 className="text-sm font-bold text-slate-800">Fluxo de Caixa Operacional</h3>
+                   <div className="flex items-center gap-2">
+                      <button className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold uppercase border border-slate-100">Exportar PDF</button>
+                      <button className="btn-primary py-2 px-6 text-[10px] uppercase">+ Nova Transação</button>
                    </div>
                 </div>
                 <div className="overflow-x-auto">
-                   <table className="w-full text-left zebra-table">
+                   <table className="w-full text-left">
                       <thead>
-                         <tr className="table-header">
-                            <th className="px-8">Vencimento</th>
-                            <th className="px-8">Descrição / Categoria</th>
-                            <th className="px-8 text-center">Status</th>
-                            <th className="px-8 text-right">Valor Líquido</th>
-                            <th className="px-8"></th>
+                         <tr className="bg-slate-50 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                            <th className="px-8 py-4">Data</th>
+                            <th className="px-8 py-4">Categoria / Descrição</th>
+                            <th className="px-8 py-4 text-center">Status</th>
+                            <th className="px-8 py-4 text-right">Valor (R$)</th>
                          </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-50 text-xs">
                          {processo.financeiro?.length === 0 ? (
-                            <tr><td colSpan={5} className="p-24 text-center text-slate-300 font-bold italic">Nenhum registro financeiro.</td></tr>
-                         ) : processo.financeiro.map((f: any) => (
-                           <tr key={f.id} className="table-row group">
-                              <td className="px-8 py-6">
-                                 <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-slate-200"/>
-                                    <span className="font-mono text-[13px] font-black text-slate-600">{f.data_vencimento ? new Date(f.data_vencimento).toLocaleDateString('pt-BR') : '—'}</span>
-                                 </div>
+                            <tr><td colSpan={4} className="p-10 text-center italic text-slate-400">Nenhuma transação financeira registrada.</td></tr>
+                         ) : processo.financeiro.map((f: any, i: number) => (
+                           <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                              <td className="px-8 py-5 text-slate-500">{new Date(f.createdAt).toLocaleDateString('pt-BR')}</td>
+                              <td className="px-8 py-5">
+                                 <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{f.descricao}</p>
+                                 <p className="text-[9px] text-slate-400 uppercase mt-0.5">{f.categoria || f.tipo}</p>
                               </td>
-                              <td className="px-8 py-6">
-                                 <p className="text-sm font-black text-slate-900 leading-none mb-1.5">{f.descricao}</p>
-                                 <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg uppercase tracking-widest border border-blue-100">{f.categoria || f.tipo}</span>
-                              </td>
-                              <td className="px-8 py-6 text-center">
-                                 <span className={`badge ${f.status === 'pago' || f.status === 'recebido' ? 'badge-green' : 'badge-amber'}`}>
+                              <td className="px-8 py-5 text-center">
+                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase ${f.status === 'pago' || f.status === 'recebido' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
                                     {f.status}
                                  </span>
                               </td>
-                              <td className={`px-8 py-6 text-right font-black text-base tracking-tighter ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-500'}`}>
+                              <td className={`px-8 py-5 text-right font-bold ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-500'}`}>
                                  {f.tipo === 'receita' ? '+' : '-'}{fmt(f.valor)}
-                              </td>
-                              <td className="px-8 py-6 text-right">
-                                 <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => { setEditData(f); setActiveModal('financeiro') }} className="w-9 h-9 bg-slate-50 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-xl flex items-center justify-center transition-all border border-slate-100"><Edit size={14}/></button>
-                                    <button onClick={() => { if(confirm('Excluir?')) handleAction('DELETE', 'financeiro', { id: f.id, descricao: f.descricao }) }} className="w-9 h-9 bg-slate-50 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl flex items-center justify-center transition-all border border-slate-100"><Trash2 size={14}/></button>
-                                 </div>
                               </td>
                            </tr>
                          ))}
@@ -647,80 +461,186 @@ export default function ProcessoDetailPage() {
                    </table>
                 </div>
              </div>
+
           </div>
         )}
 
-        {/* --- DOCS --- */}
+        {/* ── DOCUMENTOS TÉCNICOS ──────────────────────────────────── */}
         {tab === 'documentos' && (
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-6 animate-fade-up">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             
+             {/* UPLOAD AREA */}
              <div 
-               onClick={() => setActiveModal('upload')}
-               className="col-span-full h-40 border-3 border-dashed border-slate-200 rounded-[32px] flex flex-col items-center justify-center bg-white hover:bg-blue-50 hover:border-blue-400 transition-all cursor-pointer group shadow-sm"
+               onClick={handleAddDocument}
+               className="col-span-full border-2 border-dashed border-slate-200 rounded-3xl p-10 text-center bg-white hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer group"
              >
-                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-600 transition-all mb-4 border border-slate-100 group-hover:border-blue-500">
-                   <Plus size={24} className="text-slate-400 group-hover:text-white transition-all"/>
+                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-sm">
+                   <Plus size={32}/>
                 </div>
-                <p className="text-xs font-black text-slate-900 uppercase tracking-widest">Anexar Documento Técnico</p>
-                <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">PDF, DWG, PNG (Máx 50MB)</p>
+                <h3 className="text-sm font-bold text-slate-800">Upload de Arquivos Técnicos</h3>
+                <p className="text-xs text-slate-400 mt-2">Clique aqui para simular o upload de PDFs, plantas ou memoriais.</p>
              </div>
 
              {processo.documentos?.length === 0 ? (
-                <div className="col-span-full py-32 text-center text-slate-300 font-bold italic text-sm">Aguardando upload de documentos.</div>
-             ) : processo.documentos.map((doc: any) => (
-                <div key={doc.id} className="card p-5 group hover:border-blue-500 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); if(confirm('Remover?')) handleAction('DELETE', 'documentos', { id: doc.id, processoId: params.id, nome: doc.nome }) }}
-                        className="w-8 h-8 bg-red-500 text-white rounded-bl-xl flex items-center justify-center hover:bg-red-600 transition-all"
-                      >
-                         <Trash2 size={14}/>
-                      </button>
-                   </div>
-
-                   <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm mb-4">
-                      <FileText size={22} strokeWidth={2.5}/>
-                   </div>
-                   <h4 className="text-[11px] font-black text-slate-900 leading-tight mb-3 line-clamp-2 min-h-[2.4rem]" title={doc.nome}>{doc.nome}</h4>
-                   <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                      <span className="text-[9px] font-black px-2 py-0.5 rounded-lg bg-slate-100 text-slate-500 uppercase tracking-widest">{doc.tipo}</span>
-                      <a href={doc.url} target="_blank" className="text-blue-600 hover:text-blue-800 text-[10px] font-black uppercase tracking-widest underline decoration-2 underline-offset-4">Abrir</a>
-                   </div>
-                </div>
+                <div className="col-span-full py-20 text-center text-slate-400 italic">Nenhum documento anexado.</div>
+             ) : processo.documentos.map((doc: any, i: number) => (
+               <div key={i} className="card p-6 border-0 shadow-sm bg-white group hover:shadow-xl transition-all">
+                  <div className="flex items-center justify-between mb-4">
+                     <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                        <FileText size={20}/>
+                     </div>
+                     <div className="relative">
+                        <button className="text-slate-300 hover:text-slate-600 transition-colors"><MoreVertical size={18}/></button>
+                     </div>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-800 mb-1 truncate" title={doc.nome}>{doc.nome}</h4>
+                  <div className="flex items-center gap-2 mb-4">
+                     <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded uppercase">{doc.tipo}</span>
+                     <span className="text-[10px] text-slate-400 font-mono">{(doc.tamanho / 1024 / 1024).toFixed(1)} MB</span>
+                  </div>
+                  <div className="flex gap-2">
+                     <a 
+                       href={doc.url} 
+                       target="_blank" 
+                       rel="noopener noreferrer"
+                       className="flex-1 py-2 bg-slate-50 hover:bg-slate-900 hover:text-white text-slate-600 text-[10px] font-bold uppercase rounded-lg transition-all border border-slate-100 flex items-center justify-center gap-1"
+                     >
+                        <Download size={12}/> Abrir
+                     </a>
+                     <button 
+                       onClick={() => handleDeleteDocument(doc.id, doc.nome)}
+                       className="p-2 bg-red-50 text-red-400 hover:bg-red-500 hover:text-white rounded-lg transition-all border border-red-100"
+                     >
+                        <Trash2 size={14}/>
+                     </button>
+                  </div>
+               </div>
              ))}
+
           </div>
         )}
 
-        {/* --- HISTORICO --- */}
-        {tab === 'historico' && (
-          <div className="max-w-4xl mx-auto animate-fade-up">
-             <div className="card overflow-hidden">
-                <div className="card-header border-b-2 border-slate-50">
-                   <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">Logs de Auditoria de Sistema</h3>
-                   <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold text-slate-400 font-mono tracking-tighter">UUID: {processo.id}</span>
+        {/* ── TAREFAS OPERACIONAIS ─────────────────────────────────── */}
+        {tab === 'tarefas' && (
+          <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="card p-8 border-0 shadow-sm bg-white">
+                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-50">
+                   <div>
+                      <h3 className="text-base font-bold text-slate-800">Checklist Operacional</h3>
+                      <p className="text-xs text-slate-400">Tarefas críticas para finalização do processo</p>
+                   </div>
+                   <button onClick={() => setIsTaskModalOpen(true)} className="btn-primary py-2 px-6 text-[10px] uppercase tracking-widest">+ Nova Tarefa</button>
+                </div>
+
+                <div className="space-y-4">
+                   {processo.tarefas?.length === 0 ? (
+                      <div className="py-20 text-center text-slate-400 italic">Nenhuma tarefa cadastrada.</div>
+                   ) : processo.tarefas.map((t: any, i: number) => (
+                      <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all ${t.status === 'concluido' ? 'bg-slate-50 border-slate-50 opacity-60' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'}`}>
+                         <button 
+                           onClick={() => handleToggleTarefa(t.id, t.status)}
+                           className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.status === 'concluido' ? 'bg-blue-600 border-blue-600' : 'border-slate-300 bg-white hover:border-blue-400'}`}
+                         >
+                            {t.status === 'concluido' && <Check size={14} className="text-white" />}
+                         </button>
+                         <div className="flex-1">
+                            <p className={`text-sm font-bold ${t.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-700'}`}>{t.titulo}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                               <span className={`text-[9px] font-bold uppercase tracking-widest ${t.prioridade === 'urgente' ? 'text-red-500' : 'text-blue-500'}`}>{t.prioridade}</span>
+                               <span className="text-[10px] text-slate-400 flex items-center gap-1"><Calendar size={10}/> {new Date(t.data).toLocaleDateString('pt-BR')}</span>
+                               <span className="text-[10px] text-slate-400 flex items-center gap-1"><User size={10}/> {t.responsavel}</span>
+                            </div>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* ── PREFEITURA / ÓRGÃOS ──────────────────────────────────── */}
+        {tab === 'prefeitura' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="lg:col-span-2 space-y-6">
+                <div className="card p-8 border-0 shadow-sm bg-white">
+                   <div className="flex items-center justify-between mb-8">
+                      <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><Building2 size={16} className="text-blue-500"/> Protocolos nos Órgãos Públicos</h3>
+                      <button onClick={() => setIsProtocoloModalOpen(true)} className="btn-primary py-2 px-6 text-[10px] uppercase">+ Novo Protocolo</button>
+                   </div>
+                   
+                   <div className="space-y-6">
+                      {processo.protocolos?.length === 0 ? (
+                         <div className="py-20 text-center border-2 border-dashed border-slate-50 rounded-[32px] text-slate-400 italic">Nenhum protocolo externo registrado.</div>
+                      ) : processo.protocolos.map((prot: any, i: number) => (
+                        <div key={i} className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                           <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center gap-3">
+                                 <div className="w-10 h-10 bg-white border border-slate-200 rounded-xl flex items-center justify-center shadow-sm font-bold text-blue-600">
+                                    {prot.orgao.substring(0, 2).toUpperCase()}
+                                 </div>
+                                 <div>
+                                    <p className="text-sm font-bold text-slate-800">{prot.orgao}</p>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase">Nº {prot.numero_protocolo}</p>
+                                 </div>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${prot.status === 'concluido' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                                 {prot.status}
+                              </span>
+                           </div>
+                           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                              <div><p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Data Início</p><p className="text-xs font-bold text-slate-700">{new Date(prot.data).toLocaleDateString('pt-BR')}</p></div>
+                              <div><p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Prazo Previsto</p><p className="text-xs font-bold text-slate-700">{prot.prazo ? new Date(prot.prazo).toLocaleDateString('pt-BR') : '—'}</p></div>
+                              <div><p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Última Movimentação</p><p className="text-xs font-bold text-slate-700">{new Date(prot.updatedAt).toLocaleDateString('pt-BR')}</p></div>
+                           </div>
+                           {prot.observacao && (
+                             <div className="bg-white rounded-2xl p-4 border border-slate-100">
+                                <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">Notas do Protocolo</p>
+                                <p className="text-xs text-slate-500 italic">{prot.observacao}</p>
+                             </div>
+                           )}
+                        </div>
+                      ))}
                    </div>
                 </div>
-                <div className="divide-y divide-slate-100 bg-white">
+             </div>
+
+             <div className="space-y-6">
+                <div className="card p-6 border-0 shadow-sm bg-slate-900 text-white">
+                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Central de Trâmites</h3>
+                   <p className="text-sm text-slate-400 mb-6">Gerencie o fluxo burocrático em prefeituras, cartórios e órgãos de classe.</p>
+                   <button onClick={() => setIsProtocoloModalOpen(true)} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/20">Registrar Novo Trâmite</button>
+                   <button onClick={() => fetchProcesso()} className="w-full mt-2 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all border border-white/10 flex items-center justify-center gap-2">
+                      <RefreshCw size={14} className={loading ? 'animate-spin' : ''}/> Sincronizar Dados
+                   </button>
+                </div>
+             </div>
+          </div>
+        )}
+
+        {/* ── HISTÓRICO DE LOG ─────────────────────────────────────── */}
+        {tab === 'historico' && (
+          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+             <div className="card border-0 shadow-sm bg-white overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-50 flex items-center justify-between">
+                   <h3 className="text-sm font-bold text-slate-800">Log de Auditoria</h3>
+                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rastreabilidade Total</span>
+                </div>
+                <div className="divide-y divide-slate-50">
                    {processo.logs?.length === 0 ? (
-                      <div className="p-32 text-center text-slate-300 font-bold italic">Sem histórico para auditoria.</div>
-                   ) : processo.logs.map((log: any) => (
-                     <div key={log.id} className="px-8 py-5 hover:bg-slate-50 transition-colors flex items-center justify-between">
-                        <div className="flex items-center gap-6">
-                           <div className="w-10 h-10 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg">
-                              <User size={16}/>
+                      <div className="p-20 text-center text-slate-400 italic">Sem registros de auditoria.</div>
+                   ) : processo.logs.map((log: any, i: number) => (
+                     <div key={i} className="px-8 py-5 hover:bg-slate-50 transition-colors">
+                        <div className="flex items-center justify-between mb-1">
+                           <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-bold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase">{log.modulo}</span>
+                              <p className="text-xs font-bold text-slate-800">{log.acao}</p>
                            </div>
-                           <div>
-                              <div className="flex items-center gap-3 mb-1">
-                                 <span className="text-[10px] font-black bg-blue-600 text-white px-2 py-0.5 rounded-lg uppercase tracking-widest">{log.modulo}</span>
-                                 <p className="text-[13px] font-black text-slate-900">{log.acao}</p>
-                              </div>
-                              <p className="text-[12px] text-slate-500 font-medium">{log.detalhe}</p>
-                           </div>
+                           <span className="text-[10px] font-bold text-slate-400 uppercase">
+                              {new Date(log.createdAt).toLocaleDateString('pt-BR')} às {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                           </span>
                         </div>
-                        <div className="text-right shrink-0">
-                           <p className="text-sm font-black text-slate-900">{log.usuario}</p>
-                           <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mt-1">{new Date(log.createdAt).toLocaleString('pt-BR')}</p>
-                        </div>
+                        <p className="text-[11px] text-slate-500">{log.detalhe}</p>
+                        <p className="text-[9px] font-bold text-blue-600 mt-2">Agente: {log.usuario}</p>
                      </div>
                    ))}
                 </div>
@@ -730,203 +650,160 @@ export default function ProcessoDetailPage() {
 
       </div>
 
-      {/* --- MODAIS --- */}
-      {activeModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
-           <div className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden animate-fade-up border border-white/20">
-              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                 <div>
-                    <h2 className="text-base font-black text-slate-900 uppercase tracking-tight">
-                       {editData ? 'Atualizar' : 'Novo Registro'} — {activeModal}
-                    </h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Gestão Operacional RegularizaPro</p>
-                 </div>
-                 <button onClick={() => { setActiveModal(null); setEditData(null) }} className="w-10 h-10 flex items-center justify-center bg-white hover:bg-slate-100 rounded-2xl transition-all text-slate-400 border border-slate-100 shadow-sm"><X size={20}/></button>
+      {/* MODAL: EDITAR STATUS / PROCESSO */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Atualizar Status Operacional</h2>
+                <p className="text-xs text-slate-500 font-medium">Isso registrará um evento na timeline e log de auditoria</p>
               </div>
-              
-              <form onSubmit={async (e) => {
-                 e.preventDefault()
-                 const formData = new FormData(e.target as HTMLFormElement)
-                 const data: any = {}
-                 formData.forEach((val, key) => data[key] = val)
-                 
-                 const method = editData ? 'PATCH' : 'POST'
-                 const endpoint = activeModal === 'processo' ? '' : activeModal
-                 const body = editData ? { ...data, id: editData.id } : data
-                 
-                 if (activeModal === 'processo') {
-                    await fetch(`/api/processos/${params.id}`, { method: 'PATCH', body: JSON.stringify(data) })
-                    await fetchProcesso()
-                    setActiveModal(null)
-                    return
-                 }
+              <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-slate-100 text-slate-400 rounded-full transition-colors"><X/></button>
+            </div>
+            <form onSubmit={(e) => {
+               e.preventDefault()
+               const form = e.target as HTMLFormElement
+               handleUpdateStatus(
+                 (form.elements.namedItem('status') as HTMLSelectElement).value,
+                 (form.elements.namedItem('observacoes') as HTMLTextAreaElement).value
+               )
+            }} className="p-8 space-y-6">
+               <div className="grid grid-cols-2 gap-6">
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Novo Status</label>
+                     <select name="status" defaultValue={processo.status} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold">
+                        <option value="em_analise">Análise Inicial</option>
+                        <option value="levantamento">Levantamento Técnico</option>
+                        <option value="projeto">Elaboração de Projeto</option>
+                        <option value="protocolo_prefeitura">Protocolo Prefeitura</option>
+                        <option value="exigencia_tecnica">Exigência Técnica</option>
+                        <option value="em_aprovacao">Em Aprovação</option>
+                        <option value="cartorio">Trâmite Cartorial</option>
+                        <option value="finalizado">Finalizado / Concluído</option>
+                     </select>
+                  </div>
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Responsável Técnico</label>
+                     <input type="text" name="responsavel" defaultValue={processo.responsavel} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+               </div>
+               <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Notas da Movimentação (Detalhes)</label>
+                  <textarea name="observacoes" rows={4} placeholder="Descreva o que foi feito nesta etapa..." className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none" />
+               </div>
+               <div className="flex gap-3 pt-6">
+                  <button type="button" onClick={() => setIsEditModalOpen(false)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-bold text-sm transition-all">Cancelar</button>
+                  <button type="submit" disabled={isUpdating} className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2">
+                     {isUpdating ? <Loader2 size={18} className="animate-spin"/> : 'Confirmar Atualização'}
+                  </button>
+               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-                 await handleAction(method, endpoint, body)
-              }} className="p-8 space-y-6">
-                 
-                 {activeModal === 'processo' && (
-                    <div className="space-y-6">
-                       <div>
-                          <label className="text-label mb-2 block">Tipo de Regularização / Título</label>
-                          <input name="tipo_regularizacao" defaultValue={editData?.tipo_regularizacao} className="input-field" required />
-                       </div>
-                       <div className="grid grid-cols-2 gap-6">
-                          <div>
-                             <label className="text-label mb-2 block">Código do Projeto</label>
-                             <input name="codigo_projeto" defaultValue={editData?.codigo_projeto} className="input-field font-mono font-bold" />
-                          </div>
-                          <div>
-                             <label className="text-label mb-2 block">Responsável Técnico</label>
-                             <input name="responsavel" defaultValue={editData?.responsavel} className="input-field" />
-                          </div>
-                       </div>
-                       <div>
-                          <label className="text-label mb-2 block">Status Operacional</label>
-                          <select name="status" defaultValue={editData?.status} className="select-field w-full">
-                             {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                          </select>
-                       </div>
-                    </div>
-                 )}
+      {/* MODAL: NOVA TAREFA */}
+      {isTaskModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+               <h2 className="text-lg font-bold text-slate-900">Nova Tarefa Operacional</h2>
+            </div>
+            <form onSubmit={async (e) => {
+               e.preventDefault()
+               const form = e.target as HTMLFormElement
+               const data = {
+                  titulo: (form.elements.namedItem('titulo') as HTMLInputElement).value,
+                  prioridade: (form.elements.namedItem('prioridade') as HTMLSelectElement).value,
+                  responsavel: (form.elements.namedItem('responsavel') as HTMLInputElement).value,
+                  data: (form.elements.namedItem('data') as HTMLInputElement).value,
+               }
+               await fetch(`/api/processos/${params.id}/tarefas`, { method: 'POST', body: JSON.stringify(data) })
+               await fetchProcesso()
+               setIsTaskModalOpen(false)
+            }} className="p-8 space-y-4">
+               <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Título da Tarefa</label>
+                  <input name="titulo" required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prioridade</label>
+                     <select name="prioridade" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
+                        <option value="baixa">Baixa</option>
+                        <option value="normal">Normal</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                     </select>
+                  </div>
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data Limite</label>
+                     <input name="data" required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+               </div>
+               <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável</label>
+                  <input name="responsavel" required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+               </div>
+               <div className="flex gap-3 pt-6">
+                  <button type="button" onClick={() => setIsTaskModalOpen(false)} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
+                  <button type="submit" className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl">Criar Tarefa</button>
+               </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-                 {activeModal === 'tarefa' && (
-                    <div className="space-y-6">
-                       <div>
-                          <label className="text-label mb-2 block">Nome da Tarefa / Marco</label>
-                          <input name="titulo" defaultValue={editData?.titulo} className="input-field" required />
-                       </div>
-                       <div className="grid grid-cols-2 gap-6">
-                          <div>
-                             <label className="text-label mb-2 block">Data Limite de Execução</label>
-                             <input name="data" type="date" defaultValue={editData?.data ? new Date(editData.data).toISOString().split('T')[0] : ''} className="input-field" required />
-                          </div>
-                          <div>
-                             <label className="text-label mb-2 block">Nível de Prioridade</label>
-                             <select name="prioridade" defaultValue={editData?.prioridade || 'normal'} className="select-field w-full">
-                                <option value="baixa">Baixa</option>
-                                <option value="normal">Normal</option>
-                                <option value="alta">Alta</option>
-                                <option value="urgente">Urgente</option>
-                             </select>
-                          </div>
-                       </div>
-                    </div>
-                 )}
-
-                 {activeModal === 'protocolo' && (
-                    <div className="space-y-6">
-                       <div>
-                          <label className="text-label mb-2 block">Órgão Competente</label>
-                          <input name="orgao" defaultValue={editData?.orgao} className="input-field" required placeholder="Ex: Prefeitura de São Paulo" />
-                       </div>
-                       <div>
-                          <label className="text-label mb-2 block">Nº de Protocolo / Registro</label>
-                          <input name="numero_protocolo" defaultValue={editData?.numero_protocolo} className="input-field font-mono font-bold" required />
-                       </div>
-                       <div className="grid grid-cols-2 gap-6">
-                          <div>
-                             <label className="text-label mb-2 block">Data do Protocolo</label>
-                             <input name="data" type="date" defaultValue={editData?.data ? new Date(editData.data).toISOString().split('T')[0] : ''} className="input-field" required />
-                          </div>
-                          <div>
-                             <label className="text-label mb-2 block">Situação Atual</label>
-                             <select name="status" defaultValue={editData?.status || 'protocolado'} className="select-field w-full">
-                                <option value="protocolado">Protocolado</option>
-                                <option value="em_analise">Em Análise</option>
-                                <option value="exigencia">Exigência Técnica</option>
-                                <option value="aprovado">Aprovado</option>
-                                <option value="concluido">Concluído / Finalizado</option>
-                             </select>
-                          </div>
-                       </div>
-                    </div>
-                 )}
-
-                 {activeModal === 'financeiro' && (
-                    <div className="space-y-6">
-                       <div>
-                          <label className="text-label mb-2 block">Descrição da Transação</label>
-                          <input name="descricao" defaultValue={editData?.descricao} className="input-field" required />
-                       </div>
-                       <div className="grid grid-cols-2 gap-6">
-                          <div>
-                             <label className="text-label mb-2 block">Tipo de Lançamento</label>
-                             <select name="tipo" defaultValue={editData?.tipo || 'receita'} className="select-field w-full">
-                                <option value="receita">Receita (Contrato)</option>
-                                <option value="despesa">Despesa (Custos)</option>
-                             </select>
-                          </div>
-                          <div>
-                             <label className="text-label mb-2 block">Valor Bruto (R$)</label>
-                             <input name="valor" type="number" step="0.01" defaultValue={editData?.valor} className="input-field font-mono font-black text-base" required />
-                          </div>
-                       </div>
-                       <div className="grid grid-cols-2 gap-6">
-                          <div>
-                             <label className="text-label mb-2 block">Vencimento Programado</label>
-                             <input name="data_vencimento" type="date" defaultValue={editData?.data_vencimento ? new Date(editData.data_vencimento).toISOString().split('T')[0] : ''} className="input-field" />
-                          </div>
-                          <div>
-                             <label className="text-label mb-2 block">Status de Recebimento</label>
-                             <select name="status" defaultValue={editData?.status || 'pendente'} className="select-field w-full">
-                                <option value="pendente">Aguardando Pagamento</option>
-                                <option value="pago">Liquidado / Recebido</option>
-                             </select>
-                          </div>
-                       </div>
-                    </div>
-                 )}
-
-                 {activeModal === 'upload' && (
-                    <div className="space-y-6 text-center py-4">
-                       <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[28px] flex items-center justify-center mx-auto shadow-inner border border-blue-100">
-                          <FileText size={32} strokeWidth={2.5}/>
-                       </div>
-                       <div>
-                          <h4 className="text-lg font-black text-slate-900 leading-tight">Simulação de Repositório</h4>
-                          <p className="text-xs text-slate-500 font-medium mt-1">Selecione o arquivo técnico para upload seguro no banco de dados.</p>
-                       </div>
-                       <div className="space-y-4 text-left">
-                          <div>
-                             <label className="text-label mb-2 block">Identificação do Arquivo</label>
-                             <input id="up_nome" className="input-field" placeholder="Ex: Projeto_Aprovado_V1.dwg" required />
-                          </div>
-                          <div>
-                             <label className="text-label mb-2 block">Extensão / Tipo</label>
-                             <select id="up_tipo" className="select-field w-full">
-                                <option value="PDF">PDF (Documento)</option>
-                                <option value="DWG">DWG (Projeto)</option>
-                                <option value="JPG">JPG/PNG (Imagem)</option>
-                             </select>
-                          </div>
-                       </div>
-                       <button 
-                         type="button"
-                         onClick={async () => {
-                            const nome = (document.getElementById('up_nome') as HTMLInputElement).value
-                            const tipo = (document.getElementById('up_tipo') as HTMLSelectElement).value
-                            if(!nome) return alert('Nome obrigatório')
-                            await handleAction('POST', 'documentos', {
-                               nome, tipo, tamanho: 2500000, categoria: 'técnico', responsavel: 'SISTEMA'
-                            })
-                         }}
-                         className="w-full btn-primary justify-center py-5 rounded-[24px]"
-                       >
-                          Executar Upload e Registrar
-                       </button>
-                    </div>
-                 )}
-
-                 {activeModal !== 'upload' && (
-                    <div className="flex gap-4 pt-4">
-                       <button type="button" onClick={() => setActiveModal(null)} className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[24px] text-[11px] font-black uppercase tracking-widest transition-all">Cancelar</button>
-                       <button type="submit" disabled={isActionLoading} className="flex-1 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl shadow-slate-900/20">
-                          {isActionLoading ? <Loader2 size={18} className="animate-spin"/> : (editData ? 'Atualizar Dados' : 'Confirmar Registro')}
-                       </button>
-                    </div>
-                 )}
-              </form>
-           </div>
+      {/* MODAL: NOVO PROTOCOLO */}
+      {isProtocoloModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+          <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+               <h2 className="text-lg font-bold text-slate-900">Registrar Trâmite Externo</h2>
+            </div>
+            <form onSubmit={async (e) => {
+               e.preventDefault()
+               const form = e.target as HTMLFormElement
+               const data = {
+                  orgao: (form.elements.namedItem('orgao') as HTMLInputElement).value,
+                  numero_protocolo: (form.elements.namedItem('numero_protocolo') as HTMLInputElement).value,
+                  data: (form.elements.namedItem('data') as HTMLInputElement).value,
+                  prazo: (form.elements.namedItem('prazo') as HTMLInputElement).value,
+                  observacao: (form.elements.namedItem('observacao') as HTMLTextAreaElement).value,
+               }
+               await fetch(`/api/processos/${params.id}/protocolos`, { method: 'POST', body: JSON.stringify(data) })
+               await fetchProcesso()
+               setIsProtocoloModalOpen(false)
+            }} className="p-8 space-y-4">
+               <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Órgão Público</label>
+                  <input name="orgao" required placeholder="Ex: Prefeitura, Cartório, CREA..." type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+               </div>
+               <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Nº Protocolo / Processo</label>
+                  <input name="numero_protocolo" required type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Entrada</label>
+                     <input name="data" required type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prazo Previsto</label>
+                     <input name="prazo" type="date" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+               </div>
+               <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Observações do Protocolo</label>
+                  <textarea name="observacao" rows={3} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none" />
+               </div>
+               <div className="flex gap-3 pt-6">
+                  <button type="button" onClick={() => setIsProtocoloModalOpen(false)} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
+                  <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-xl">Registrar Protocolo</button>
+               </div>
+            </form>
+          </div>
         </div>
       )}
 
