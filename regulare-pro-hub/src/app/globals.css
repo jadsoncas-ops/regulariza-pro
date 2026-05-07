@@ -46,6 +46,10 @@
   }
 }
 
+@utility card {
+  @apply bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all duration-200;
+}
+
 @layer components {
   .page-title {
     @apply text-2xl font-extrabold text-slate-800 tracking-tight mb-1;
@@ -53,10 +57,6 @@
   
   .page-subtitle {
     @apply text-xs font-medium text-slate-500 uppercase tracking-widest;
-  }
-
-  @utility card {
-    @apply bg-white border border-slate-200 rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05)] transition-all duration-200;
   }
 
   .card-header {
