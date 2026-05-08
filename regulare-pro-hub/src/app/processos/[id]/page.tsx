@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -49,6 +49,36 @@ export default function ProcessoDetailPage() {
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
   const [selectedProtocolos, setSelectedProtocolos] = useState<string[]>([])
   const [selectedFinanceiro, setSelectedFinanceiro] = useState<string[]>([])
+  
+  const stats = useMemo(() => {
+    if (!processo) return null;
+    const totalContratado = processo.valor_total || 0;
+    // Recebido do Cliente (apenas o que está com status 'pago')
+    const totalRecebido = processo.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status === 'pago').reduce((a:number,b:any)=>a+b.valor,0) || 0;
+    // Total Lançado (Independente de status, para ver quanto do contrato já foi parcelado)
+    const totalLancadoReceita = processo.financeiro?.filter((f:any)=>f.tipo==='receita').reduce((a:number,b:any)=>a+b.valor,0) || 0;
+    const totalAReceber = Math.max(0, totalContratado - totalRecebido);
+    
+    // Repasses (Parceiros/Comissões)
+    const totalRepasses = processo.financeiro?.filter((f:any)=>f.is_repasse).reduce((a:number,b:any)=>a+b.valor,0) || 0;
+    const totalRepassesPagos = processo.financeiro?.filter((f:any)=>f.is_repasse && f.status === 'pago').reduce((a:number,b:any)=>a+b.valor,0) || 0;
+    const totalRepassesPendentes = totalRepasses - totalRepassesPagos;
+    
+    // Lucro e Saldo
+    const lucroEstimadoFinal = totalContratado - totalRepasses;
+    const saldoEmContaAtual = totalRecebido - totalRepassesPagos;
+    
+    return { 
+      totalContratado, 
+      totalRecebido, 
+      totalAReceber, 
+      totalRepasses, 
+      totalRepassesPagos, 
+      totalRepassesPendentes,
+      lucroEstimadoFinal, 
+      saldoEmContaAtual 
+    };
+  }, [processo]);
 
   const fetchProcesso = async () => {
     try {
@@ -414,18 +444,18 @@ export default function ProcessoDetailPage() {
                         <div className="space-y-8">
                           <div>
                             <p className="text-xs text-slate-400 mb-1">Valor Total Contratado</p>
-                            <p className="text-3xl font-bold tracking-tight text-white">{fmt(processo.valor_total)}</p>
+                            <p className="text-3xl font-bold tracking-tight text-white">{fmt(stats?.totalContratado || 0)}</p>
                           </div>
 
                           <div className="space-y-4">
                              <div className="flex justify-between items-end">
                                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recolhimento</p>
-                                <p className="text-xs font-bold text-emerald-400">{processo.valor_total > 0 ? Math.round(((processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0) / processo.valor_total) * 100) : 0}%</p>
+                                <p className="text-xs font-bold text-emerald-400">{stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</p>
                              </div>
                              <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] transition-all duration-1000"
-                                  style={{ width: `${processo.valor_total > 0 ? Math.min(100, ((processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0) / processo.valor_total) * 100) : 0}%` }}
+                                  style={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.min(100, (stats.totalRecebido / stats.totalContratado) * 100) : 0}%` }}
                                 />
                              </div>
                           </div>
@@ -433,11 +463,11 @@ export default function ProcessoDetailPage() {
                           <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/5">
                             <div>
                               <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter mb-1">RECEBIDO</p>
-                              <p className="text-sm font-bold text-emerald-400">{fmt(processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0)}</p>
+                              <p className="text-sm font-bold text-emerald-400">{fmt(stats?.totalRecebido || 0)}</p>
                             </div>
                             <div>
                               <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter mb-1">SALDO</p>
-                              <p className="text-sm font-bold text-slate-300">{fmt(processo.valor_total - (processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0))}</p>
+                              <p className="text-sm font-bold text-slate-300">{fmt(stats?.totalAReceber || 0)}</p>
                             </div>
                           </div>
                         </div>
@@ -473,40 +503,52 @@ export default function ProcessoDetailPage() {
             {tab === 'financeiro' && (
               <div className="space-y-6">
                  {/* SUMMARY CARDS */}
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white border border-slate-200 p-6 rounded-[28px] shadow-sm relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform text-emerald-600">
-                          <TrendingUp size={64} />
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm relative overflow-hidden group">
+                       <div className="absolute -right-2 -top-2 opacity-[0.03] group-hover:scale-110 transition-transform text-slate-900">
+                          <FileText size={80} />
                        </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Receita (Cliente)</p>
-                       <p className="text-2xl font-black text-slate-900">{fmt(processo.financeiro?.filter((f:any)=>f.tipo==='receita').reduce((a:number,b:any)=>a+b.valor,0) || 0)}</p>
-                       <div className="mt-2 flex items-center gap-2">
-                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">Honorários</span>
-                       </div>
-                    </div>
-                    
-                    <div className="bg-white border border-slate-200 p-6 rounded-[28px] shadow-sm relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform text-indigo-600">
-                          <Users size={64} />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Repasses (Parceiros)</p>
-                       <p className="text-2xl font-black text-slate-900">{fmt(processo.financeiro?.filter((f:any)=>f.is_repasse).reduce((a:number,b:any)=>a+b.valor,0) || 0)}</p>
-                       <div className="mt-2 flex items-center gap-2">
-                          <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full uppercase">Comissões</span>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Contrato Total</p>
+                       <p className="text-xl font-black text-slate-900">{fmt(stats?.totalContratado || 0)}</p>
+                       <div className="mt-2 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse" />
+                          <span className="text-[9px] font-bold text-slate-500 uppercase">Valor Nominal</span>
                        </div>
                     </div>
 
-                    <div className="bg-slate-900 p-6 rounded-[28px] shadow-xl relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-white">
-                          <DollarSign size={64} />
+                    <div className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm relative overflow-hidden group">
+                       <div className="absolute -right-2 -top-2 opacity-[0.03] group-hover:scale-110 transition-transform text-emerald-600">
+                          <TrendingUp size={80} />
                        </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Resultado Líquido</p>
-                       <p className="text-2xl font-black text-white">{fmt(
-                         (processo.financeiro?.filter((f:any)=>f.tipo==='receita').reduce((a:number,b:any)=>a+b.valor,0) || 0) - 
-                         (processo.financeiro?.filter((f:any)=>f.tipo==='despesa').reduce((a:number,b:any)=>a+b.valor,0) || 0)
-                       )}</p>
-                       <div className="mt-2 flex items-center gap-2">
-                          <span className="text-[9px] font-bold text-white/40 bg-white/10 px-2 py-0.5 rounded-full uppercase">Margem Operacional</span>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Recebido / Saldo</p>
+                       <p className="text-xl font-black text-emerald-600">{fmt(stats?.totalRecebido || 0)}</p>
+                       <div className="mt-2 flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">A Receber:</span>
+                          <span className="text-[10px] font-bold text-amber-600 font-mono">{fmt(stats?.totalAReceber || 0)}</span>
+                       </div>
+                    </div>
+                    
+                    <div className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm relative overflow-hidden group">
+                       <div className="absolute -right-2 -top-2 opacity-[0.03] group-hover:scale-110 transition-transform text-indigo-600">
+                          <Users size={80} />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Repasses Totais</p>
+                       <p className="text-xl font-black text-slate-900">{fmt(stats?.totalRepasses || 0)}</p>
+                       <div className="mt-2 flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">Pagos:</span>
+                          <span className="text-[10px] font-bold text-indigo-600 font-mono">{fmt(stats?.totalRepassesPagos || 0)}</span>
+                       </div>
+                    </div>
+
+                    <div className="bg-slate-900 p-5 rounded-[28px] shadow-xl relative overflow-hidden group">
+                       <div className="absolute -right-2 -top-2 opacity-10 group-hover:scale-110 transition-transform text-white">
+                          <DollarSign size={80} />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lucro Estimado</p>
+                       <p className="text-xl font-black text-white">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
+                       <div className="mt-2 flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-white/40 uppercase">Saldo Atual:</span>
+                          <span className="text-[10px] font-bold text-emerald-400 font-mono">{fmt(stats?.saldoEmContaAtual || 0)}</span>
                        </div>
                     </div>
                  </div>
