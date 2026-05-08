@@ -851,7 +851,19 @@ export default function ProcessoDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                    <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data Limite</label>
-                      <input name="data" required type="date" defaultValue={tarefaToEdit?.data ? new Date(tarefaToEdit.data).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <input 
+                        name="data" 
+                        required 
+                        type="date" 
+                        defaultValue={(() => {
+                          try {
+                            return tarefaToEdit?.data ? new Date(tarefaToEdit.data).toISOString().split('T')[0] : ''
+                          } catch (e) {
+                            return ''
+                          }
+                        })()} 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                      />
                    </div>
                    <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável</label>
@@ -925,11 +937,34 @@ export default function ProcessoDetailPage() {
                 <div className="grid grid-cols-2 gap-4">
                    <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Entrada</label>
-                      <input name="data" required type="date" defaultValue={protocoloToEdit?.data ? new Date(protocoloToEdit.data).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <input 
+                        name="data" 
+                        required 
+                        type="date" 
+                        defaultValue={(() => {
+                          try {
+                            return protocoloToEdit?.data ? new Date(protocoloToEdit.data).toISOString().split('T')[0] : ''
+                          } catch (e) {
+                            return ''
+                          }
+                        })()} 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                      />
                    </div>
                    <div>
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prazo Previsto (Deadline)</label>
-                      <input name="prazo" type="date" defaultValue={protocoloToEdit?.prazo ? new Date(protocoloToEdit.prazo).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <input 
+                        name="prazo" 
+                        type="date" 
+                        defaultValue={(() => {
+                          try {
+                            return protocoloToEdit?.prazo ? new Date(protocoloToEdit.prazo).toISOString().split('T')[0] : ''
+                          } catch (e) {
+                            return ''
+                          }
+                        })()} 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                      />
                    </div>
                 </div>
                 <div>
@@ -1017,7 +1052,19 @@ export default function ProcessoDetailPage() {
                <div className="grid grid-cols-2 gap-4">
                   <div>
                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vencimento</label>
-                     <input name="data_vencimento" required type="date" defaultValue={financeiroToEdit?.data_vencimento ? new Date(financeiroToEdit.data_vencimento).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                      <input 
+                        name="data_vencimento" 
+                        required 
+                        type="date" 
+                        defaultValue={(() => {
+                          try {
+                            return financeiroToEdit?.data_vencimento ? new Date(financeiroToEdit.data_vencimento).toISOString().split('T')[0] : ''
+                          } catch (e) {
+                            return ''
+                          }
+                        })()} 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                      />
                   </div>
                   <div>
                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Status</label>
