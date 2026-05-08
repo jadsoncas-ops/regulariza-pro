@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, X, Tag, LayoutGrid, List, Filter, MoreHorizontal, User, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Search, Briefcase, Clock, AlertTriangle, ChevronRight, X, Tag, LayoutGrid, List, Filter, MoreHorizontal, User, Edit2, Trash2, ExternalLink } from 'lucide-react'
 import { TagChip } from '@/components/TagInput'
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
@@ -334,12 +334,15 @@ export default function ProcessosPage() {
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
-                            <button onClick={(e) => { e.preventDefault(); setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Editar">
+                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Editar">
                               <Edit2 size={14} />
                             </button>
-                            <button onClick={(e) => { e.preventDefault(); setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1 text-slate-400 hover:text-red-600 rounded" title="Excluir">
+                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1 text-slate-400 hover:text-red-600 rounded" title="Excluir">
                               <Trash2 size={14} />
                             </button>
+                            <Link href={`/processos/${p.id}`} className="p-1 text-slate-400 hover:text-emerald-600 rounded" title="Abrir Processo">
+                              <ExternalLink size={14} />
+                            </Link>
                           </div>
                         </div>
                         <Link href={`/processos/${p.id}`}>

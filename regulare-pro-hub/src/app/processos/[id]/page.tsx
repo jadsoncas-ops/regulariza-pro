@@ -314,27 +314,27 @@ export default function ProcessoDetailPage() {
                 </div>
 
                 {/* KPI RÁPIDO FINANCEIRO */}
-                <div className="card p-6 border-0 shadow-sm bg-slate-900 text-white">
+                <div className="card p-6 border-0 shadow-sm bg-white">
                    <div className="flex items-center justify-between mb-6">
                       <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Financeiro</h3>
-                      <button onClick={() => setTab('financeiro')} className="text-blue-400"><ArrowUpRight size={16}/></button>
+                      <button onClick={() => setTab('financeiro')} className="text-blue-600"><ArrowUpRight size={16}/></button>
                    </div>
                    <div className="space-y-4">
                       <div>
-                         <p className="text-2xl font-bold tracking-tight">{fmt(processo.valor_total)}</p>
-                         <p className="text-[10px] text-slate-500 font-bold uppercase">Valor do Contrato</p>
+                         <p className="text-2xl font-bold tracking-tight text-blue-600">{fmt(Number(processo.valor_total) || 0)}</p>
+                         <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Valor do Contrato</p>
                       </div>
-                      <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                          <div 
                            className="h-full bg-blue-500 transition-all duration-1000" 
-                           style={{ width: `${(processo.valor_pago / processo.valor_total) * 100 || 0}%` }} 
+                           style={{ width: `${(Number(processo.valor_total) || 0) > 0 ? (Number(processo.valor_pago) || 0) / (Number(processo.valor_total) || 1) * 100 : 0}%` }} 
                          />
                       </div>
                       <div className="flex items-center justify-between">
-                         <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                            Recebido ({Math.round((processo.valor_pago / processo.valor_total) * 100) || 0}%)
+                         <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                            Recebido ({((Number(processo.valor_total) || 0) > 0 ? Math.round(((Number(processo.valor_pago) || 0) / (Number(processo.valor_total) || 1)) * 100) : 0)}%)
                          </span>
-                         <span className="text-xs font-bold">{fmt(processo.valor_pago)}</span>
+                         <span className="text-xs font-bold text-blue-600">{fmt(Number(processo.valor_pago) || 0)}</span>
                       </div>
                    </div>
                 </div>
