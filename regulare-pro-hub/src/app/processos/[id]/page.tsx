@@ -276,69 +276,195 @@ export default function ProcessoDetailPage() {
             {tab === 'visao' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
+                  {/* WORKFLOW PROGRESS */}
                   <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-                    <div className="flex items-center gap-2 mb-8">
-                      <LayoutGrid size={18} className="text-primary" />
-                      <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono">Resumo Operacional</h3>
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-2">
+                        <GitBranch size={18} className="text-primary" />
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono">Status da Esteira</h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full uppercase tracking-tighter">
+                        Etapa Atual: {processo.status?.replace(/_/g, ' ') || 'Entrada'}
+                      </span>
                     </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Última Movimentação</p>
-                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl">
-                          <p className="text-sm font-bold text-slate-700">
-                            {processo.logs?.[0]?.acao || 'Aguardando início'}
-                          </p>
-                          <p className="text-[10px] text-slate-400 mt-1 uppercase font-mono tracking-tight">
-                            {processo.logs?.[0]?.detalhe || 'Sem detalhes registrados'}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Documentação Crítica</p>
-                        <div className="space-y-2">
-                          {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 3).map((t: any, i: number) => (
-                            <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors">
-                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                              <span className="text-xs font-bold text-slate-600 truncate">{t.titulo}</span>
+                    <div className="relative pt-4 pb-8">
+                      <div className="absolute top-1/2 left-0 right-0 h-1.5 bg-slate-100 rounded-full -translate-y-1/2" />
+                      <div 
+                        className="absolute top-1/2 left-0 h-1.5 bg-primary rounded-full -translate-y-1/2 transition-all duration-1000 shadow-[0_0_8px_rgba(45,91,255,0.4)]"
+                        style={{ 
+                          width: `${
+                            processo.status === 'finalizado' ? 100 :
+                            processo.status === 'cartorio' ? 80 :
+                            processo.status === 'protocolo_prefeitura' ? 60 :
+                            processo.status === 'projeto' ? 40 :
+                            processo.status === 'levantamento' ? 20 : 5
+                          }%` 
+                        }}
+                      />
+                      <div className="flex justify-between relative z-10">
+                        {['Entrada', 'Levantamento', 'Projeto', 'Prefeitura', 'Cartório', 'Conclusão'].map((s, i) => {
+                          const steps = ['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado']
+                          const currentIdx = steps.indexOf(processo.status || 'em_analise')
+                          const isPast = i < currentIdx
+                          const isCurrent = i === currentIdx
+                          return (
+                            <div key={s} className="flex flex-col items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full border-2 transition-all duration-500 ${
+                                isPast ? 'bg-primary border-primary' : 
+                                isCurrent ? 'bg-white border-primary ring-4 ring-primary/10' : 
+                                'bg-white border-slate-200'
+                              }`}>
+                                {isPast && <Check size={8} className="text-white mx-auto mt-0.5" />}
+                              </div>
+                              <span className={`text-[9px] font-bold uppercase tracking-tight ${isCurrent ? 'text-primary' : 'text-slate-400'}`}>{s}</span>
                             </div>
-                          ))}
-                          {(!processo.tarefas || processo.tarefas.length === 0) && (
-                             <p className="text-xs italic text-slate-400">Nenhuma pendência.</p>
-                          )}
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* RESUMO OPERACIONAL REFINADO */}
+                    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+                      <div className="flex items-center gap-2 mb-6">
+                        <LayoutGrid size={16} className="text-slate-400" />
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Movimentação Recente</h3>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div className="relative pl-6 pb-2 border-l-2 border-slate-100">
+                           <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary ring-4 ring-primary/10" />
+                           <p className="text-xs font-bold text-slate-700 leading-tight">
+                              {processo.logs?.[0]?.acao || 'Processo Criado'}
+                           </p>
+                           <p className="text-[10px] text-slate-400 mt-1 uppercase font-mono tracking-tight">
+                              {processo.logs?.[0]?.detalhe || 'Início da jornada de regularização'}
+                           </p>
+                           <p className="text-[9px] text-slate-300 mt-2 font-bold uppercase">
+                              {processo.logs?.[0] ? new Date(processo.logs[0].createdAt).toLocaleDateString('pt-BR') : new Date(processo.createdAt).toLocaleDateString('pt-BR')}
+                           </p>
                         </div>
                       </div>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
+                      <div className="flex items-center gap-2 mb-6">
+                        <ListTodo size={16} className="text-slate-400" />
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Pendências Críticas</h3>
+                      </div>
+                      <div className="space-y-3">
+                        {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 3).map((t: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100 group hover:border-amber-200 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span className="text-xs font-bold text-slate-600 truncate max-w-[120px]">{t.titulo}</span>
+                            </div>
+                            <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-tighter">{new Date(t.data).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>
+                          </div>
+                        ))}
+                        {(!processo.tarefas || processo.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
+                           <div className="py-4 text-center">
+                              <CheckCircle2 className="w-8 h-8 text-emerald-100 mx-auto mb-2" />
+                              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Tudo em dia!</p>
+                           </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* METRIC GRID */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center">
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tarefas</p>
+                       <p className="text-xl font-bold text-slate-900">{processo.tarefas?.length || 0}</p>
+                       <p className="text-[9px] text-emerald-500 font-bold uppercase mt-1">{processo.tarefas?.filter((t:any)=>t.status==='concluido').length || 0} CONCLUÍDAS</p>
+                    </div>
+                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center">
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Documentos</p>
+                       <p className="text-xl font-bold text-slate-900">{processo.documentos?.length || 0}</p>
+                       <p className="text-[9px] text-primary font-bold uppercase mt-1">EM ARQUIVO</p>
+                    </div>
+                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center">
+                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Protocolos</p>
+                       <p className="text-xl font-bold text-slate-900">{processo.protocolos?.length || 0}</p>
+                       <p className="text-[9px] text-amber-500 font-bold uppercase mt-1">ÓRGÃOS ATIVOS</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                   <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group">
+                   <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                        <TrendingUp size={80} />
+                        <TrendingUp size={120} />
                       </div>
-                      <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 font-mono">INDICADOR FINANCEIRO</h3>
-                      <div className="space-y-6 relative z-10">
-                        <div>
-                          <p className="text-xs text-slate-400">Total Contratado</p>
-                          <p className="text-2xl font-bold tracking-tight">{fmt(processo.valor_total)}</p>
+                      
+                      <div className="relative z-10">
+                        <div className="flex items-center gap-2 mb-6">
+                           <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-inner">
+                              <DollarSign size={16} />
+                           </div>
+                           <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] font-mono">Performance Financeira</h3>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+
+                        <div className="space-y-8">
                           <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold">RECOLHIDO</p>
-                            <p className="text-sm font-bold text-emerald-400">100%</p>
+                            <p className="text-xs text-slate-400 mb-1">Valor Total Contratado</p>
+                            <p className="text-3xl font-bold tracking-tight text-white">{fmt(processo.valor_total)}</p>
                           </div>
-                          <div>
-                            <p className="text-[10px] text-slate-500 uppercase font-bold">PENDENTE</p>
-                            <p className="text-sm font-bold text-slate-300">R$ 0,00</p>
+
+                          <div className="space-y-4">
+                             <div className="flex justify-between items-end">
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recolhimento</p>
+                                <p className="text-xs font-bold text-emerald-400">{processo.valor_total > 0 ? Math.round(((processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0) / processo.valor_total) * 100) : 0}%</p>
+                             </div>
+                             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] transition-all duration-1000"
+                                  style={{ width: `${processo.valor_total > 0 ? Math.min(100, ((processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0) / processo.valor_total) * 100) : 0}%` }}
+                                />
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/5">
+                            <div>
+                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter mb-1">RECEBIDO</p>
+                              <p className="text-sm font-bold text-emerald-400">{fmt(processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0)}</p>
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter mb-1">SALDO</p>
+                              <p className="text-sm font-bold text-slate-300">{fmt(processo.valor_total - (processo.financeiro?.filter((f:any)=>f.status==='pago'||f.status==='recebido').reduce((a:number,b:any)=>a+b.valor,0) || 0))}</p>
+                            </div>
                           </div>
                         </div>
+                      </div>
+                   </div>
+
+                   {/* QUICK INFO CARD */}
+                   <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Informações Rápidas</h4>
+                      <div className="space-y-4">
+                         <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">Tempo Decorrido</span>
+                            <span className="font-bold text-slate-700">{Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias</span>
+                         </div>
+                         <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">Responsável</span>
+                            <span className="font-bold text-slate-700 truncate max-w-[120px]">{processo.responsavel || 'Não definido'}</span>
+                         </div>
+                         <div className="flex justify-between items-center text-xs">
+                            <span className="text-slate-500">Prioridade</span>
+                            <span className={`font-bold px-2 py-0.5 rounded uppercase text-[9px] ${processo.prioridade === 'urgente' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                               {processo.prioridade || 'Normal'}
+                            </span>
+                         </div>
                       </div>
                    </div>
                 </div>
               </div>
             )}
+
 
             {/* ── FINANCEIRO ── */}
             {tab === 'financeiro' && (
