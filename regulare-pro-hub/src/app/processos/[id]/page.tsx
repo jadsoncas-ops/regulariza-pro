@@ -14,6 +14,9 @@ import {
 } from 'lucide-react'
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
+import { FinanceiroModal } from '@/components/FinanceiroModal'
+import { TaskModal } from '@/components/TaskModal'
+import { ProtocoloModal } from '@/components/ProtocoloModal'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const TABS = [
@@ -22,7 +25,7 @@ const TABS = [
   { id: 'financeiro', label: 'Financeiro',     icon: DollarSign },
   { id: 'documentos', label: 'Documentos',     icon: FileText },
   { id: 'tarefas',    label: 'Tarefas',        icon: ListTodo },
-  { id: 'prefeitura', label: 'Prefeitura',    icon: Building2 },
+  { id: 'prefeitura', label: 'Órgãos',         icon: Building2 },
 ]
 
 export default function ProcessoDetailPage() {
@@ -631,14 +634,67 @@ export default function ProcessoDetailPage() {
               </div>
             )}
 
-            {/* ── PREFEITURA ── */}
+            {/* ── ESTEIRA (TIMELINE) ── */}
+            {tab === 'timeline' && (
+              <div className="max-w-4xl mx-auto py-8">
+                 <div className="relative border-l-2 border-slate-100 ml-4 space-y-12">
+                    {/* Combine tasks and protocols chronologically */}
+                    {[
+                      ...(processo.tarefas || []).map((t: any) => ({ ...t, type: 'task' })),
+                      ...(processo.protocolos || []).map((p: any) => ({ ...p, type: 'protocol' }))
+                    ]
+                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                    .map((item, idx) => (
+                      <div key={idx} className="relative pl-10">
+                        <div className={`absolute left-[-11px] top-0 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center ${
+                          item.status === 'concluido' ? 'bg-emerald-500' : 'bg-primary'
+                        }`}>
+                           {item.type === 'task' ? <ListTodo size={8} className="text-white"/> : <Building2 size={8} className="text-white"/>}
+                        </div>
+                        
+                        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:border-primary/20 transition-all group">
+                           <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                                 {new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
+                                item.status === 'concluido' ? 'bg-emerald-50 text-emerald-600' : 'bg-primary/5 text-primary'
+                              }`}>
+                                 {item.status}
+                              </span>
+                           </div>
+                           <h4 className="text-sm font-bold text-slate-800 mb-1">
+                              {item.type === 'task' ? item.titulo : `Protocolo: ${item.orgao}`}
+                           </h4>
+                           <p className="text-xs text-slate-500 leading-relaxed">
+                              {item.type === 'task' ? (item.descricao || 'Sem descrição detalhada') : `Número: ${item.numero_protocolo}`}
+                           </p>
+                           
+                           {item.type === 'protocol' && item.prazo && (
+                             <div className="mt-4 pt-3 border-t border-slate-50 flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase">
+                                <Clock size={12}/> Previsão: {new Date(item.prazo).toLocaleDateString('pt-BR')}
+                             </div>
+                           )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {( (!processo.tarefas || processo.tarefas.length === 0) && (!processo.protocolos || processo.protocolos.length === 0) ) && (
+                      <div className="text-center py-20 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                         <GitBranch className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">A esteira ganha vida quando você adiciona tarefas e protocolos.</p>
+                      </div>
+                    )}
+                 </div>
+              </div>
+            )}
             {tab === 'prefeitura' && (
               <div className="space-y-6">
                  <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
                     <div className="flex items-center justify-between mb-8">
                        <div className="flex items-center gap-3">
                           <Building2 size={18} className="text-primary" />
-                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Protocolos e Trâmites Externos</h3>
+                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Trâmites em Órgãos Públicos</h3>
                        </div>
                        <div className="flex items-center gap-2">
                           <AnimatePresence>
@@ -721,9 +777,31 @@ export default function ProcessoDetailPage() {
         description={<p>Deseja remover <strong>{processo?.codigo_projeto}</strong> permanentemente?</p>}
       />
 
-      {/* Simplified Modal Logic for Tasks/Protocols/Finance (preserving original functionality) */}
-      {/* ... Task/Protocol/Finance Modal code remains functionally identical but styled to match premium theme ... */}
-      {/* (Skipping direct re-paste for brevity but would implement matching style in final tool call) */}
+      <FinanceiroModal 
+        isOpen={isFinanceiroModalOpen}
+        onClose={() => { setIsFinanceiroModalOpen(false); setFinanceiroToEdit(null) }}
+        processoId={params.id as string}
+        processoTotal={processo.valor_total}
+        item={financeiroToEdit}
+        onSuccess={fetchProcesso}
+        currentLançamentos={processo.financeiro}
+      />
+
+      <TaskModal 
+        isOpen={isTaskModalOpen}
+        onClose={() => { setIsTaskModalOpen(false); setTarefaToEdit(null) }}
+        processoId={params.id as string}
+        item={tarefaToEdit}
+        onSuccess={fetchProcesso}
+      />
+
+      <ProtocoloModal 
+        isOpen={isProtocoloModalOpen}
+        onClose={() => { setIsProtocoloModalOpen(false); setProtocoloToEdit(null) }}
+        processoId={params.id as string}
+        item={protocoloToEdit}
+        onSuccess={fetchProcesso}
+      />
 
     </div>
   )
