@@ -158,6 +158,27 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       }
     }
 
+    // 4️⃣ Reorganizar a numeração dos processos (codigo_projeto)
+    const allProcessos = await prisma.processo.findMany({
+      orderBy: { createdAt: 'asc' }
+    })
+
+    // Agrupar por sigla se necessário, ou apenas resequenciar tudo como REG se for o padrão
+    // Vamos resequenciar mantendo a sigla original se existir, ou usando REG como padrão
+    for (let i = 0; i < allProcessos.length; i++) {
+      const p = allProcessos[i]
+      const currentCode = p.codigo_projeto || ''
+      const sigla = currentCode.split('-')[0] || 'REG'
+      const newCode = `${sigla}-${(i + 1).toString().padStart(3, '0')}`
+      
+      if (p.codigo_projeto !== newCode) {
+        await prisma.processo.update({
+          where: { id: p.id },
+          data: { codigo_projeto: newCode }
+        })
+      }
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Erro na deleção em cascata:', error)

@@ -34,11 +34,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
 export async function PATCH(req: Request) {
   try {
-    const { id, status, processoId } = await req.json()
+    const data = await req.json()
+    const { id, status, titulo, prioridade, data: taskDate, responsavel, processoId } = data
     
+    const updateData: any = {}
+    if (status !== undefined) updateData.status = status
+    if (titulo !== undefined) updateData.titulo = titulo
+    if (prioridade !== undefined) updateData.prioridade = prioridade
+    if (taskDate !== undefined) updateData.data = new Date(taskDate)
+    if (responsavel !== undefined) updateData.responsavel = responsavel
+
     const tarefa = await prisma.tarefa.update({
       where: { id },
-      data: { status }
+      data: updateData
     })
 
     if (status === 'concluido') {
@@ -48,10 +56,38 @@ export async function PATCH(req: Request) {
         modulo: 'TAREFAS',
         detalhe: tarefa.titulo
       })
+    } else if (titulo || prioridade || taskDate || responsavel) {
+      await logAction({
+        processoId,
+        acao: `Tarefa Editada`,
+        modulo: 'TAREFAS',
+        detalhe: tarefa.titulo
+      })
     }
 
     return NextResponse.json(tarefa)
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao atualizar tarefa' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { id, processoId, titulo } = await req.json()
+    
+    await prisma.tarefa.delete({
+      where: { id }
+    })
+
+    await logAction({
+      processoId,
+      acao: `Tarefa Excluída`,
+      modulo: 'TAREFAS',
+      detalhe: titulo
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ error: 'Erro ao excluir tarefa' }, { status: 500 })
   }
 }

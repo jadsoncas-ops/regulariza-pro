@@ -670,8 +670,16 @@ function WizardContent() {
               setFormData((prev: any) => ({ ...prev, processo: { ...prev.processo, subservicos: has ? prev.processo.subservicos.filter((s: string) => s !== a) : [...prev.processo.subservicos, a] } }))
             }
             const selectNatureza = (n: typeof NATUREZAS[0]) => {
-              const num = String(Math.floor(Math.random()*899+100))
-              setFormData((prev: any) => ({ ...prev, processo: { ...prev.processo, tipo: n.label, categoria: n.label, codigo_projeto: `${n.sigla}-${num}`, subservicos: n.atividades } }))
+              setFormData((prev: any) => ({ 
+                ...prev, 
+                processo: { 
+                  ...prev.processo, 
+                  tipo: n.label, 
+                  categoria: n.label, 
+                  codigo_projeto: `${n.sigla}-AUTO`, 
+                  subservicos: n.atividades 
+                } 
+              }))
             }
             return (
               <div className="animate-fade-in" style={{ display:'flex', flexDirection:'column', gap:16, maxWidth:860, margin:'0 auto' }}>
