@@ -34,7 +34,7 @@ export default function ProcessosPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [tagFilter, setTagFilter] = useState('')
-  const [view, setView] = useState<'list' | 'board'>('list')
+  const [view, setView] = useState<'list' | 'board'>('board') // Default to board (Kanban)
   const [allTags, setAllTags] = useState<string[]>([])
   
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -102,274 +102,182 @@ export default function ProcessosPage() {
   const activeFilters = [statusFilter, tagFilter].filter(Boolean)
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="flex flex-col gap-4 animate-fade-up w-full h-full min-h-[calc(100vh-100px)]">
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* Header - Mais denso */}
+      <div className="flex items-center justify-between px-2">
         <div>
-          <h1 className="page-title">Processos</h1>
-          <p className="page-subtitle">{processos.length} processo(s) no sistema</p>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Fluxo Operacional</h1>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Controle de Processos Ativos • {processos.length} registros</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
-            <button onClick={() => setView('list')} className={`p-1.5 rounded-lg transition-all ${view === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}><List size={16}/></button>
-            <button onClick={() => setView('board')} className={`p-1.5 rounded-lg transition-all ${view === 'board' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}><LayoutGrid size={16}/></button>
+            <button onClick={() => setView('list')} className={`p-1.5 rounded-lg transition-all ${view === 'list' ? 'bg-white shadow-sm text-blue-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}><List size={16}/></button>
+            <button onClick={() => setView('board')} className={`p-1.5 rounded-lg transition-all ${view === 'board' ? 'bg-white shadow-sm text-blue-600 scale-105' : 'text-slate-400 hover:text-slate-600'}`}><LayoutGrid size={16}/></button>
           </div>
-          <Link href="/processos/novo" className="btn-primary">
+          <Link href="/processos/novo" className="btn-primary py-2.5 px-6 text-xs shadow-lg shadow-blue-200">
             <Plus className="w-4 h-4" /> Novo Processo
           </Link>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="card p-4 space-y-3">
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Busca */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* Barra de Filtros Full Width */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl p-3 shadow-sm flex flex-col md:flex-row items-center gap-4">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
             <input
-              placeholder="Buscar por cliente, serviço, código, cidade..."
-              className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20"
+              placeholder="Pesquisar por cliente, código ou serviço..."
+              className="w-full pl-9 pr-4 py-2.5 text-xs bg-slate-50 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 font-medium placeholder:text-slate-300"
               value={search} onChange={e => setSearch(e.target.value)}
             />
           </div>
 
-          {/* Status */}
-          <select
-            className="select-field sm:w-44"
-            value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
-          >
-            <option value="">Todos os status</option>
-            {Object.entries(STATUS_CONFIG).map(([v, c]) => (
-              <option key={v} value={v}>{c.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tags filter */}
-        {allTags.length > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span className="text-xs text-slate-400">Filtrar por tag:</span>
-            {allTags.map(tag => (
-              <button
-                key={tag}
-                onClick={() => setTagFilter(tagFilter === tag ? '' : tag)}
-                className={`transition-all ${tagFilter === tag ? 'ring-2 ring-blue-500 ring-offset-1 rounded-full' : 'opacity-70 hover:opacity-100'}`}
-              >
-                <TagChip tag={tag} size="sm" />
-              </button>
-            ))}
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <select
+              className="bg-slate-50 border-none rounded-xl px-4 py-2.5 text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/10 cursor-pointer min-w-[180px]"
+              value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">Status: Todos</option>
+              {Object.entries(STATUS_CONFIG).map(([v, c]) => (
+                <option key={v} value={v}>{c.label}</option>
+              ))}
+            </select>
+            
+            {(statusFilter || tagFilter || search) && (
+              <button onClick={() => { setStatusFilter(''); setTagFilter(''); setSearch('') }} className="p-2.5 text-red-400 hover:bg-red-50 rounded-xl transition-all" title="Limpar Filtros"><X size={16}/></button>
+            )}
           </div>
-        )}
+      </div>
 
-        {/* Active filters */}
-        {activeFilters.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">Filtros ativos:</span>
-            {statusFilter && (
-              <button onClick={() => setStatusFilter('')}
-                className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full hover:bg-blue-200 transition-colors">
-                {STATUS_CONFIG[statusFilter]?.label} <X className="w-3 h-3" />
-              </button>
-            )}
-            {tagFilter && (
-              <button onClick={() => setTagFilter('')}
-                className="inline-flex items-center gap-1 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors">
-                {tagFilter} <X className="w-3 h-3" />
-              </button>
-            )}
-            <button onClick={() => { setStatusFilter(''); setTagFilter(''); setSearch('') }}
-              className="text-xs text-slate-400 hover:text-red-500 transition-colors ml-1">
-              Limpar tudo
-            </button>
+      {/* Main View Area */}
+      <div className="flex-1 w-full overflow-hidden">
+        {view === 'list' ? (
+          <div className="card overflow-hidden border-slate-200/60 h-full">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                    <th className="px-5 py-3 text-left table-header">Código</th>
+                    <th className="px-5 py-3 text-left table-header">Serviço</th>
+                    <th className="px-5 py-3 text-left table-header">Cliente</th>
+                    <th className="px-5 py-3 text-left table-header">Prazo</th>
+                    <th className="px-5 py-3 text-left table-header">Status</th>
+                    <th className="px-5 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    [...Array(8)].map((_, i) => (
+                      <tr key={i} className="border-b border-slate-50">
+                        {[...Array(6)].map((_, j) => (
+                          <td key={j} className="px-5 py-3.5"><div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" /></td>
+                        ))}
+                      </tr>
+                    ))
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-24 text-center">
+                        <Briefcase className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                        <p className="text-sm text-slate-300 font-bold uppercase tracking-widest">Nenhum processo em andamento</p>
+                      </td>
+                    </tr>
+                  ) : filtered.map(p => {
+                    const days = getDays(p.data_deadline)
+                    return (
+                      <tr key={p.id} className="table-row group">
+                        <td className="px-5 py-3.5"><span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100/50">{p.codigo_projeto || '—'}</span></td>
+                        <td className="px-5 py-3.5"><p className="text-sm font-bold text-slate-800 truncate">{p.tipo_regularizacao}</p></td>
+                        <td className="px-5 py-3.5">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-xl bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600 border border-slate-200">{p.cliente?.nome?.charAt(0)}</div>
+                            <p className="text-xs font-bold text-slate-700 truncate">{p.cliente?.nome || '—'}</p>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3.5">
+                          {days !== null ? (
+                            <div className={`flex items-center gap-1.5 ${days <= 3 ? 'text-red-500' : 'text-slate-400'}`}>
+                              <Clock className="w-3 h-3" />
+                              <span className="text-[10px] font-bold uppercase">{days < 0 ? 'Atrasado' : `${days} dias`}</span>
+                            </div>
+                          ) : <span className="text-xs text-slate-300">—</span>}
+                        </td>
+                        <td className="px-5 py-3.5"><StatusBadge status={p.status} /></td>
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={16} /></button>
+                            <Link href={`/processos/${p.id}`} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"><ChevronRight size={16} /></Link>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* Kanban View - FULL SCREEN OPTIMIZED */
+          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 h-full scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+            {[
+              { id: 'em_analise', label: 'Entrada', color: 'bg-amber-500' },
+              { id: 'levantamento', label: 'Levantamento', color: 'bg-blue-400' },
+              { id: 'projeto', label: 'Projeto', color: 'bg-indigo-500' },
+              { id: 'protocolo_prefeitura', label: 'Prefeitura', color: 'bg-purple-500' },
+              { id: 'cartorio', label: 'Cartório', color: 'bg-orange-500' },
+              { id: 'finalizado', label: 'Conclusão', color: 'bg-emerald-500' }
+            ].map(column => {
+              const columnProcs = filtered.filter(p => p.status === column.id)
+
+              return (
+                <div key={column.id} className="flex-shrink-0 flex-1 min-w-[280px] max-w-[320px] flex flex-col gap-3">
+                  <div className="flex items-center justify-between px-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full ${column.color}`} />
+                      <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{column.label}</h3>
+                      <span className="bg-white text-slate-500 text-[9px] font-bold px-1.5 py-0.5 rounded-md border border-slate-200 shadow-sm">{columnProcs.length}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1 space-y-3 p-2 rounded-[28px] bg-slate-50/50 border border-slate-200/40 overflow-y-auto max-h-[calc(100vh-250px)] scrollbar-hide">
+                    {columnProcs.map(p => (
+                        <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-xl hover:border-blue-300 transition-all group relative animate-in fade-in slide-in-from-bottom-2 duration-300">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-[9px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-2 py-0.5 rounded border border-blue-100/50">
+                              {p.codigo_projeto || 'S/C'}
+                            </span>
+                            <div className="flex gap-1">
+                              <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1 text-slate-300 hover:text-red-500 rounded-lg transition-colors"><Trash2 size={12} /></button>
+                              <Link href={`/processos/${p.id}`} className="p-1 text-slate-300 hover:text-blue-600 rounded-lg transition-colors"><ExternalLink size={12} /></Link>
+                            </div>
+                          </div>
+                          <Link href={`/processos/${p.id}`}>
+                            <h4 className="text-xs font-bold text-slate-800 leading-snug mb-3 group-hover:text-blue-600 transition-colors line-clamp-2">{p.tipo_regularizacao}</h4>
+                            <div className="flex items-center gap-2 mb-4">
+                               <div className="w-5 h-5 rounded-lg bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-500 border border-slate-200 uppercase">{p.cliente?.nome?.charAt(0)}</div>
+                               <span className="text-[10px] text-slate-500 font-bold truncate uppercase tracking-tight">{p.cliente?.nome}</span>
+                            </div>
+                            <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                              <div className="flex items-center gap-1.5 text-slate-400">
+                                <Clock size={10} />
+                                <span className="text-[9px] font-bold uppercase">{getDays(p.data_deadline) !== null ? `${getDays(p.data_deadline)}d` : 'S/P'}</span>
+                              </div>
+                              <div className="w-5 h-5 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-[7px] text-white font-bold uppercase">{p.responsavel?.charAt(0) || 'U'}</div>
+                            </div>
+                          </Link>
+                        </div>
+                    ))}
+                    {columnProcs.length === 0 && (
+                      <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-200/30 rounded-2xl text-slate-300">
+                        <span className="text-[8px] font-bold uppercase tracking-widest opacity-30">Vazio</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
-
-      {/* Views */}
-      {view === 'list' ? (
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/60">
-                  <th className="px-5 py-3 text-left table-header">Código</th>
-                  <th className="px-5 py-3 text-left table-header">Serviço</th>
-                  <th className="px-5 py-3 text-left table-header">Cliente</th>
-                  <th className="px-5 py-3 text-left table-header hidden md:table-cell">Imóvel</th>
-                  <th className="px-5 py-3 text-left table-header hidden lg:table-cell">Tags</th>
-                  <th className="px-5 py-3 text-left table-header">Prazo</th>
-                  <th className="px-5 py-3 text-left table-header">Status</th>
-                  <th className="px-5 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  [...Array(5)].map((_, i) => (
-                    <tr key={i} className="border-b border-slate-50">
-                      {[...Array(8)].map((_, j) => (
-                        <td key={j} className="px-5 py-3.5">
-                          <div className="h-4 bg-slate-100 rounded animate-pulse w-3/4" />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-16 text-center">
-                      <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-3" />
-                      <p className="text-sm text-slate-500 mb-4">Nenhum processo encontrado</p>
-                      <Link href="/processos/novo" className="btn-primary inline-flex">
-                        <Plus className="w-4 h-4" /> Criar processo
-                      </Link>
-                    </td>
-                  </tr>
-                ) : filtered.map(p => {
-                  const days = getDays(p.data_deadline)
-                  const isCritical = days !== null && days <= 3 && days >= 0
-                  let tags: string[] = []
-                  try { tags = JSON.parse(p.tags || '[]') } catch {}
-
-                  return (
-                    <tr key={p.id} className="table-row">
-                      <td className="px-5 py-3.5">
-                        <span className="text-[11px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                          {p.codigo_projeto || '—'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <p className="text-sm font-medium text-slate-800 max-w-[160px] truncate">{p.tipo_regularizacao}</p>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-                            <span className="text-xs font-bold text-blue-600">{p.cliente?.nome?.charAt(0)}</span>
-                          </div>
-                          <p className="text-sm text-slate-700 max-w-[120px] truncate">{p.cliente?.nome || '—'}</p>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 hidden md:table-cell">
-                        <p className="text-xs text-slate-500 max-w-[140px] truncate">
-                          {p.imovel?.cidade ? `${p.imovel.cidade}` : '—'}
-                        </p>
-                      </td>
-                      <td className="px-5 py-3.5 hidden lg:table-cell">
-                        <div className="flex gap-1 flex-wrap max-w-[140px]">
-                          {tags.slice(0, 2).map((t: string) => <TagChip key={t} tag={t} size="sm" />)}
-                          {tags.length > 2 && <span className="text-[10px] text-slate-400">+{tags.length - 2}</span>}
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {days !== null ? (
-                          <div className={`flex items-center gap-1.5 ${isCritical ? 'text-red-600' : 'text-slate-500'}`}>
-                            {isCritical && <AlertTriangle className="w-3.5 h-3.5" />}
-                            <Clock className="w-3.5 h-3.5" />
-                            <span className="text-xs font-semibold">{days < 0 ? 'Vencido' : `${days}d`}</span>
-                          </div>
-                        ) : <span className="text-xs text-slate-400">—</span>}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <StatusBadge status={p.status} />
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="flex justify-end gap-1">
-                          <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors" title="Excluir">
-                            <Trash2 size={16} />
-                          </button>
-                          <Link href={`/processos/${p.id}`} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" title="Abrir">
-                            <ChevronRight size={16} />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-          {!loading && filtered.length > 0 && (
-            <div className="px-5 py-3 bg-slate-50/60 border-t border-slate-100">
-              <p className="text-xs text-slate-400">
-                Mostrando <strong>{filtered.length}</strong> de <strong>{processos.length}</strong> processos
-              </p>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Board View (Kanban) */
-        <div className="flex gap-4 overflow-x-auto pb-4 min-h-[500px] scrollbar-hide">
-          {[
-            { id: 'em_analise', label: 'Entrada / Análise' },
-            { id: 'levantamento', label: 'Levantamento' },
-            { id: 'projeto', label: 'Projeto Técnico' },
-            { id: 'protocolo_prefeitura', label: 'Prefeitura' },
-            { id: 'cartorio', label: 'Cartório' },
-            { id: 'finalizado', label: 'Finalização' }
-          ].map(column => {
-            const columnProcs = filtered.filter(p => {
-              if (column.id === 'levantamento' || column.id === 'projeto') {
-                 // Agrupamento lógico para simplificar o board se necessário, ou usar status exatos
-                 return p.status === column.id
-              }
-              return p.status === column.id
-            })
-
-            return (
-              <div key={column.id} className="flex-shrink-0 w-80 flex flex-col gap-3">
-                <div className="flex items-center justify-between px-2 mb-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">{column.label}</h3>
-                    <span className="bg-slate-200 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-md">{columnProcs.length}</span>
-                  </div>
-                  <button className="text-slate-300 hover:text-slate-500 transition-colors"><Plus size={14}/></button>
-                </div>
-                
-                <div className="flex-1 space-y-3 p-1 rounded-2xl bg-slate-100/50 border border-slate-200/50 min-h-[400px]">
-                  {columnProcs.map(p => (
-                      <div className="block bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
-                          <div className="flex gap-1 absolute right-2 top-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
-                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1 text-slate-400 hover:text-red-600 rounded" title="Excluir">
-                              <Trash2 size={14} />
-                            </button>
-                            <Link href={`/processos/${p.id}`} className="p-1 text-slate-400 hover:text-emerald-600 rounded" title="Abrir Processo">
-                              <ExternalLink size={14} />
-                            </Link>
-                          </div>
-                        </div>
-                        <Link href={`/processos/${p.id}`}>
-                          <h4 className="text-sm font-bold text-slate-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">{p.tipo_regularizacao}</h4>
-                          <div className="flex items-center gap-2 mb-4">
-                             <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[9px] font-bold text-slate-500 border border-slate-200">
-                               {p.cliente?.nome?.charAt(0)}
-                             </div>
-                             <span className="text-[11px] text-slate-500 font-medium truncate">{p.cliente?.nome}</span>
-                          </div>
-                          <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                            <div className="flex items-center gap-1.5 text-slate-400">
-                              <Clock size={11} />
-                              <span className="text-[10px] font-bold">{getDays(p.data_deadline) || '—'}</span>
-                            </div>
-                            <div className="flex -space-x-1.5">
-                               <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white flex items-center justify-center text-[8px] text-white font-bold"><User size={10}/></div>
-                            </div>
-                          </div>
-                        </Link>
-                      </div>
-                  ))}
-                  {columnProcs.length === 0 && (
-                    <div className="h-24 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl text-slate-300">
-                      <span className="text-[10px] font-bold uppercase tracking-widest">Sem processos</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       <EditProcessoModal 
         isOpen={isEditModalOpen} 
@@ -383,16 +291,12 @@ export default function ProcessosPage() {
         onClose={() => { setIsDeleteModalOpen(false); setProcessoToDelete(null) }}
         onConfirm={handleDelete}
         loading={isDeleting}
-        title="Tem certeza que deseja excluir este processo?"
+        title="Excluir Processo?"
         description={
-          <>
-            <p>Essa ação removerá:</p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
-              <li>o processo <strong>{processoToDelete?.codigo_projeto}</strong></li>
-              <li>possíveis vínculos com imóvel e cliente</li>
-            </ul>
-            <p className="mt-4 font-semibold text-red-600">Essa ação não poderá ser desfeita.</p>
-          </>
+          <div className="text-xs space-y-2">
+            <p>Remover permanentemente <strong>{processoToDelete?.codigo_projeto}</strong>?</p>
+            <p className="text-red-500 font-bold uppercase tracking-widest text-[10px]">Ação irreversível.</p>
+          </div>
         }
       />
     </div>

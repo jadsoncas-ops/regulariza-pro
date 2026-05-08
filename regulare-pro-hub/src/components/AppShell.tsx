@@ -254,7 +254,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* ── Page Content ── */}
         <main style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 28px' }}>
+          <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 32px' }}>
             {children}
           </div>
         </main>
