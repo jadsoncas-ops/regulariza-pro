@@ -195,16 +195,28 @@ export default function ProcessosPage() {
                             {p.tipo_regularizacao}
                           </h4>
                           
-                          <div className="space-y-1.5 mb-4">
+                          <div className="space-y-2 mb-4">
                             <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
                               <div className="w-5 h-5 rounded bg-slate-100 flex items-center justify-center border border-slate-200 text-[9px]">
                                 {p.cliente?.nome?.charAt(0)}
                               </div>
                               <span className="truncate">{p.cliente?.nome || 'Cliente não identificado'}</span>
                             </div>
-                            <p className="text-[10px] text-slate-400 font-medium truncate ml-7">
-                              {p.imovel?.endereco}, {p.imovel?.numero}
-                            </p>
+                            <div className="ml-7 space-y-1">
+                              <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                                {p.imovel?.endereco}, {p.imovel?.numero}
+                              </p>
+                              <div className="flex flex-wrap gap-x-2 gap-y-1">
+                                <span className="text-[9px] text-primary/70 font-bold uppercase tracking-wider">
+                                  {p.imovel?.cidade} / {p.imovel?.estado}
+                                </span>
+                                {p.imovel?.num_matricula && (
+                                  <span className="text-[9px] text-slate-400 font-mono">
+                                    MAT: {p.imovel.num_matricula}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
 
                           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
