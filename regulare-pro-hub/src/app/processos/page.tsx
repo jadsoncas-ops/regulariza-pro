@@ -274,7 +274,7 @@ export default function ProcessosPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
-                        <Link href={`/processos/${p.id}`} className="p-2 text-slate-400 hover:text-primary rounded-lg"><ChevronRight size={16}/></button>
+                        <Link href={`/processos/${p.id}`} className="p-2 text-slate-400 hover:text-primary rounded-lg"><ChevronRight size={16}/></Link>
                       </div>
                     </td>
                   </tr>

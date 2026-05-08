@@ -53,7 +53,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-slate-200;
   }
   body {
     @apply bg-[#FAFAFA] text-foreground;
