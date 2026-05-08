@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Search, PlusCircle, Calendar, CheckSquare, 
   MapPin, Clock, ArrowUpRight, X, Edit, Trash2,
-  CalendarDays, CheckCircle2
+  CalendarDays, CheckCircle2, ChevronLeft, ChevronRight,
+  MoreHorizontal, Users, Filter, Bell, ListTodo
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
-// --- Tipagens ---
 interface Evento {
   id: string; titulo: string; descricao: string | null; tipo: string;
   processoId: string | null; data_inicio: string; data_fim: string | null;
@@ -29,81 +30,45 @@ interface AgendaListProps {
   processos: { id: string, tipo_regularizacao: string, cliente: { nome: string } }[]
 }
 
-// --- Componentes de UI Internos ---
-function Label({ children }: { children: React.ReactNode }) {
-  return <label className="block text-xs font-medium text-slate-600 mb-1.5">{children}</label>
-}
+const DAYS = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB']
+const HOURS = Array.from({ length: 14 }).map((_, i) => i + 7) // 07:00 to 20:00
 
-function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      {...props}
-      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
-    />
-  )
-}
-
-function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select
-      {...props}
-      className="w-full px-3 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
-    >
-      {children}
-    </select>
-  )
-}
-
-// --- Componente Principal ---
 export default function AgendaList({ initialEventos, initialTarefas, processos }: AgendaListProps) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'eventos' | 'tarefas'>('eventos')
+  const [view, setView] = useState<'week' | 'list'>('week')
   const [search, setSearch] = useState('')
-  
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [modalType, setModalType] = useState<'evento' | 'tarefa'>('evento')
-  const [selectedItem, setSelectedItem] = useState<Evento | Tarefa | null>(null)
+  const [selectedItem, setSelectedItem] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  
+  // Date Management
+  const [currentDate, setCurrentDate] = useState(new Date())
 
-  // Filtros
-  const filteredEventos = initialEventos.filter(e => 
-    e.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    (e.processo?.cliente.nome.toLowerCase().includes(search.toLowerCase()))
-  )
+  const weekDays = useMemo(() => {
+    const start = new Date(currentDate)
+    start.setDate(currentDate.getDate() - currentDate.getDay())
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(start)
+      d.setDate(start.getDate() + i)
+      return d
+    })
+  }, [currentDate])
 
-  const filteredTarefas = initialTarefas.filter(t => 
-    t.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    (t.processo?.cliente.nome.toLowerCase().includes(search.toLowerCase()))
-  )
-
-  const openModal = (type: 'evento' | 'tarefa', item: Evento | Tarefa | null = null) => {
+  const openDrawer = (type: 'evento' | 'tarefa', item: any = null) => {
     setModalType(type)
     setSelectedItem(item)
-    setIsModalOpen(true)
+    setDrawerOpen(true)
   }
 
-  const closeModal = () => {
-    setIsModalOpen(false)
-    setSelectedItem(null)
+  const getEventPosition = (evento: Evento) => {
+    const start = new Date(evento.data_inicio)
+    const h = start.getHours()
+    const m = start.getMinutes()
+    const top = (h - 7) * 80 + (m / 60) * 80
+    return { top: `${top}px`, height: '70px' }
   }
 
-  // Helpers de Cor
-  const getBadgeTypeColor = (tipo: string) => {
-    switch(tipo) {
-      case 'reuniao': return 'badge-blue';
-      case 'vistoria': return 'badge-amber';
-      case 'prazo': return 'badge-red';
-      default: return 'badge-gray';
-    }
-  }
-
-  const getStatusColor = (status: string) => {
-    if (status === 'concluido' || status === 'concluida') return 'badge-green'
-    if (status === 'pendente' || status === 'agendado') return 'badge-blue'
-    return 'badge-gray'
-  }
-
-  // --- Handlers de API ---
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
@@ -114,17 +79,13 @@ export default function AgendaList({ initialEventos, initialTarefas, processos }
       const endpoint = modalType === 'evento' ? '/api/eventos' : '/api/tarefas'
       const url = selectedItem ? `${endpoint}/${selectedItem.id}` : endpoint
       const method = selectedItem ? 'PATCH' : 'POST'
-
       let payload: any = { ...data }
       
       if (modalType === 'evento') {
         payload.data_inicio = new Date(data.data_inicio as string).toISOString()
         payload.data_fim = data.data_fim ? new Date(data.data_fim as string).toISOString() : null
-        payload.processoId = data.processoId || null
       } else {
         payload.data = new Date(data.data as string).toISOString()
-        payload.hora = data.hora || null
-        payload.processoId = data.processoId || null
       }
 
       const res = await fetch(url, {
@@ -132,339 +93,213 @@ export default function AgendaList({ initialEventos, initialTarefas, processos }
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-
       if (res.ok) {
-        closeModal()
+        setDrawerOpen(false)
         router.refresh()
+        setTimeout(() => window.location.reload(), 300)
       }
     } catch (error) {
-      console.error('Erro ao salvar:', error)
+      console.error(error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDelete = async (id: string, type: 'evento' | 'tarefa') => {
-    if (!confirm('Deseja realmente excluir este registro?')) return
-    try {
-      const res = await fetch(`/api/${type}s/${id}`, { method: 'DELETE' })
-      if (res.ok) router.refresh()
-    } catch (error) {
-      console.error('Erro ao deletar:', error)
-    }
-  }
-
-  const handleToggleTarefa = async (tarefa: Tarefa) => {
-    const newStatus = tarefa.status === 'concluida' ? 'pendente' : 'concluida'
-    try {
-      const res = await fetch(`/api/tarefas/${tarefa.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      })
-      if (res.ok) router.refresh()
-    } catch (error) {
-      console.error('Erro ao atualizar status:', error)
-    }
-  }
-
   return (
-    <>
-      {/* PAGE HEADER */}
-      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">Agenda & Tarefas</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Gestão de prazos, vistorias e demandas da equipe</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Buscar compromisso..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 border border-[hsl(var(--border))] rounded-md text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all w-64 bg-white"
-              />
+    <div className="flex h-screen overflow-hidden bg-[#FAFAFA]">
+      
+      {/* ── LEFT SIDE: CALENDAR GRID ── */}
+      <div className="flex-1 flex flex-col min-w-0">
+        
+        {/* Sub Header / Navigation */}
+        <div className="h-20 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+               <button onClick={() => setView('week')} className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${view === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Semana</button>
+               <button onClick={() => setView('list')} className={`px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${view === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>Lista</button>
             </div>
-            <button
-              onClick={() => openModal('evento')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
-            >
-              <Calendar className="w-4 h-4" /> Novo Evento
-            </button>
-            <button
-              onClick={() => openModal('tarefa')}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium rounded-md transition-colors shadow-sm"
-            >
-              <CheckSquare className="w-4 h-4" /> Nova Tarefa
-            </button>
+            <div className="flex items-center gap-4">
+               <div className="flex items-center gap-2">
+                  <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() - 7)))} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition-all"><ChevronLeft size={16} /></button>
+                  <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-200 rounded-lg hover:bg-slate-50 transition-all">Hoje</button>
+                  <button onClick={() => setCurrentDate(new Date(currentDate.setDate(currentDate.getDate() + 7)))} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 transition-all"><ChevronRight size={16} /></button>
+               </div>
+               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">
+                  {currentDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+               </h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+             <div className="relative w-64">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input 
+                  placeholder="Pesquisar agenda..." 
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-9 pr-4 py-2 text-xs font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all"
+                  value={search} onChange={e => setSearch(e.target.value)}
+                />
+             </div>
+             <button onClick={() => openDrawer('evento')} className="btn-premium px-5 py-2">
+                <PlusCircle size={16} /> EVENTO
+             </button>
           </div>
         </div>
 
-        {/* TABS */}
-        <div className="flex items-center gap-6 mt-6 -mb-5 border-t border-[hsl(var(--border))] pt-1">
-          <button
-            onClick={() => setActiveTab('eventos')}
-            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'eventos' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <CalendarDays className="w-4 h-4" /> Eventos & Reuniões
-          </button>
-          <button
-            onClick={() => setActiveTab('tarefas')}
-            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'tarefas' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <ListTodo className="w-4 h-4" /> Tarefas & Checklists
-          </button>
+        {/* Weekly Grid */}
+        <div className="flex-1 overflow-y-auto bg-white relative scrollbar-hide">
+          <div className="grid grid-cols-[80px_repeat(7,1fr)] min-w-[1000px] h-full border-b border-slate-100">
+            {/* Header: Days */}
+            <div className="h-14 border-b border-slate-100 sticky top-0 bg-white z-10" />
+            {weekDays.map((d, i) => (
+              <div key={i} className="h-14 border-b border-slate-100 border-l border-slate-50 flex flex-col items-center justify-center sticky top-0 bg-white z-10">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{DAYS[i]}</span>
+                <span className={`text-lg font-bold mt-1 leading-none ${d.toDateString() === new Date().toDateString() ? 'text-primary' : 'text-slate-900'}`}>{d.getDate()}</span>
+              </div>
+            ))}
+
+            {/* Grid Body */}
+            <div className="contents relative">
+              {HOURS.map(h => (
+                <div key={h} className="contents">
+                  <div className="h-20 border-b border-slate-50 flex items-start justify-center pr-2 pt-2 text-[10px] font-bold text-slate-300 font-mono">
+                    {h}:00
+                  </div>
+                  {weekDays.map((_, dayIdx) => (
+                    <div key={dayIdx} className="h-20 border-b border-slate-50 border-l border-slate-50 relative group hover:bg-slate-50/50 transition-colors">
+                       {/* Render Events for this day and hour */}
+                       {initialEventos
+                        .filter(e => {
+                          const ed = new Date(e.data_inicio)
+                          return ed.getDate() === weekDays[dayIdx].getDate() && ed.getHours() === h
+                        })
+                        .map(e => (
+                          <motion.div 
+                            key={e.id}
+                            initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                            className={`absolute left-1 right-1 z-10 rounded-xl p-3 border-l-4 shadow-sm cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg ${
+                              e.tipo === 'reuniao' ? 'bg-primary/5 border-primary text-primary' :
+                              e.tipo === 'vistoria' ? 'bg-amber-50 border-amber-500 text-amber-700' :
+                              'bg-rose-50 border-rose-500 text-rose-700'
+                            }`}
+                            style={getEventPosition(e)}
+                            onClick={() => openDrawer('evento', e)}
+                          >
+                             <div className="flex items-start justify-between">
+                                <p className="text-[10px] font-bold uppercase truncate pr-4 leading-tight">{e.titulo}</p>
+                                <Clock size={10} className="opacity-40" />
+                             </div>
+                             <p className="text-[9px] font-bold opacity-60 mt-1 uppercase tracking-tighter truncate">{e.processo?.cliente.nome || 'Evento Avulso'}</p>
+                          </motion.div>
+                        ))
+                       }
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="p-8">
-        {/* LISTAGEM DE EVENTOS */}
-        {activeTab === 'eventos' && (
-          <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-left">
-              <thead className="border-b border-[hsl(var(--border))] bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide w-24 text-center">Data</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Evento</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Vinculado a</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                  <th className="px-6 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[hsl(var(--border))]">
-                {filteredEventos.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">Nenhum evento agendado.</td></tr>
-                ) : filteredEventos.map(e => {
-                  const date = new Date(e.data_inicio)
-                  return (
-                    <tr key={e.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col items-center justify-center p-2 bg-slate-50 border border-slate-200 rounded-lg w-14 h-14 mx-auto">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase leading-none mb-1">{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>
-                          <span className="text-lg font-bold text-slate-800 leading-none">{date.getDate()}</span>
+      {/* ── RIGHT DRAWER ── */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setDrawerOpen(false)}
+              className="fixed inset-0 z-[150] bg-slate-900/20 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white z-[160] shadow-2xl flex flex-col"
+            >
+               <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                  <div className="flex items-center gap-3">
+                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg ${modalType === 'evento' ? 'bg-primary shadow-primary/20' : 'bg-slate-900 shadow-slate-900/20'}`}>
+                        {modalType === 'evento' ? <Calendar size={20} /> : <ListTodo size={20} />}
+                     </div>
+                     <div>
+                        <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">{selectedItem ? 'Editar' : 'Criar'} {modalType}</h2>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Regulariza Pro Agenda</p>
+                     </div>
+                  </div>
+                  <button onClick={() => setDrawerOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-all">
+                     <X size={24} />
+                  </button>
+               </div>
+
+               <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-8">
+                  <div className="space-y-4">
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">TÍTULO & TIPO</p>
+                     <input name="titulo" defaultValue={selectedItem?.titulo || ''} required placeholder="Ex: Vistoria Técnica Lote 42" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                     {modalType === 'evento' && (
+                        <select name="tipo" defaultValue={selectedItem?.tipo || 'reuniao'} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all">
+                           <option value="reuniao">Reunião</option>
+                           <option value="vistoria">Vistoria</option>
+                           <option value="prazo">Prazo Crítico</option>
+                           <option value="outro">Outro</option>
+                        </select>
+                     )}
+                  </div>
+
+                  <div className="space-y-4">
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">VÍNCULO OPERACIONAL</p>
+                     <select name="processoId" defaultValue={selectedItem?.processoId || ''} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all">
+                        <option value="">Nenhum processo vinculado</option>
+                        {processos.map(p => (
+                           <option key={p.id} value={p.id}>{p.tipo_regularizacao} — {p.cliente.nome}</option>
+                        ))}
+                     </select>
+                  </div>
+
+                  <div className="space-y-4">
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">HORÁRIO & PRAZO</p>
+                     {modalType === 'evento' ? (
+                        <div className="grid grid-cols-1 gap-4">
+                           <input name="data_inicio" type="datetime-local" defaultValue={selectedItem?.data_inicio?.slice(0,16) || ''} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                           <input name="data_fim" type="datetime-local" defaultValue={selectedItem?.data_fim?.slice(0,16) || ''} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-slate-800">{e.titulo}</p>
-                          <span className={`badge ${getBadgeTypeColor(e.tipo)} capitalize text-[10px]`}>{e.tipo}</span>
+                     ) : (
+                        <div className="grid grid-cols-2 gap-4">
+                           <input name="data" type="date" defaultValue={selectedItem?.data?.split('T')[0] || ''} required className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                           <input name="hora" type="time" defaultValue={selectedItem?.hora || ''} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                          {e.local && <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {e.local}</span>}
+                     )}
+                  </div>
+
+                  {modalType === 'evento' && (
+                     <div className="space-y-4">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">LOCALIZAÇÃO</p>
+                        <div className="relative">
+                           <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                           <input name="local" defaultValue={selectedItem?.local || ''} placeholder="Endereço ou Link" className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {e.processo ? (
-                          <div>
-                            <Link href={`/processos/${e.processo.id}`} className="text-xs font-medium text-blue-600 hover:underline">
-                              #{e.processo.id.substring(0,6).toUpperCase()}
-                            </Link>
-                            <p className="text-xs text-slate-500 mt-0.5">{e.processo.cliente.nome}</p>
-                          </div>
-                        ) : <span className="text-xs text-slate-400">—</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`badge ${getStatusColor(e.status)} capitalize`}>{e.status}</span>
-                      </td>
-                      <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => openModal('evento', e)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"><Edit className="w-4 h-4" /></button>
-                          <button onClick={() => handleDelete(e.id, 'evento')} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                     </div>
+                  )}
+
+                  <div className="space-y-4">
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">OBSERVAÇÕES</p>
+                     <textarea name="descricao" defaultValue={selectedItem?.descricao || ''} rows={4} className="w-full bg-slate-50 border border-slate-200 rounded-3xl px-6 py-4 text-sm font-medium text-slate-600 outline-none focus:ring-4 focus:ring-primary/5 transition-all resize-none" />
+                  </div>
+               </form>
+
+               <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
+                  {selectedItem && (
+                     <button type="button" onClick={() => { if(confirm('Excluir permanentemente?')) router.refresh() }} className="p-4 bg-white border border-slate-200 text-rose-500 rounded-2xl hover:bg-rose-50 transition-all shadow-sm">
+                        <Trash2 size={20} />
+                     </button>
+                  )}
+                  <button type="submit" onClick={(e: any) => e.currentTarget.form?.requestSubmit()} disabled={loading} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
+                     {loading ? 'SALVANDO...' : 'SALVAR NA AGENDA'}
+                  </button>
+               </div>
+            </motion.div>
+          </>
         )}
+      </AnimatePresence>
 
-        {/* LISTAGEM DE TAREFAS */}
-        {activeTab === 'tarefas' && (
-          <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
-            <table className="w-full text-sm text-left">
-              <thead className="border-b border-[hsl(var(--border))] bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 w-12 text-center"></th>
-                  <th className="px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Tarefa</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Vinculado a</th>
-                  <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Prazo</th>
-                  <th className="px-6 py-3"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[hsl(var(--border))]">
-                {filteredTarefas.length === 0 ? (
-                  <tr><td colSpan={5} className="px-6 py-16 text-center text-slate-400">Nenhuma tarefa pendente.</td></tr>
-                ) : filteredTarefas.map(t => {
-                  const isDone = t.status === 'concluida'
-                  const isLate = new Date(t.data) < new Date() && !isDone
-                  return (
-                    <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-6 py-4 text-center">
-                        <button 
-                          onClick={() => handleToggleTarefa(t)}
-                          className={`flex items-center justify-center w-5 h-5 rounded-md border transition-all ${
-                            isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-blue-500 text-transparent'
-                          }`}
-                        >
-                          <CheckSquare className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className={`font-medium ${isDone ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{t.titulo}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        {t.processo ? (
-                          <div>
-                            <Link href={`/processos/${t.processo.id}`} className="text-xs font-medium text-blue-600 hover:underline">
-                              #{t.processo.id.substring(0,6).toUpperCase()}
-                            </Link>
-                            <p className="text-xs text-slate-500 mt-0.5">{t.processo.cliente.nome}</p>
-                          </div>
-                        ) : <span className="text-xs text-slate-400">—</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className={`w-3.5 h-3.5 ${isLate ? 'text-red-500' : 'text-slate-400'}`} />
-                          <span className={`text-xs font-medium ${isLate ? 'text-red-600' : 'text-slate-600'}`}>
-                            {new Date(t.data).toLocaleDateString('pt-BR')} {t.hora && `às ${t.hora}`}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => openModal('tarefa', t)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"><Edit className="w-4 h-4" /></button>
-                          <button onClick={() => handleDelete(t.id, 'tarefa')} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"><Trash2 className="w-4 h-4" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* MODAL GLOBAL */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <h2 className="text-base font-semibold text-slate-900">
-                {selectedItem ? `Editar ${modalType === 'evento' ? 'Evento' : 'Tarefa'}` : `Novo ${modalType === 'evento' ? 'Evento' : 'Tarefa'}`}
-              </h2>
-              <button onClick={closeModal} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-md transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSave} className="p-6">
-              <div className="space-y-5">
-                
-                {/* Campos Comuns */}
-                <div>
-                  <Label>Título *</Label>
-                  <Input name="titulo" defaultValue={selectedItem?.titulo || ''} required placeholder={`Ex: ${modalType === 'evento' ? 'Reunião com cliente' : 'Revisar planta'}`} />
-                </div>
-                
-                <div>
-                  <Label>Vincular a Processo</Label>
-                  <Select name="processoId" defaultValue={selectedItem?.processoId || ''}>
-                    <option value="">Nenhum processo</option>
-                    {processos.map(p => (
-                      <option key={p.id} value={p.id}>#{p.id.substring(0,6).toUpperCase()} - {p.cliente.nome}</option>
-                    ))}
-                  </Select>
-                </div>
-
-                {/* Campos Específicos de Evento */}
-                {modalType === 'evento' && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Data/Hora Início *</Label>
-                        <Input name="data_inicio" type="datetime-local" required defaultValue={(selectedItem as Evento)?.data_inicio?.slice(0,16) || ''} />
-                      </div>
-                      <div>
-                        <Label>Data/Hora Fim</Label>
-                        <Input name="data_fim" type="datetime-local" defaultValue={(selectedItem as Evento)?.data_fim?.slice(0,16) || ''} />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Tipo</Label>
-                        <Select name="tipo" defaultValue={(selectedItem as Evento)?.tipo || 'reuniao'}>
-                          <option value="reuniao">Reunião</option>
-                          <option value="vistoria">Vistoria</option>
-                          <option value="prazo">Prazo</option>
-                          <option value="outro">Outro</option>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Status</Label>
-                        <Select name="status" defaultValue={selectedItem?.status || 'agendado'}>
-                          <option value="agendado">Agendado</option>
-                          <option value="concluido">Concluído</option>
-                          <option value="cancelado">Cancelado</option>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Local / Link da Reunião</Label>
-                      <Input name="local" defaultValue={(selectedItem as Evento)?.local || ''} placeholder="Endereço ou link do Google Meet" />
-                    </div>
-                  </>
-                )}
-
-                {/* Campos Específicos de Tarefa */}
-                {modalType === 'tarefa' && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>Data Limite *</Label>
-                        <Input name="data" type="date" required defaultValue={(selectedItem as Tarefa)?.data?.split('T')[0] || ''} />
-                      </div>
-                      <div>
-                        <Label>Hora (Opcional)</Label>
-                        <Input name="hora" type="time" defaultValue={(selectedItem as Tarefa)?.hora || ''} />
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Status</Label>
-                      <Select name="status" defaultValue={selectedItem?.status || 'pendente'}>
-                        <option value="pendente">Pendente</option>
-                        <option value="concluida">Concluída</option>
-                      </Select>
-                    </div>
-                  </>
-                )}
-
-              </div>
-
-              {/* Ações do Modal */}
-              <div className="flex items-center justify-end gap-3 mt-8 pt-5 border-t border-slate-100">
-                <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors">
-                  Cancelar
-                </button>
-                <button type="submit" disabled={loading} className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors shadow-sm disabled:opacity-60">
-                  {loading ? 'Salvando...' : 'Salvar'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   )
 }
-import { ListTodo } from 'lucide-react'
