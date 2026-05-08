@@ -472,13 +472,55 @@ export default function ProcessoDetailPage() {
             {/* ── FINANCEIRO ── */}
             {tab === 'financeiro' && (
               <div className="space-y-6">
-                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-                       <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-600">
-                             <Wallet size={16} />
+                 {/* SUMMARY CARDS */}
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="bg-white border border-slate-200 p-6 rounded-[28px] shadow-sm relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform text-emerald-600">
+                          <TrendingUp size={64} />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Receita (Cliente)</p>
+                       <p className="text-2xl font-black text-slate-900">{fmt(processo.financeiro?.filter((f:any)=>f.tipo==='receita').reduce((a:number,b:any)=>a+b.valor,0) || 0)}</p>
+                       <div className="mt-2 flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full uppercase">Honorários</span>
+                       </div>
+                    </div>
+                    
+                    <div className="bg-white border border-slate-200 p-6 rounded-[28px] shadow-sm relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform text-indigo-600">
+                          <Users size={64} />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Repasses (Parceiros)</p>
+                       <p className="text-2xl font-black text-slate-900">{fmt(processo.financeiro?.filter((f:any)=>f.is_repasse).reduce((a:number,b:any)=>a+b.valor,0) || 0)}</p>
+                       <div className="mt-2 flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full uppercase">Comissões</span>
+                       </div>
+                    </div>
+
+                    <div className="bg-slate-900 p-6 rounded-[28px] shadow-xl relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform text-white">
+                          <DollarSign size={64} />
+                       </div>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Resultado Líquido</p>
+                       <p className="text-2xl font-black text-white">{fmt(
+                         (processo.financeiro?.filter((f:any)=>f.tipo==='receita').reduce((a:number,b:any)=>a+b.valor,0) || 0) - 
+                         (processo.financeiro?.filter((f:any)=>f.tipo==='despesa').reduce((a:number,b:any)=>a+b.valor,0) || 0)
+                       )}</p>
+                       <div className="mt-2 flex items-center gap-2">
+                          <span className="text-[9px] font-bold text-white/40 bg-white/10 px-2 py-0.5 rounded-full uppercase">Margem Operacional</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/20">
+                       <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                             <Wallet size={20} />
                           </div>
-                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Fluxo de Caixa do Projeto</h3>
+                          <div>
+                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono leading-none">Fluxo de Caixa</h3>
+                             <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">Detalhamento de transações</p>
+                          </div>
                        </div>
 
                        <div className="flex items-center gap-2">
