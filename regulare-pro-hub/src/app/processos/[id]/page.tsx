@@ -354,7 +354,11 @@ export default function ProcessoDetailPage() {
                             </div>
                           )
                         })}
-                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* DOSSIÊ DO PROJETO */}
                     <div className="md:col-span-2 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden group">
                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform">
