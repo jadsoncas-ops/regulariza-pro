@@ -767,7 +767,16 @@ function WizardContent() {
                         <button 
                           onClick={() => {
                             setSelectedImovelId('')
-                            setFormData(prev => ({ ...prev, imovel: { cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '', zoneamento: '', isProprietario: true } }))
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              imovel: { 
+                                cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', 
+                                area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '', 
+                                zoneamento: '', isProprietario: true,
+                                cartorio: '', observacoes: '',
+                                proprietario_nome: '', proprietario_doc: '', proprietario_tel: '', proprietario_email: ''
+                              } 
+                            }))
                           }}
                           className="p-2 hover:bg-emerald-100 text-emerald-400 rounded-xl transition-colors"
                         >
