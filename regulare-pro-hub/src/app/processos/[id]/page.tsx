@@ -354,56 +354,106 @@ export default function ProcessoDetailPage() {
                             </div>
                           )
                         })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* RESUMO OPERACIONAL REFINADO */}
-                    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-                      <div className="flex items-center gap-2 mb-6">
-                        <LayoutGrid size={16} className="text-slate-400" />
-                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Movimentação Recente</h3>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div className="relative pl-6 pb-2 border-l-2 border-slate-100">
-                           <div className="absolute left-[-5px] top-0 w-2 h-2 rounded-full bg-primary ring-4 ring-primary/10" />
-                           <p className="text-xs font-bold text-slate-700 leading-tight">
-                              {processo.logs?.[0]?.acao || 'Processo Criado'}
-                           </p>
-                           <p className="text-[10px] text-slate-400 mt-1 uppercase font-mono tracking-tight">
-                              {processo.logs?.[0]?.detalhe || 'Início da jornada de regularização'}
-                           </p>
-                           <p className="text-[9px] text-slate-300 mt-2 font-bold uppercase">
-                              {processo.logs?.[0] ? new Date(processo.logs[0].createdAt).toLocaleDateString('pt-BR') : new Date(processo.createdAt).toLocaleDateString('pt-BR')}
-                           </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-                      <div className="flex items-center gap-2 mb-6">
-                        <ListTodo size={16} className="text-slate-400" />
-                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Pendências Críticas</h3>
-                      </div>
-                      <div className="space-y-3">
-                        {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 3).map((t: any, i: number) => (
-                          <div key={i} className="flex items-center justify-between p-3 bg-slate-50/50 rounded-xl border border-slate-100 group hover:border-amber-200 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                              <span className="text-xs font-bold text-slate-600 truncate max-w-[120px]">{t.titulo}</span>
-                            </div>
-                            <span className="text-[9px] font-mono font-bold text-slate-400 uppercase tracking-tighter">{new Date(t.data).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* DOSSIÊ DO PROJETO */}
+                    <div className="md:col-span-2 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden group">
+                       <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform">
+                          <Building2 size={120} />
+                       </div>
+                       
+                       <div className="relative z-10">
+                          <div className="flex items-center gap-2 mb-8 border-b border-slate-100 pb-4">
+                             <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
+                                <Info size={20} />
+                             </div>
+                             <div>
+                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest font-mono leading-none">Dossiê do Projeto</h3>
+                                <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">Informações consolidadas</p>
+                             </div>
                           </div>
-                        ))}
-                        {(!processo.tarefas || processo.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
-                           <div className="py-4 text-center">
-                              <CheckCircle2 className="w-8 h-8 text-emerald-100 mx-auto mb-2" />
-                              <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Tudo em dia!</p>
-                           </div>
-                        )}
-                      </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
+                             <div className="space-y-6">
+                                <div>
+                                   <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                                      <User size={12} className="text-primary" /> Cliente
+                                   </p>
+                                   <p className="text-sm font-black text-slate-900 leading-tight">{processo.cliente?.nome || '—'}</p>
+                                   <p className="text-[10px] font-bold text-slate-500 font-mono mt-1">{processo.cliente?.cpf_cnpj || '—'}</p>
+                                   <p className="text-[10px] font-bold text-slate-400 mt-0.5">{processo.cliente?.telefone || '—'}</p>
+                                </div>
+                                <div>
+                                   <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                                      <Briefcase size={12} className="text-primary" /> Serviço
+                                   </p>
+                                   <span className="inline-flex px-3 py-1 bg-primary/5 text-primary text-[10px] font-black uppercase rounded-lg border border-primary/10">
+                                      {processo.tipo_regularizacao || 'Regularização'}
+                                   </span>
+                                </div>
+                             </div>
+
+                             <div className="space-y-6">
+                                <div>
+                                   <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+                                      <MapPin size={12} className="text-primary" /> Imóvel
+                                   </p>
+                                   <p className="text-sm font-black text-slate-900 leading-tight truncate">{processo.imovel?.endereco || '—'}</p>
+                                   <p className="text-[10px] font-bold text-slate-500 font-mono mt-1">Nº {processo.imovel?.numero || 'S/N'}</p>
+                                   <div className="mt-4 flex flex-wrap gap-4 pt-4 border-t border-slate-50">
+                                      <div>
+                                         <p className="text-[8px] font-bold text-slate-400 uppercase">Matrícula</p>
+                                         <p className="text-[10px] font-bold text-slate-700 font-mono">{processo.imovel?.num_matricula || '—'}</p>
+                                      </div>
+                                      <div>
+                                         <p className="text-[8px] font-bold text-slate-400 uppercase">Inscrição</p>
+                                         <p className="text-[10px] font-bold text-slate-700 font-mono">{processo.imovel?.inscricao_imobiliaria || '—'}</p>
+                                      </div>
+                                   </div>
+                                </div>
+                             </div>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* PRÓXIMA AÇÃO / PENDÊNCIA */}
+                    <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden group border-l-4 border-l-amber-400">
+                       <div className="flex items-center gap-2 mb-6">
+                          <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                             <Clock size={16} />
+                          </div>
+                          <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Próxima Ação</h3>
+                       </div>
+
+                       <div className="space-y-6">
+                          {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 1).map((t: any, i: number) => (
+                             <div key={i} className="space-y-4">
+                                <div>
+                                   <p className="text-sm font-black text-slate-900 leading-tight mb-2">{t.titulo}</p>
+                                   <p className="text-[10px] text-slate-400 font-medium line-clamp-2">{t.descricao || 'Nenhuma descrição detalhada.'}</p>
+                                </div>
+                                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                                   <div className="flex flex-col">
+                                      <span className="text-[8px] font-bold text-slate-400 uppercase">Vencimento</span>
+                                      <span className="text-[10px] font-bold text-amber-600 font-mono">{new Date(t.data).toLocaleDateString('pt-BR')}</span>
+                                   </div>
+                                   <div className="flex flex-col items-end">
+                                      <span className="text-[8px] font-bold text-slate-400 uppercase">Prioridade</span>
+                                      <span className={`text-[9px] font-black uppercase ${t.prioridade === 'urgente' ? 'text-red-500' : 'text-primary'}`}>{t.prioridade}</span>
+                                   </div>
+                                </div>
+                             </div>
+                          ))}
+                          
+                          {(!processo.tarefas || processo.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
+                             <div className="py-6 text-center space-y-2">
+                                <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+                                   <CheckCircle2 size={24} className="text-emerald-500" />
+                                </div>
+                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Tudo em ordem!</p>
+                                <p className="text-[10px] text-slate-400">Nenhuma tarefa pendente no momento.</p>
+                             </div>
+                          )}
+                       </div>
                     </div>
                   </div>
 
