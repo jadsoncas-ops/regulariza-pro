@@ -89,14 +89,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       data: {
         tipo_regularizacao: data.tipo_regularizacao,
+        codigo_projeto: data.codigo_projeto,
+        categoria: data.categoria,
+        valor_total: data.valor_total ? parseFloat(data.valor_total) : undefined,
         etapa_atual: data.etapa_atual,
         status: data.status,
-        data_previsao: data.data_previsao ? new Date(data.data_previsao) : null,
+        data_deadline: data.data_deadline ? new Date(data.data_deadline) : undefined,
+        data_previsao: data.data_previsao ? new Date(data.data_previsao) : undefined,
         responsavel: data.responsavel,
         observacoes: data.observacoes,
         imovelId: imovelId // Garante que o vínculo esteja atualizado
       }
     })
+
 
     // LOGAR MUDANÇA DE STATUS SE HOUVER
     if (data.status && data.status !== processoAtual.status) {

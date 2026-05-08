@@ -32,6 +32,9 @@ export default function ProcessosPage() {
   const [processoToDelete, setProcessoToDelete] = useState<any>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [processoToEdit, setProcessoToEdit] = useState<any>(null)
+
   const fetchData = () => {
     fetch('/api/processos')
       .then(r => r.json())
@@ -217,9 +220,28 @@ export default function ProcessosPage() {
                           </div>
                         </Link>
                         
-                        <div className="flex items-center justify-end gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1.5 text-slate-300 hover:text-red-500 rounded-lg"><Trash2 size={14}/></button>
-                          <Link href={`/processos/${p.id}`} className="p-1.5 text-slate-300 hover:text-primary rounded-lg"><ArrowUpRight size={14}/></Link>
+                        <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-slate-50">
+                          <button 
+                            onClick={() => { setProcessoToEdit(p); setIsEditModalOpen(true) }} 
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="Editar"
+                          >
+                            <SlidersHorizontal size={14}/>
+                          </button>
+                          <button 
+                            onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} 
+                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            title="Excluir"
+                          >
+                            <Trash2 size={14}/>
+                          </button>
+                          <Link 
+                            href={`/processos/${p.id}`} 
+                            className="p-1.5 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-all"
+                            title="Ver Detalhes"
+                          >
+                            <ArrowUpRight size={14}/>
+                          </Link>
                         </div>
                       </motion.div>
                     ))}
@@ -272,9 +294,25 @@ export default function ProcessosPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Trash2 size={16}/></button>
-                        <Link href={`/processos/${p.id}`} className="p-2 text-slate-400 hover:text-primary rounded-lg"><ChevronRight size={16}/></Link>
+                      <div className="flex justify-end gap-1">
+                        <button 
+                          onClick={() => { setProcessoToEdit(p); setIsEditModalOpen(true) }} 
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        >
+                          <SlidersHorizontal size={16}/>
+                        </button>
+                        <button 
+                          onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} 
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16}/>
+                        </button>
+                        <Link 
+                          href={`/processos/${p.id}`} 
+                          className="p-2 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg transition-all"
+                        >
+                          <ChevronRight size={16}/>
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -284,6 +322,13 @@ export default function ProcessosPage() {
           </div>
         )}
       </div>
+
+      <EditProcessoModal 
+        isOpen={isEditModalOpen}
+        onClose={() => { setIsEditModalOpen(false); setProcessoToEdit(null) }}
+        processo={processoToEdit}
+        onSuccess={fetchData}
+      />
 
       <DeleteConfirmModal 
         isOpen={isDeleteModalOpen}

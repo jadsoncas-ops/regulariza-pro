@@ -63,39 +63,61 @@ export function EditProcessoModal({
           </button>
         </div>
         
-        <form onSubmit={handleSave} className="p-8 space-y-6">
+        <form onSubmit={handleSave} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Código do Projeto</label>
+              <input name="codigo_projeto" defaultValue={processo.codigo_projeto} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold text-slate-700" />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Categoria / Natureza</label>
+              <input name="categoria" defaultValue={processo.categoria || processo.tipo_regularizacao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-medium" />
+            </div>
+          </div>
+
           <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Tipo de Regularização</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Tipo de Regularização (Exibição)</label>
             <input name="tipo_regularizacao" defaultValue={processo.tipo_regularizacao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-medium" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Status Operacional</label>
-              <select name="status" defaultValue={processo.status} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold text-blue-600">
-                <option value="em_analise">Em Andamento</option>
-                <option value="protocolo_prefeitura">Protocolado</option>
-                <option value="pendente">Pendência</option>
-                <option value="finalizado">Concluído</option>
-                <option value="aprovado">Aprovado</option>
-                <option value="documentacao_pendente">Doc. Pendente</option>
-                <option value="exigencia_tecnica">Exigência Técnica</option>
+              <select name="status" defaultValue={processo.status} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold text-blue-600 appearance-none">
+                <option value="em_analise">Em Entrada</option>
+                <option value="levantamento">Levantamento</option>
+                <option value="projeto">Projeto</option>
+                <option value="protocolo_prefeitura">Protocolo Prefeitura</option>
+                <option value="cartorio">Cartório</option>
+                <option value="finalizado">Conclusão</option>
               </select>
             </div>
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Previsão</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Valor Total Contratado (R$)</label>
               <input 
-                name="data_previsao" 
-                type="date" 
-                defaultValue={formatDateForInput(processo.data_previsao || processo.data_deadline)} 
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                name="valor_total" 
+                type="number" 
+                step="0.01"
+                defaultValue={processo.valor_total} 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold text-emerald-600" 
               />
             </div>
           </div>
 
-          <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável Técnico</label>
-            <input name="responsavel" defaultValue={processo.responsavel} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Previsão</label>
+              <input 
+                name="data_deadline" 
+                type="date" 
+                defaultValue={formatDateForInput(processo.data_deadline || processo.data_previsao)} 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+              />
+            </div>
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável Técnico</label>
+              <input name="responsavel" defaultValue={processo.responsavel} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required />
+            </div>
           </div>
 
           <div>
@@ -103,14 +125,15 @@ export function EditProcessoModal({
             <textarea name="observacoes" defaultValue={processo.observacoes} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none min-h-[100px]" />
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <button type="button" onClick={onClose} disabled={saving} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
-            <button type="submit" disabled={saving} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all hover:bg-slate-800">
+          <div className="flex gap-3 pt-4 sticky bottom-0 bg-white pb-2">
+            <button type="button" onClick={onClose} disabled={saving} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm hover:bg-slate-100 transition-colors">Cancelar</button>
+            <button type="submit" disabled={saving} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all hover:bg-slate-800 active:scale-[0.98]">
               {saving ? <Save className="animate-pulse" size={18} /> : <Save size={18} />}
               {saving ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
         </form>
+
       </div>
     </div>
   )
