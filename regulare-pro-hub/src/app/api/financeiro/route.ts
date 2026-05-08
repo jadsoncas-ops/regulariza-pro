@@ -34,7 +34,22 @@ export async function GET() {
         createdAt: 'desc'
       }
     })
-    return NextResponse.json(financeiro)
+
+    const processos = await prisma.processo.findMany({
+      select: {
+        id: true,
+        valor_total: true,
+        financeiro: {
+          select: {
+            valor: true,
+            tipo: true,
+            status: true
+          }
+        }
+      }
+    })
+
+    return NextResponse.json({ financeiro, processos })
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao buscar financeiro' }, { status: 500 })
   }

@@ -15,6 +15,7 @@ import { motion } from 'framer-motion'
 
 export default function FinanceiroPage() {
   const [registros, setRegistros] = useState<any[]>([])
+  const [processos, setProcessos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [tipo, setTipo] = useState('')
@@ -22,7 +23,11 @@ export default function FinanceiroPage() {
   useEffect(() => {
     fetch('/api/financeiro')
       .then(r => r.json())
-      .then(d => { setRegistros(Array.isArray(d) ? d : []); setLoading(false) })
+      .then(d => { 
+        setRegistros(Array.isArray(d.financeiro) ? d.financeiro : []); 
+        setProcessos(Array.isArray(d.processos) ? d.processos : []);
+        setLoading(false) 
+      })
       .catch(() => setLoading(false))
   }, [])
 
@@ -32,13 +37,40 @@ export default function FinanceiroPage() {
     return matchSearch && matchTipo
   }), [registros, search, tipo])
 
-  const totais = useMemo(() => ({
-    receitas:    registros.filter(r => r.tipo === 'receita').reduce((s, r) => s + r.valor, 0),
-    recebido:    registros.filter(r => r.tipo === 'receita' && r.status === 'pago').reduce((s, r) => s + r.valor, 0),
-    aReceber:    registros.filter(r => r.tipo === 'receita' && r.status !== 'pago').reduce((s, r) => s + r.valor, 0),
-    despesas:    registros.filter(r => r.tipo === 'despesa').reduce((s, r) => s + r.valor, 0),
-    inadimplente: registros.filter(r => r.tipo === 'receita' && r.status !== 'pago' && new Date(r.data_vencimento) < new Date()).reduce((s, r) => s + r.valor, 0),
-  }), [registros])
+  const totais = useMemo(() => {
+    // 1. Recebido Total (Todas as receitas pagas)
+    const recebido = registros.filter(r => r.tipo === 'receita' && r.status === 'pago').reduce((s, r) => s + r.valor, 0);
+    
+    // 2. A Receber (Lógica dos processos: Valor Total - Recebido do Processo)
+    // Mais as receitas avulsas (sem processoId) que estão pendentes
+    const aReceberProcessos = processos.reduce((acc, p) => {
+      const recebidoNoProcesso = p.financeiro
+        ?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago')
+        .reduce((s: number, f: any) => s + f.valor, 0) || 0;
+      return acc + Math.max(0, (p.valor_total || 0) - recebidoNoProcesso);
+    }, 0);
+    
+    const aReceberAvulso = registros
+      .filter(r => r.tipo === 'receita' && r.status !== 'pago' && !r.processoId)
+      .reduce((s, r) => s + r.valor, 0);
+    
+    const aReceberTotal = aReceberProcessos + aReceberAvulso;
+
+    // 3. A Pagar (Todas as despesas pendentes)
+    const aPagar = registros.filter(r => r.tipo === 'despesa' && r.status !== 'pago').reduce((s, r) => s + r.valor, 0);
+
+    // 4. Inadimplência (Receitas pendentes com vencimento passado)
+    const inadimplente = registros
+      .filter(r => r.tipo === 'receita' && r.status !== 'pago' && r.data_vencimento && new Date(r.data_vencimento) < new Date())
+      .reduce((s, r) => s + r.valor, 0);
+
+    return {
+      recebido,
+      aReceber: aReceberTotal,
+      despesas: aPagar,
+      inadimplente
+    };
+  }, [registros, processos])
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
