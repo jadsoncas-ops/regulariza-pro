@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Save, DollarSign, Calendar, Tag, TrendingUp, Users, RefreshCw, Check } from 'lucide-react'
+import { X, Save, DollarSign, Calendar, Tag, TrendingUp, Users, RefreshCw, Check, Plus } from 'lucide-react'
 
 export function FinanceiroModal({
   isOpen,
