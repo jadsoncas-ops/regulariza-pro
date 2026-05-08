@@ -95,7 +95,7 @@
 
 .sidebar-item-active-premium::after {
   content: '';
-  @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full shadow-[0_0_12px_rgba(45,91,255,0.8)];
+  @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#2D5BFF] rounded-r-full shadow-[0_0_12px_rgba(45,91,255,0.8)];
 }
 
 /* ── Kanban Premium ── */
@@ -117,7 +117,7 @@
 
 /* ── Buttons & Shadows ── */
 .btn-premium {
-  @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 shadow-[0_4px_14px_0_rgba(45,91,255,0.39)];
+  @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2D5BFF] text-white rounded-lg font-semibold text-sm transition-all hover:brightness-110 active:scale-95 shadow-[0_4px_14px_0_rgba(45,91,255,0.39)];
 }
 
 .btn-secondary-premium {
