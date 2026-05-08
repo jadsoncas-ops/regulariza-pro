@@ -679,7 +679,8 @@ function WizardContent() {
                       imovel: {
                         cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
                         area_terreno: '', area_construida: '', num_matricula: '', cartorio: '', inscricao_imobiliaria: '', zoneamento: '', observacoes: '',
-                        isProprietario: true
+                        isProprietario: true,
+                        proprietario_nome: '', proprietario_doc: '', proprietario_tel: '', proprietario_email: ''
                       }
                     }))
                   }}
@@ -727,7 +728,13 @@ function WizardContent() {
                                   inscricao_imobiliaria: i.inscricao_imobiliaria || '',
                                   zoneamento: i.zoneamento || '',
                                   complemento: i.complemento || '',
-                                  numero: i.numero || ''
+                                  numero: i.numero || '',
+                                  cartorio: i.cartorio || '',
+                                  observacoes: i.observacoes || '',
+                                  proprietario_nome: i.proprietario_nome || '',
+                                  proprietario_doc: i.proprietario_doc || '',
+                                  proprietario_tel: i.proprietario_tel || '',
+                                  proprietario_email: i.proprietario_email || ''
                                 } 
                               }))
                               setImovelSearch('')
