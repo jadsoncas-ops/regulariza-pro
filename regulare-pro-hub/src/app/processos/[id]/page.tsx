@@ -830,6 +830,22 @@ export default function ProcessoDetailPage() {
           </div>
         </div>
       )}
+      {/* MODALS */}
+      <EditProcessoModal 
+        isOpen={isEditProcessoModalOpen} 
+        onClose={() => setIsEditProcessoModalOpen(false)} 
+        processo={processo} 
+        onSuccess={fetchProcesso} 
+      />
+
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteProcesso}
+        loading={isDeleting}
+        title="Tem certeza que deseja excluir este processo?"
+        description={<p>Esta ação removerá o processo <strong>{processo?.codigo_projeto}</strong> permanentemente.</p>}
+      />
 
     </div>
   )

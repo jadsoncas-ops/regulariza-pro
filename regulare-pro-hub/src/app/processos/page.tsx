@@ -274,9 +274,6 @@ export default function ProcessosPage() {
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex justify-end gap-1">
-                          <button onClick={() => { setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Editar">
-                            <Edit2 size={16} />
-                          </button>
                           <button onClick={() => { setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-slate-100 rounded-lg transition-colors" title="Excluir">
                             <Trash2 size={16} />
                           </button>
@@ -334,9 +331,6 @@ export default function ProcessosPage() {
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
                           <div className="flex gap-1 absolute right-2 top-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
-                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Editar">
-                              <Edit2 size={14} />
-                            </button>
                             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProcessoToDelete(p); setIsDeleteModalOpen(true) }} className="p-1 text-slate-400 hover:text-red-600 rounded" title="Excluir">
                               <Trash2 size={14} />
                             </button>
