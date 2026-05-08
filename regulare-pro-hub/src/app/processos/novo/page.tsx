@@ -119,6 +119,13 @@ function WizardContent() {
     }
   })
 
+  // NOVOS ESTADOS PARA UI MELHORADA
+  const [clientMode, setClientMode] = useState<'existente' | 'novo'>('existente')
+  const [clientSearch, setClientSearch] = useState('')
+  const [imovelMode, setImovelMode] = useState<'existente' | 'novo'>('existente')
+  const [imovelSearch, setImovelSearch] = useState('')
+
+
   // Estado para criação de novo serviço
   const [newService, setNewService] = useState({
     nome: '', sigla: '', categoria: 'Regularização', descricao: ''
@@ -410,6 +417,24 @@ function WizardContent() {
     return groups
   }, [servicosDisponiveis])
 
+  const filteredClients = useMemo(() => {
+    if (!clientSearch) return []
+    return existingClientes.filter(c => 
+      c.nome.toLowerCase().includes(clientSearch.toLowerCase()) || 
+      c.cpf_cnpj.includes(clientSearch)
+    ).slice(0, 5)
+  }, [existingClientes, clientSearch])
+
+  const filteredImoveis = useMemo(() => {
+    if (!imovelSearch) return []
+    return existingImoveis.filter(i => 
+      i.endereco.toLowerCase().includes(imovelSearch.toLowerCase()) || 
+      (i.num_matricula && i.num_matricula.includes(imovelSearch))
+    ).slice(0, 5)
+  }, [existingImoveis, imovelSearch])
+
+
+
   const selectedServicoData = servicosDisponiveis.find(s => s.nome === formData.processo.tipo)
 
   return (
@@ -471,181 +496,341 @@ function WizardContent() {
           
           {/* STEP 1: CLIENTE */}
           {step === 1 && (
-            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-               <div className="card" style={{ padding: '18px 20px' }}>
-                  <div style={{ marginBottom: 12 }}>
-                    <h3 style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Seleção de Cliente</h3>
-                  </div>
-                  <div>
-                    <Label>Escolher Cliente Existente</Label>
-                    <select 
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500"
-                      value={selectedClienteId}
-                      onChange={(e) => {
-                        const id = e.target.value
-                        setSelectedClienteId(id)
-                        setSelectedImovelId('') // Limpa seleção anterior
-                        setFormData((prev: any) => ({ 
-                          ...prev, 
-                          imovel: {
-                            cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
-                            area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '',
-                            zoneamento: '', isProprietario: true
-                          }
-                        }))
-                        if (id) {
-                          const c = existingClientes.find(x => x.id === id)
-                          if (c) setFormData((prev: any) => ({ ...prev, cliente: { ...c } }))
-                        } else {
-                          setFormData((prev: any) => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
-                        }
-                      }}
-                    >
-                      <option value="">+ Criar Novo Cliente</option>
-                      {existingClientes.map(c => (
-                        <option key={c.id} value={c.id}>{c.nome} ({c.cpf_cnpj})</option>
-                      ))}
-                    </select>
-                  </div>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              
+              {/* SELETOR DE MODO */}
+              <div className="flex p-1 bg-slate-200/50 rounded-2xl w-full max-w-sm mx-auto mb-8 border border-slate-200">
+                <button 
+                  onClick={() => setClientMode('existente')}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${clientMode === 'existente' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Cliente Existente
+                </button>
+                <button 
+                  onClick={() => {
+                    setClientMode('novo')
+                    setSelectedClienteId('')
+                    setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
+                  }}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${clientMode === 'novo' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Novo Cliente
+                </button>
+              </div>
 
-                  {!selectedClienteId && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px 14px', paddingTop: 12, borderTop: '1px solid rgba(0,0,0,0.05)', marginTop: 10 }}>
-                      <div style={{ gridColumn: '1 / -1' }}>
-                        <Label>Nome do Cliente / Empresa *</Label>
-                        <Input placeholder="Nome completo ou Razão Social" value={formData.cliente.nome} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, nome: e.target.value}}))} />
+              {clientMode === 'existente' ? (
+                <div className="space-y-6">
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm transition-all duration-300">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><Search className="w-5 h-5" /></div>
+                      <div>
+                        <h2 className="text-base font-bold text-slate-900">Buscar Cliente</h2>
+                        <p className="text-xs text-slate-500">Digite o nome ou CPF/CNPJ para localizar</p>
                       </div>
-                      <div><Label>CPF ou CNPJ *</Label><Input placeholder="000.000.000-00" value={formData.cliente.cpf_cnpj} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))} /></div>
-                      <div><Label>Telefone / WhatsApp *</Label><Input placeholder="(00) 00000-0000" value={formData.cliente.telefone} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, telefone: maskPhone(e.target.value)}}))} /></div>
-                      <div><Label>E-mail de Contato *</Label><Input type="email" placeholder="exemplo@email.com" value={formData.cliente.email} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))} /></div>
                     </div>
-                  )}
-               </div>
 
-               {!selectedClienteId && (
-                 <div className="card" style={{ padding: '18px 20px' }}>
-                    <h3 style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Endereço de Cobrança</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 80px', gap: '10px 12px' }}>
-                       <div><Label>CEP</Label><div style={{ position: 'relative' }}><Input placeholder="00000-000" value={formData.cliente.cep} onChange={e => handleCepChange(e, 'cliente')} />{isSearchingCep && <Loader2 size={14} className="text-blue-500 animate-spin" style={{ position: 'absolute', right: 10, top: 9 }} />}</div></div>
-                       <div><Label>Logradouro / Endereço</Label><Input placeholder="Rua, Av..." value={formData.cliente.endereco} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, endereco: e.target.value}}))} /></div>
-                       <div><Label>Número</Label><Input name="cliente_numero" placeholder="123" value={formData.cliente.numero} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, numero: e.target.value}}))} /></div>
+                    <div className="relative group">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                      <input 
+                        type="text"
+                        placeholder="Pesquisar..."
+                        className="w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-medium text-slate-700 transition-all"
+                        value={clientSearch}
+                        onChange={(e) => setClientSearch(e.target.value)}
+                      />
+                      
+                      {filteredClients.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+                          {filteredClients.map(c => (
+                            <button
+                              key={c.id}
+                              onClick={() => {
+                                setSelectedClienteId(c.id)
+                                setFormData(prev => ({ ...prev, cliente: { ...c } }))
+                                setClientSearch('')
+                              }}
+                              className="w-full px-6 py-4 text-left hover:bg-blue-50 transition-colors flex items-center justify-between group"
+                            >
+                              <div>
+                                <div className="text-sm font-bold text-slate-900">{c.nome}</div>
+                                <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">{c.cpf_cnpj}</div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-transform group-hover:translate-x-1" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px', gap: '10px 12px', marginTop: 10 }}>
-                       <div><Label>Bairro</Label><Input value={formData.cliente.bairro} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, bairro: e.target.value}}))} /></div>
-                       <div><Label>Cidade</Label><Input value={formData.cliente.cidade} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cidade: e.target.value}}))} /></div>
-                       <div><Label>UF</Label><Input value={formData.cliente.estado} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, estado: e.target.value}}))} /></div>
+
+                    {selectedClienteId && (
+                      <div className="mt-8 p-6 bg-blue-50/50 border border-blue-100 rounded-3xl animate-in zoom-in-95 duration-300">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-white rounded-2xl border border-blue-100 flex items-center justify-center text-blue-600 shadow-sm">
+                              <User className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <div className="text-sm font-bold text-slate-900">{formData.cliente.nome}</div>
+                              <div className="text-xs text-slate-500">{formData.cliente.email || 'Sem e-mail'} • {formData.cliente.telefone}</div>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              setSelectedClienteId('')
+                              setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
+                            }}
+                            className="p-2 hover:bg-blue-100 text-blue-400 rounded-xl transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* FORMULÁRIO NOVO CLIENTE */}
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center"><User className="w-5 h-5" /></div>
+                      <div>
+                        <h2 className="text-base font-bold text-slate-900">Novo Cliente</h2>
+                        <p className="text-xs text-slate-500">Preencha os dados fundamentais</p>
+                      </div>
                     </div>
-                 </div>
-               )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="md:col-span-2">
+                        <Label>Nome Completo / Razão Social *</Label>
+                        <Input placeholder="Ex: João da Silva / Construtora X" value={formData.cliente.nome} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, nome: e.target.value}}))} />
+                      </div>
+                      <div>
+                        <Label>CPF ou CNPJ *</Label>
+                        <Input placeholder="000.000.000-00" value={formData.cliente.cpf_cnpj} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))} />
+                      </div>
+                      <div>
+                        <Label>Telefone / WhatsApp *</Label>
+                        <Input placeholder="(00) 00000-0000" value={formData.cliente.telefone} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, telefone: maskPhone(e.target.value)}}))} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>E-mail Principal</Label>
+                        <Input type="email" placeholder="cliente@email.com" value={formData.cliente.email} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center"><MapPin className="w-5 h-5" /></div>
+                      <div>
+                        <h2 className="text-base font-bold text-slate-900">Endereço de Cobrança</h2>
+                        <p className="text-xs text-slate-500">Local para faturamento e correspondência</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <Label>CEP</Label>
+                        <div className="relative">
+                          <Input placeholder="00000-000" value={formData.cliente.cep} onChange={e => handleCepChange(e, 'cliente')} />
+                          {isSearchingCep && <Loader2 size={14} className="text-blue-500 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
+                        </div>
+                      </div>
+                      <div className="md:col-span-2 flex gap-4">
+                        <div className="flex-1">
+                          <Label>Rua / Logradouro</Label>
+                          <Input placeholder="Logradouro..." value={formData.cliente.endereco} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, endereco: e.target.value}}))} />
+                        </div>
+                        <div className="w-24">
+                          <Label>Nº</Label>
+                          <Input name="cliente_numero" placeholder="123" value={formData.cliente.numero} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, numero: e.target.value}}))} />
+                        </div>
+                      </div>
+                      <div><Label>Bairro</Label><Input value={formData.cliente.bairro} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, bairro: e.target.value}}))} /></div>
+                      <div><Label>Cidade</Label><Input value={formData.cliente.cidade} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cidade: e.target.value}}))} /></div>
+                      <div><Label>UF</Label><Input value={formData.cliente.estado} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, estado: e.target.value}}))} /></div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
 
           {/* STEP 2: IMÓVEL */}
           {step === 2 && (
-            <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {/* SELEÇÃO OU CADASTRO DE IMÓVEL */}
-              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><Building2 className="w-5 h-5" /></div>
-                  <div>
-                    <h2 className="text-base font-bold text-slate-900">Propriedade (Imóvel)</h2>
-                    <p className="text-xs text-slate-500">Selecione um imóvel existente ou cadastre um novo</p>
-                  </div>
-                </div>
-
-                <div className="mb-8">
-                  <Label>Selecione o Imóvel para este Processo</Label>
-                  <select 
-                    className="w-full px-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-slate-700 transition-all cursor-pointer"
-                    value={selectedImovelId}
-                    onChange={(e) => {
-                      const id = e.target.value
-                      setSelectedImovelId(id)
-                      if (id) {
-                        const im = existingImoveis.find(x => x.id === id)
-                        if (im) {
-                          setFormData((prev: any) => ({ 
-                            ...prev, 
-                            imovel: { 
-                              ...im, 
-                              isProprietario: true,
-                              area_terreno: im.area_terreno || '',
-                              area_construida: im.area_construida || '',
-                              num_matricula: im.num_matricula || '',
-                              inscricao_imobiliaria: im.inscricao_imobiliaria || '',
-                              zoneamento: im.zoneamento || '',
-                              complemento: im.complemento || '',
-                              numero: im.numero || ''
-                            } 
-                          }))
-                        }
-                      } else {
-                        setFormData((prev: any) => ({ 
-                          ...prev, 
-                          imovel: {
-                            cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
-                            area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '',
-                            zoneamento: '', isProprietario: true
-                          }
-                        }))
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+              
+              {/* SELETOR DE MODO */}
+              <div className="flex p-1 bg-slate-200/50 rounded-2xl w-full max-w-sm mx-auto mb-8 border border-slate-200">
+                <button 
+                  onClick={() => setImovelMode('existente')}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${imovelMode === 'existente' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Imóvel Existente
+                </button>
+                <button 
+                  onClick={() => {
+                    setImovelMode('novo')
+                    setSelectedImovelId('')
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      imovel: {
+                        cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
+                        area_terreno: '', area_construida: '', num_matricula: '', cartorio: '', inscricao_imobiliaria: '', zoneamento: '', observacoes: '',
+                        isProprietario: true
                       }
-                    }}
-                  >
-                    <option value="">+ CADASTRAR NOVO IMÓVEL</option>
-                    {existingImoveis.map(im => (
-                      <option key={im.id} value={im.id}>{im.endereco}, {im.numero} - {im.bairro} ({im.cidade})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={`space-y-8 transition-all duration-500 ${selectedImovelId ? 'opacity-90 grayscale-[0.5]' : ''}`}>
-                  <div className="flex items-center justify-between mb-2 pt-4 border-t border-slate-100">
-                     <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                       {selectedImovelId ? 'Dados do Imóvel Selecionado' : 'Dados do Novo Imóvel'}
-                     </h3>
-                     {!selectedImovelId && (
-                       <button type="button" onClick={copyAddressFromCliente} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-colors">
-                         <Copy className="w-3 h-3" /> Copiar do cliente
-                       </button>
-                     )}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                      <Label>CEP</Label>
-                      <Input disabled={!!selectedImovelId} placeholder="00000-000" value={formData.imovel.cep} onChange={e => handleCepChange(e, 'imovel')} />
-                    </div>
-                    <div className="md:col-span-2 flex gap-4">
-                      <div className="flex-1">
-                        <Label>Endereço / Logradouro</Label>
-                        <Input disabled={!!selectedImovelId} placeholder="Rua, Av..." value={formData.imovel.endereco} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))} />
-                      </div>
-                      <div className="w-24">
-                        <Label>Nº</Label>
-                        <Input disabled={!!selectedImovelId} name="imovel_numero" placeholder="123" value={formData.imovel.numero} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))} />
-                      </div>
-                    </div>
-                    <div><Label>Bairro</Label><Input disabled={!!selectedImovelId} value={formData.imovel.bairro} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))} /></div>
-                    <div><Label>Cidade</Label><Input disabled={!!selectedImovelId} value={formData.imovel.cidade} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, cidade: e.target.value}}))} /></div>
-                    <div><Label>UF</Label><Input disabled={!!selectedImovelId} value={formData.imovel.estado} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))} /></div>
-                  </div>
-
-                  <div className="pt-8 border-t border-slate-100">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Informações Técnicas</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                      <div><Label>Área Terreno</Label><Input disabled={!!selectedImovelId} type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div>
-                      <div><Label>Área Constr.</Label><Input disabled={!!selectedImovelId} type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div>
-                      <div><Label>Matrícula</Label><Input disabled={!!selectedImovelId} value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div>
-                      <div><Label>Zoneamento</Label><Input disabled={!!selectedImovelId} value={formData.imovel.zoneamento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, zoneamento: e.target.value}}))} /></div>
-                    </div>
-                    <div className="mt-6">
-                       <Label>IPTU / Inscrição Imobiliária</Label>
-                       <Input disabled={!!selectedImovelId} value={formData.imovel.inscricao_imobiliaria} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, inscricao_imobiliaria: e.target.value}}))} />
-                    </div>
-                  </div>
-                </div>
+                    }))
+                  }}
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${imovelMode === 'novo' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Novo Imóvel
+                </button>
               </div>
+
+              {imovelMode === 'existente' ? (
+                <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-8">
+                    <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><Building2 className="w-5 h-5" /></div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-900">Buscar Propriedade</h2>
+                      <p className="text-xs text-slate-500">Selecione entre os imóveis cadastrados para este cliente</p>
+                    </div>
+                  </div>
+
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-emerald-500 transition-colors" />
+                    <input 
+                      type="text"
+                      placeholder="Pesquisar endereço ou matrícula..."
+                      className="w-full pl-12 pr-4 py-4 border-2 border-slate-100 rounded-2xl text-sm bg-slate-50 outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 font-medium text-slate-700 transition-all"
+                      value={imovelSearch}
+                      onChange={(e) => setImovelSearch(e.target.value)}
+                    />
+                    
+                    {filteredImoveis.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95">
+                        {filteredImoveis.map(i => (
+                          <button
+                            key={i.id}
+                            onClick={() => {
+                              setSelectedImovelId(i.id)
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                imovel: { 
+                                  ...i, 
+                                  isProprietario: true,
+                                  area_terreno: i.area_terreno || '',
+                                  area_construida: i.area_construida || '',
+                                  num_matricula: i.num_matricula || '',
+                                  inscricao_imobiliaria: i.inscricao_imobiliaria || '',
+                                  zoneamento: i.zoneamento || '',
+                                  complemento: i.complemento || '',
+                                  numero: i.numero || ''
+                                } 
+                              }))
+                              setImovelSearch('')
+                            }}
+                            className="w-full px-6 py-4 text-left hover:bg-emerald-50 transition-colors flex items-center justify-between group"
+                          >
+                            <div>
+                              <div className="text-sm font-bold text-slate-900">{i.endereco}, {i.numero}</div>
+                              <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono">{i.bairro} - {i.cidade}</div>
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-500 transition-transform group-hover:translate-x-1" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedImovelId && (
+                    <div className="mt-8 p-6 bg-emerald-50/50 border border-emerald-100 rounded-3xl animate-in zoom-in-95 duration-300">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-white rounded-2xl border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                            <Building2 className="w-6 h-6" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-bold text-slate-900">{formData.imovel.endereco}, {formData.imovel.numero}</div>
+                            <div className="text-xs text-slate-500">{formData.imovel.bairro} • {formData.imovel.cidade} - {formData.imovel.estado}</div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setSelectedImovelId('')
+                            setFormData(prev => ({ ...prev, imovel: { cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', area_terreno: '', area_construida: '', num_matricula: '', inscricao_imobiliaria: '', zoneamento: '', isProprietario: true } }))
+                          }}
+                          className="p-2 hover:bg-emerald-100 text-emerald-400 rounded-xl transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center"><Building2 className="w-5 h-5" /></div>
+                        <div>
+                          <h2 className="text-base font-bold text-slate-900">Novo Imóvel</h2>
+                          <p className="text-xs text-slate-500">Cadastre a propriedade para este processo</p>
+                        </div>
+                      </div>
+                      <button type="button" onClick={copyAddressFromCliente} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all active:scale-95">
+                        <Copy className="w-3.5 h-3.5" /> Copiar do cliente
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <Label>CEP</Label>
+                        <div className="relative">
+                          <Input placeholder="00000-000" value={formData.imovel.cep} onChange={e => handleCepChange(e, 'imovel')} />
+                          {isSearchingCep && <Loader2 size={14} className="text-blue-500 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
+                        </div>
+                      </div>
+                      <div className="md:col-span-2 flex gap-4">
+                        <div className="flex-1">
+                          <Label>Rua / Logradouro</Label>
+                          <Input placeholder="Endereço completo..." value={formData.imovel.endereco} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, endereco: e.target.value}}))} />
+                        </div>
+                        <div className="w-24">
+                          <Label>Nº</Label>
+                          <Input name="imovel_numero" placeholder="123" value={formData.imovel.numero} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, numero: e.target.value}}))} />
+                        </div>
+                      </div>
+                      <div><Label>Bairro</Label><Input value={formData.imovel.bairro} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, bairro: e.target.value}}))} /></div>
+                      <div><Label>Cidade</Label><Input value={formData.imovel.cidade} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, city: e.target.value}}))} /></div>
+                      <div><Label>UF</Label><Input value={formData.imovel.estado} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, estado: e.target.value}}))} /></div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-8">
+                      <div className="w-10 h-10 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center"><Calculator className="w-5 h-5" /></div>
+                      <div>
+                        <h2 className="text-base font-bold text-slate-900">Dados Técnicos</h2>
+                        <p className="text-xs text-slate-500">Informações de área e registro</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                      <div><Label>Área Terreno</Label><Input type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div>
+                      <div><Label>Área Constr.</Label><Input type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div>
+                      <div><Label>Matrícula</Label><Input value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div>
+                      <div><Label>Zoneamento</Label><Input value={formData.imovel.zoneamento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, zoneamento: e.target.value}}))} /></div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
 
           {/* STEP 3: NATUREZA E ATIVIDADES TÉCNICAS — refatorado */}
           {step === 3 && (() => {
@@ -1021,21 +1206,49 @@ function WizardContent() {
         </div>
       )}
 
-      {/* FOOTER NAVIGATION — compact */}
-      <div style={{ background: '#fff', borderTop: '1px solid rgba(0,0,0,0.07)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button onClick={prevStep} disabled={step === 1} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 8, border: 'none', background: 'none', fontSize: 13, fontWeight: 600, color: '#6B7280', cursor: step === 1 ? 'default' : 'pointer', opacity: step === 1 ? 0 : 1, transition: 'background 0.12s' }}
-          onMouseEnter={e => { if (step > 1) (e.currentTarget as HTMLElement).style.background = '#F3F4F6' }}
-          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'none'}>
-          <ChevronLeft size={14} /> Voltar
-        </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Progress dots */}
-          <div style={{ display: 'flex', gap: 5, marginRight: 12 }}>
-            {[1,2,3,4].map(n => <div key={n} style={{ width: n === step ? 16 : 6, height: 6, borderRadius: 3, background: n === step ? '#2563EB' : n < step ? '#93C5FD' : '#E5E7EB', transition: 'all 0.2s' }} />)}
+      {/* FOOTER NAVIGATION — improved and more visible */}
+      <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-slate-200 px-8 py-6 z-40">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <button 
+            onClick={prevStep} 
+            disabled={step === 1} 
+            className={`flex items-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-bold transition-all ${step === 1 ? 'opacity-0 pointer-events-none' : 'text-slate-500 hover:bg-slate-100'}`}
+          >
+            <ChevronLeft className="w-5 h-5" /> Voltar
+          </button>
+          
+          <div className="flex items-center gap-8">
+            {/* Progress dots - more modern */}
+            <div className="hidden md:flex gap-2">
+              {[1, 2, 3, 4].map(n => (
+                <div 
+                  key={n} 
+                  className={`h-1.5 rounded-full transition-all duration-500 ${n === step ? 'w-8 bg-blue-600' : n < step ? 'w-4 bg-blue-400' : 'w-4 bg-slate-200'}`} 
+                />
+              ))}
+            </div>
+
+            {step < 4 ? (
+              <button 
+                onClick={nextStep} 
+                className="group relative flex items-center gap-2 px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-xl shadow-slate-200 hover:shadow-blue-200 hover:bg-blue-600 transition-all overflow-hidden"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  Continuar <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ) : (
+              <button 
+                onClick={handleFinalSubmit} 
+                disabled={loading} 
+                className="flex items-center gap-2 px-10 py-4 bg-emerald-600 text-white rounded-2xl font-bold shadow-xl shadow-emerald-200 hover:bg-emerald-700 transition-all disabled:opacity-50"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Check className="w-5 h-5" />} 
+                Finalizar Cadastro
+              </button>
+            )}
           </div>
-          {step < 4
-            ? <button onClick={nextStep} className="btn-primary" style={{ padding: '8px 20px', fontSize: 13 }}>Continuar <ChevronRight size={14} /></button>
-            : <button onClick={handleFinalSubmit} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 22px', background: '#059669', color: '#fff', borderRadius: 9, border: 'none', fontSize: 13, fontWeight: 700, cursor: 'pointer', opacity: loading ? 0.6 : 1 }}>{loading ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Finalizar Projeto</button>}
         </div>
       </div>
 
