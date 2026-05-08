@@ -56,7 +56,7 @@
     @apply border-slate-200;
   }
   body {
-    @apply bg-[#FAFAFA] text-foreground;
+    @apply bg-[#FAFAFA] text-slate-900;
     font-family: 'Inter', sans-serif;
     letter-spacing: -0.011em;
     -webkit-font-smoothing: antialiased;
