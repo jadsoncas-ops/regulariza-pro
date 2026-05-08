@@ -216,8 +216,8 @@ export default function ProcessosPage() {
             </div>
           </div>
         ) : (
-          /* Kanban View - FULL SCREEN OPTIMIZED */
-          <div className="flex gap-4 overflow-x-auto pb-4 pt-1 h-full scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+          /* Kanban View - NO SCROLL / ONE SCREEN */
+          <div className="grid grid-cols-6 gap-3 h-full pb-4 pt-1">
             {[
               { id: 'em_analise', label: 'Entrada', color: 'bg-amber-500' },
               { id: 'levantamento', label: 'Levantamento', color: 'bg-blue-400' },
@@ -229,7 +229,7 @@ export default function ProcessosPage() {
               const columnProcs = filtered.filter(p => p.status === column.id)
 
               return (
-                <div key={column.id} className="flex-shrink-0 flex-1 min-w-[280px] max-w-[320px] flex flex-col gap-3">
+                <div key={column.id} className="flex flex-col gap-3 min-w-0">
                   <div className="flex items-center justify-between px-3">
                     <div className="flex items-center gap-2">
                       <div className={`w-1.5 h-1.5 rounded-full ${column.color}`} />
