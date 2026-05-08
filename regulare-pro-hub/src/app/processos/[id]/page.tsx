@@ -42,6 +42,8 @@ export default function ProcessoDetailPage() {
   const [tarefaToEdit, setTarefaToEdit] = useState<any>(null)
   const [isProtocoloModalOpen, setIsProtocoloModalOpen] = useState(false)
   const [protocoloToEdit, setProtocoloToEdit] = useState<any>(null)
+  const [isFinanceiroModalOpen, setIsFinanceiroModalOpen] = useState(false)
+  const [financeiroToEdit, setFinanceiroToEdit] = useState<any>(null)
 
   const handleDeleteProcesso = async () => {
     setIsDeleting(true)
@@ -176,8 +178,7 @@ export default function ProcessoDetailPage() {
 
   const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-  const [isFinanceiroModalOpen, setIsFinanceiroModalOpen] = useState(false)
-  const [financeiroToEdit, setFinanceiroToEdit] = useState<any>(null)
+
 
   const financeiroItems = processo?.financeiro || []
   const totalRecebido = financeiroItems
