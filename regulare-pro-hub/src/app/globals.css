@@ -100,7 +100,7 @@
 
 /* ── Kanban Premium ── */
 .kanban-card-premium {
-  @apply bg-white border border-slate-200/60 rounded-xl p-4 shadow-sm transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-slate-300 group cursor-grab active:cursor-grabbing;
+  @apply bg-white border border-slate-200/60 rounded-xl p-4 shadow-sm transition-all hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-slate-300 cursor-grab active:cursor-grabbing;
 }
 
 .dark .kanban-card-premium {
