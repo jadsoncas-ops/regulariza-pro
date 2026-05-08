@@ -5,8 +5,9 @@ import { logAction } from '@/lib/logger'
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const processoId = (await params).id
-    const { titulo, descricao, data, responsavel, prioridade } = await req.json()
+    const { titulo, descricao, data, responsavel, prioridade, tipo, agendar } = await req.json()
 
+    // 1. Criar a Tarefa
     const tarefa = await prisma.tarefa.create({
       data: {
         processoId,
@@ -19,15 +20,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     })
 
+    // 2. Se 'agendar' for true, criar Evento na Agenda
+    if (agendar) {
+      await prisma.evento.create({
+        data: {
+          processoId,
+          titulo: `TAREFA: ${titulo}`,
+          descricao: descricao || `Tarefa operacional vinculada ao processo.`,
+          tipo: tipo || 'tarefa',
+          data_inicio: new Date(data),
+          responsavel,
+          status: 'agendado'
+        }
+      })
+    }
+
     await logAction({
       processoId,
       acao: `Tarefa Criada`,
       modulo: 'TAREFAS',
-      detalhe: titulo
+      detalhe: `${titulo} ${agendar ? '(Agendada)' : ''}`
     })
 
     return NextResponse.json(tarefa)
   } catch (error) {
+    console.error('API Error:', error)
     return NextResponse.json({ error: 'Erro ao criar tarefa' }, { status: 500 })
   }
 }

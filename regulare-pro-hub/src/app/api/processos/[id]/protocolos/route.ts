@@ -5,8 +5,9 @@ import { logAction } from '@/lib/logger'
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const processoId = (await params).id
-    const { orgao, numero_protocolo, data, prazo, observacao } = await req.json()
+    const { orgao, numero_protocolo, data, prazo, observacao, agendar } = await req.json()
 
+    // 1. Criar o Protocolo
     const protocolo = await prisma.protocolo.create({
       data: {
         processoId,
@@ -18,15 +19,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       }
     })
 
+    // 2. Se houver prazo e 'agendar' for true, criar Evento na Agenda
+    if (prazo && agendar) {
+      await prisma.evento.create({
+        data: {
+          processoId,
+          titulo: `PRAZO: ${orgao} (${numero_protocolo})`,
+          descricao: `Vencimento do prazo para o protocolo no órgão ${orgao}.`,
+          tipo: 'prazo',
+          data_inicio: new Date(prazo),
+          status: 'agendado'
+        }
+      })
+    }
+
     await logAction({
       processoId,
       acao: `Protocolo Registrado`,
       modulo: 'PREFEITURA',
-      detalhe: `${orgao} - Nº ${numero_protocolo}`
+      detalhe: `${orgao} - Nº ${numero_protocolo} ${agendar ? '(Deadline Agendado)' : ''}`
     })
 
     return NextResponse.json(protocolo)
   } catch (error) {
+    console.error('API Error:', error)
     return NextResponse.json({ error: 'Erro ao registrar protocolo' }, { status: 500 })
   }
 }

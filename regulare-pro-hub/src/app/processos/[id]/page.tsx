@@ -176,6 +176,25 @@ export default function ProcessoDetailPage() {
 
   const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+  const [isFinanceiroModalOpen, setIsFinanceiroModalOpen] = useState(false)
+  const [financeiroToEdit, setFinanceiroToEdit] = useState<any>(null)
+
+  const financeiroItems = processo?.financeiro || []
+  const totalRecebido = financeiroItems
+    .filter((f: any) => f.tipo === 'receita' && (f.status === 'pago' || f.status === 'recebido'))
+    .reduce((acc: number, curr: any) => acc + (Number(curr.valor) || 0), 0)
+  
+  const totalDespesas = financeiroItems
+    .filter((f: any) => f.tipo === 'despesa')
+    .reduce((acc: number, curr: any) => acc + (Number(curr.valor) || 0), 0)
+
+  const totalPagoDespesas = financeiroItems
+    .filter((f: any) => f.tipo === 'despesa' && (f.status === 'pago' || f.status === 'recebido'))
+    .reduce((acc: number, curr: any) => acc + (Number(curr.valor) || 0), 0)
+
+  const saldoPendenteReceita = (Number(processo?.valor_total) || 0) - totalRecebido
+  const saldoPendenteDespesa = totalDespesas - totalPagoDespesas
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       
@@ -351,14 +370,14 @@ export default function ProcessoDetailPage() {
                       <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
                          <div 
                            className="h-full bg-blue-500 transition-all duration-1000" 
-                           style={{ width: `${(Number(processo.valor_total) || 0) > 0 ? (Number(processo.valor_pago) || 0) / (Number(processo.valor_total) || 1) * 100 : 0}%` }} 
+                           style={{ width: `${(Number(processo.valor_total) || 0) > 0 ? (totalRecebido / (Number(processo.valor_total) || 1)) * 100 : 0}%` }} 
                          />
                       </div>
                       <div className="flex items-center justify-between">
                          <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
-                            Recebido ({((Number(processo.valor_total) || 0) > 0 ? Math.round(((Number(processo.valor_pago) || 0) / (Number(processo.valor_total) || 1)) * 100) : 0)}%)
+                            Recebido ({((Number(processo.valor_total) || 0) > 0 ? Math.round((totalRecebido / (Number(processo.valor_total) || 1)) * 100) : 0)}%)
                          </span>
-                         <span className="text-xs font-bold text-blue-600">{fmt(Number(processo.valor_pago) || 0)}</span>
+                         <span className="text-xs font-bold text-blue-600">{fmt(totalRecebido)}</span>
                       </div>
                    </div>
                 </div>
@@ -422,8 +441,8 @@ export default function ProcessoDetailPage() {
                    <div className="space-y-4">
                       <div><p className="text-3xl font-bold tracking-tight text-blue-600">{fmt(processo.valor_total)}</p><p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Valor Bruto Contratado</p></div>
                       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                         <div><p className="text-sm font-bold text-emerald-600">{fmt(processo.valor_pago)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Já Recebido</p></div>
-                         <div><p className="text-sm font-bold text-amber-600">{fmt(processo.valor_total - processo.valor_pago)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Pendente</p></div>
+                         <div><p className="text-sm font-bold text-emerald-600">{fmt(totalRecebido)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Já Recebido</p></div>
+                         <div><p className="text-sm font-bold text-amber-600">{fmt(saldoPendenteReceita)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Pendente</p></div>
                       </div>
                    </div>
                 </div>
@@ -434,10 +453,10 @@ export default function ProcessoDetailPage() {
                       <div><h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Custo com Parceiros</h3></div>
                    </div>
                    <div className="space-y-4">
-                      <div><p className="text-3xl font-bold tracking-tight text-slate-800">{fmt(processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)}</p><p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Total de Despesas Lançadas</p></div>
+                      <div><p className="text-3xl font-bold tracking-tight text-slate-800">{fmt(totalDespesas)}</p><p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Total de Despesas Lançadas</p></div>
                       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                         <div><p className="text-sm font-bold text-red-500">{fmt(processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status === 'pago').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Pago</p></div>
-                         <div><p className="text-sm font-bold text-slate-700">{fmt(processo.financeiro?.filter((f: any) => f.tipo === 'despesa' && f.status === 'pendente').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">A Pagar</p></div>
+                         <div><p className="text-sm font-bold text-red-500">{fmt(totalPagoDespesas)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">Pago</p></div>
+                         <div><p className="text-sm font-bold text-slate-700">{fmt(saldoPendenteDespesa)}</p><p className="text-[9px] text-slate-400 font-bold uppercase">A Pagar</p></div>
                       </div>
                    </div>
                 </div>
@@ -451,14 +470,14 @@ export default function ProcessoDetailPage() {
                    <div className="space-y-4 relative z-10">
                       <div>
                          <p className="text-3xl font-bold tracking-tight text-slate-900">
-                            {fmt(processo.valor_total - (processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0))}
+                            {fmt((Number(processo.valor_total) || 0) - totalDespesas)}
                          </p>
                          <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Margem Líquida Estimada</p>
                       </div>
                       <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 mt-4">
                          <span className="text-xs font-bold text-slate-500">Eficiência Financeira</span>
                          <span className="text-sm font-bold text-blue-600">
-                            {Math.round(((processo.valor_total - (processo.financeiro?.filter((f: any) => f.tipo === 'despesa').reduce((acc: any, curr: any) => acc + curr.valor, 0) || 0)) / (processo.valor_total || 1)) * 100) || 0}%
+                            {Math.round((((Number(processo.valor_total) || 0) - totalDespesas) / (Number(processo.valor_total) || 1)) * 100) || 0}%
                          </span>
                       </div>
                    </div>
@@ -471,7 +490,7 @@ export default function ProcessoDetailPage() {
                    <h3 className="text-sm font-bold text-slate-800">Fluxo de Caixa Operacional</h3>
                    <div className="flex items-center gap-2">
                       <button className="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-bold uppercase border border-slate-100">Exportar PDF</button>
-                      <button className="btn-primary py-2 px-6 text-[10px] uppercase">+ Nova Transação</button>
+                      <button onClick={() => { setFinanceiroToEdit(null); setIsFinanceiroModalOpen(true) }} className="btn-primary py-2 px-6 text-[10px] uppercase">+ Nova Transação</button>
                    </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -768,131 +787,255 @@ export default function ProcessoDetailPage() {
         </div>
       )}
 
-      {/* MODAL: NOVA TAREFA */}
-      {isTaskModalOpen && (
+        {/* MODAL: NOVA TAREFA / EDITAR TAREFA */}
+       {isTaskModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+           <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-slate-900">{tarefaToEdit ? 'Editar Tarefa' : 'Nova Tarefa Operacional'}</h2>
+                <button onClick={() => { setIsTaskModalOpen(false); setTarefaToEdit(null) }} className="text-slate-400 hover:text-slate-600"><X/></button>
+             </div>
+             <form onSubmit={async (e) => {
+                e.preventDefault()
+                const form = e.target as HTMLFormElement
+                const data = {
+                   id: tarefaToEdit?.id,
+                   titulo: (form.elements.namedItem('titulo') as HTMLInputElement).value,
+                   descricao: (form.elements.namedItem('descricao') as HTMLTextAreaElement).value,
+                   tipo: (form.elements.namedItem('tipo') as HTMLSelectElement).value,
+                   prioridade: (form.elements.namedItem('prioridade') as HTMLSelectElement).value,
+                   responsavel: (form.elements.namedItem('responsavel') as HTMLInputElement).value,
+                   data: (form.elements.namedItem('data') as HTMLInputElement).value,
+                   agendar: (form.elements.namedItem('agendar') as HTMLInputElement).checked,
+                   processoId: params.id
+                }
+                
+                const method = tarefaToEdit ? 'PATCH' : 'POST'
+                await fetch(`/api/processos/${params.id}/tarefas`, { 
+                  method, 
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data) 
+                })
+                await fetchProcesso()
+                setIsTaskModalOpen(false)
+                setTarefaToEdit(null)
+             }} className="p-8 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div>
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Título da Tarefa</label>
+                   <input name="titulo" required type="text" placeholder="Ex: Ligar para o cliente" defaultValue={tarefaToEdit?.titulo} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Categoria</label>
+                      <select name="tipo" defaultValue={tarefaToEdit?.tipo || 'tarefa'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold">
+                         <option value="tarefa">Geral</option>
+                         <option value="ligacao">Ligação / Contato</option>
+                         <option value="reuniao">Reunião</option>
+                         <option value="visita">Visita Técnica</option>
+                         <option value="documento">Documentação</option>
+                         <option value="pagamento">Pagamento / Taxa</option>
+                      </select>
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prioridade</label>
+                      <select name="prioridade" defaultValue={tarefaToEdit?.prioridade || 'normal'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold">
+                         <option value="baixa">Baixa</option>
+                         <option value="normal">Normal</option>
+                         <option value="alta">Alta</option>
+                         <option value="urgente">Urgente</option>
+                      </select>
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data Limite</label>
+                      <input name="data" required type="date" defaultValue={tarefaToEdit?.data ? new Date(tarefaToEdit.data).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável</label>
+                      <input name="responsavel" required type="text" placeholder="Nome do responsável" defaultValue={tarefaToEdit?.responsavel} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" />
+                   </div>
+                </div>
+
+                <div>
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Descrição / Notas</label>
+                   <textarea name="descricao" rows={3} placeholder="Instruções ou detalhes sobre a tarefa..." defaultValue={tarefaToEdit?.descricao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none" />
+                </div>
+
+                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex items-center justify-between">
+                   <div>
+                      <p className="text-xs font-bold text-blue-900 uppercase tracking-tight">Sincronizar com Agenda</p>
+                      <p className="text-[10px] text-blue-700/70 uppercase font-bold">Lançar automaticamente no calendário</p>
+                   </div>
+                   <input name="agendar" type="checkbox" defaultChecked className="w-5 h-5 accent-blue-600 cursor-pointer" />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                   <button type="button" onClick={() => { setIsTaskModalOpen(false); setTarefaToEdit(null) }} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
+                   <button type="submit" className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl transition-all hover:bg-slate-800">{tarefaToEdit ? 'Salvar Alterações' : 'Criar Tarefa'}</button>
+                </div>
+             </form>
+           </div>
+         </div>
+       )}
+
+       {/* MODAL: NOVO PROTOCOLO */}
+       {isProtocoloModalOpen && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+           <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+             <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                <h2 className="text-lg font-bold text-slate-900">{protocoloToEdit ? 'Editar Protocolo' : 'Registrar Trâmite Externo'}</h2>
+                <button onClick={() => { setIsProtocoloModalOpen(false); setProtocoloToEdit(null) }} className="text-slate-400 hover:text-slate-600"><X/></button>
+             </div>
+             <form onSubmit={async (e) => {
+                e.preventDefault()
+                const form = e.target as HTMLFormElement
+                const data = {
+                   id: protocoloToEdit?.id,
+                   orgao: (form.elements.namedItem('orgao') as HTMLInputElement).value,
+                   numero_protocolo: (form.elements.namedItem('numero_protocolo') as HTMLInputElement).value,
+                   data: (form.elements.namedItem('data') as HTMLInputElement).value,
+                   prazo: (form.elements.namedItem('prazo') as HTMLInputElement).value,
+                   status: (form.elements.namedItem('status') as HTMLSelectElement).value,
+                   observacao: (form.elements.namedItem('observacao') as HTMLTextAreaElement).value,
+                   agendar: (form.elements.namedItem('agendar_deadline') as HTMLInputElement).checked,
+                   processoId: params.id
+                }
+                
+                const method = protocoloToEdit ? 'PATCH' : 'POST'
+                await fetch(`/api/processos/${params.id}/protocolos`, { 
+                  method, 
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(data) 
+                })
+                await fetchProcesso()
+                setIsProtocoloModalOpen(false)
+                setProtocoloToEdit(null)
+             }} className="p-8 space-y-4 max-h-[80vh] overflow-y-auto">
+                <div>
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Órgão Público</label>
+                   <input name="orgao" required placeholder="Ex: Prefeitura, Cartório, CREA..." type="text" defaultValue={protocoloToEdit?.orgao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" />
+                </div>
+                <div>
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Nº Protocolo / Processo</label>
+                   <input name="numero_protocolo" required placeholder="Ex: 2024/001.234" type="text" defaultValue={protocoloToEdit?.numero_protocolo} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Entrada</label>
+                      <input name="data" required type="date" defaultValue={protocoloToEdit?.data ? new Date(protocoloToEdit.data).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                   </div>
+                   <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prazo Previsto (Deadline)</label>
+                      <input name="prazo" type="date" defaultValue={protocoloToEdit?.prazo ? new Date(protocoloToEdit.prazo).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                   </div>
+                </div>
+                <div>
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Status do Trâmite</label>
+                   <select name="status" defaultValue={protocoloToEdit?.status || 'em_analise'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold text-blue-600">
+                      <option value="em_analise">Em Análise</option>
+                      <option value="exigencia">Com Exigência</option>
+                      <option value="aprovado">Aprovado</option>
+                      <option value="concluido">Concluído / Retirado</option>
+                   </select>
+                </div>
+                <div>
+                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Notas do Trâmite</label>
+                   <textarea name="observacao" rows={3} placeholder="Instruções ou detalhes sobre o andamento..." defaultValue={protocoloToEdit?.observacao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none" />
+                </div>
+
+                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100 flex items-center justify-between">
+                   <div>
+                      <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">Monitorar Deadline na Agenda</p>
+                      <p className="text-[10px] text-amber-700/70 uppercase font-bold">Criar alerta de vencimento no calendário</p>
+                   </div>
+                   <input name="agendar_deadline" type="checkbox" defaultChecked className="w-5 h-5 accent-amber-600 cursor-pointer" />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                   <button type="button" onClick={() => { setIsProtocoloModalOpen(false); setProtocoloToEdit(null) }} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
+                   <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-blue-700 transition-all">{protocoloToEdit ? 'Salvar Alterações' : 'Registrar Protocolo'}</button>
+                </div>
+             </form>
+           </div>
+         </div>
+       )}
+
+      {/* MODAL: FINANCEIRO (NOVA TRANSAÇÃO) */}
+      {isFinanceiroModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
           <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-               <h2 className="text-lg font-bold text-slate-900">{tarefaToEdit ? 'Editar Tarefa' : 'Nova Tarefa Operacional'}</h2>
-               <button onClick={() => { setIsTaskModalOpen(false); setTarefaToEdit(null) }} className="text-slate-400 hover:text-slate-600"><X/></button>
+               <h2 className="text-lg font-bold text-slate-900">{financeiroToEdit ? 'Editar Transação' : 'Nova Transação Financeira'}</h2>
+               <button onClick={() => { setIsFinanceiroModalOpen(false); setFinanceiroToEdit(null) }} className="text-slate-400 hover:text-slate-600"><X/></button>
             </div>
             <form onSubmit={async (e) => {
                e.preventDefault()
                const form = e.target as HTMLFormElement
                const data = {
-                  id: tarefaToEdit?.id,
-                  titulo: (form.elements.namedItem('titulo') as HTMLInputElement).value,
-                  prioridade: (form.elements.namedItem('prioridade') as HTMLSelectElement).value,
-                  responsavel: (form.elements.namedItem('responsavel') as HTMLInputElement).value,
-                  data: (form.elements.namedItem('data') as HTMLInputElement).value,
+                  id: financeiroToEdit?.id,
+                  descricao: (form.elements.namedItem('descricao') as HTMLInputElement).value,
+                  tipo: (form.elements.namedItem('tipo') as HTMLSelectElement).value,
+                  valor: Number((form.elements.namedItem('valor') as HTMLInputElement).value),
+                  status: (form.elements.namedItem('status') as HTMLSelectElement).value,
+                  data_vencimento: (form.elements.namedItem('data_vencimento') as HTMLInputElement).value,
                   processoId: params.id
                }
                
-               const method = tarefaToEdit ? 'PATCH' : 'POST'
-               await fetch(`/api/processos/${params.id}/tarefas`, { method, body: JSON.stringify(data) })
+               const method = financeiroToEdit ? 'PATCH' : 'POST'
+               await fetch(`/api/processos/${params.id}/financeiro`, { 
+                 method, 
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify(data) 
+               })
                await fetchProcesso()
-               setIsTaskModalOpen(false)
-               setTarefaToEdit(null)
+               setIsFinanceiroModalOpen(false)
+               setFinanceiroToEdit(null)
             }} className="p-8 space-y-4">
                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Título da Tarefa</label>
-                  <input name="titulo" required type="text" defaultValue={tarefaToEdit?.titulo} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Descrição da Transação</label>
+                  <input name="descricao" required placeholder="Ex: Parcela 1, Pagamento Projeto..." type="text" defaultValue={financeiroToEdit?.descricao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
                </div>
                <div className="grid grid-cols-2 gap-4">
                   <div>
-                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prioridade</label>
-                     <select name="prioridade" defaultValue={tarefaToEdit?.prioridade || 'normal'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
-                        <option value="baixa">Baixa</option>
-                        <option value="normal">Normal</option>
-                        <option value="alta">Alta</option>
-                        <option value="urgente">Urgente</option>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Tipo</label>
+                     <select name="tipo" defaultValue={financeiroToEdit?.tipo || 'receita'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold">
+                        <option value="receita">Receita (Entrada)</option>
+                        <option value="despesa">Despesa (Saída)</option>
                      </select>
                   </div>
                   <div>
-                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data Limite</label>
-                     <input name="data" required type="date" defaultValue={tarefaToEdit?.data ? new Date(tarefaToEdit.data).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Valor (R$)</label>
+                     <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>
+                        <input name="valor" required type="number" step="0.01" placeholder="0,00" defaultValue={financeiroToEdit?.valor} className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-12 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" />
+                     </div>
                   </div>
                </div>
-               <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável</label>
-                  <input name="responsavel" required type="text" defaultValue={tarefaToEdit?.responsavel} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+               <div className="grid grid-cols-2 gap-4">
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Vencimento</label>
+                     <input name="data_vencimento" required type="date" defaultValue={financeiroToEdit?.data_vencimento ? new Date(financeiroToEdit.data_vencimento).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+                  </div>
+                  <div>
+                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Status</label>
+                     <select name="status" defaultValue={financeiroToEdit?.status || 'pendente'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold">
+                        <option value="pendente">Pendente</option>
+                        <option value="pago">Pago / Recebido</option>
+                     </select>
+                  </div>
                </div>
                <div className="flex gap-3 pt-6">
-                  <button type="button" onClick={() => { setIsTaskModalOpen(false); setTarefaToEdit(null) }} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
-                  <button type="submit" className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl">{tarefaToEdit ? 'Salvar Alterações' : 'Criar Tarefa'}</button>
+                  <button type="button" onClick={() => { setIsFinanceiroModalOpen(false); setFinanceiroToEdit(null) }} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
+                  <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-xl">{financeiroToEdit ? 'Salvar Alterações' : 'Lançar Transação'}</button>
                </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL: NOVO PROTOCOLO */}
-      {isProtocoloModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
-          <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-               <h2 className="text-lg font-bold text-slate-900">{protocoloToEdit ? 'Editar Protocolo' : 'Registrar Trâmite Externo'}</h2>
-               <button onClick={() => { setIsProtocoloModalOpen(false); setProtocoloToEdit(null) }} className="text-slate-400 hover:text-slate-600"><X/></button>
-            </div>
-            <form onSubmit={async (e) => {
-               e.preventDefault()
-               const form = e.target as HTMLFormElement
-               const data = {
-                  id: protocoloToEdit?.id,
-                  orgao: (form.elements.namedItem('orgao') as HTMLInputElement).value,
-                  numero_protocolo: (form.elements.namedItem('numero_protocolo') as HTMLInputElement).value,
-                  data: (form.elements.namedItem('data') as HTMLInputElement).value,
-                  prazo: (form.elements.namedItem('prazo') as HTMLInputElement).value,
-                  status: (form.elements.namedItem('status') as HTMLSelectElement).value,
-                  observacao: (form.elements.namedItem('observacao') as HTMLTextAreaElement).value,
-                  processoId: params.id
-               }
-               
-               const method = protocoloToEdit ? 'PATCH' : 'POST'
-               await fetch(`/api/processos/${params.id}/protocolos`, { method, body: JSON.stringify(data) })
-               await fetchProcesso()
-               setIsProtocoloModalOpen(false)
-               setProtocoloToEdit(null)
-            }} className="p-8 space-y-4">
-               <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Órgão Público</label>
-                  <input name="orgao" required placeholder="Ex: Prefeitura, Cartório, CREA..." type="text" defaultValue={protocoloToEdit?.orgao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-               </div>
-               <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Nº Protocolo / Processo</label>
-                  <input name="numero_protocolo" required type="text" defaultValue={protocoloToEdit?.numero_protocolo} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-               </div>
-               <div className="grid grid-cols-2 gap-4">
-                  <div>
-                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Entrada</label>
-                     <input name="data" required type="date" defaultValue={protocoloToEdit?.data ? new Date(protocoloToEdit.data).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-                  </div>
-                  <div>
-                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Prazo Previsto</label>
-                     <input name="prazo" type="date" defaultValue={protocoloToEdit?.prazo ? new Date(protocoloToEdit.prazo).toISOString().split('T')[0] : ''} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-                  </div>
-               </div>
-               <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Status do Trâmite</label>
-                  <select name="status" defaultValue={protocoloToEdit?.status || 'em_analise'} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold">
-                     <option value="em_analise">Em Análise</option>
-                     <option value="exigencia">Com Exigência</option>
-                     <option value="aprovado">Aprovado</option>
-                     <option value="concluido">Concluído / Retirado</option>
-                  </select>
-               </div>
-               <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Observações do Protocolo</label>
-                  <textarea name="observacao" rows={3} defaultValue={protocoloToEdit?.observacao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none" />
-               </div>
-               <div className="flex gap-3 pt-6">
-                  <button type="button" onClick={() => { setIsProtocoloModalOpen(false); setProtocoloToEdit(null) }} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
-                  <button type="submit" className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-xl">{protocoloToEdit ? 'Salvar Alterações' : 'Registrar Protocolo'}</button>
-               </div>
-            </form>
-          </div>
-        </div>
-      )}
       {/* MODALS */}
       <EditProcessoModal 
         isOpen={isEditProcessoModalOpen} 
