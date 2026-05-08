@@ -1,165 +1,243 @@
 'use client'
 
+import { useState } from 'react'
 import { 
-  TrendingUp, 
-  TrendingDown, 
-  Users, 
-  FileText, 
-  DollarSign, 
-  Calendar,
-  ChevronRight,
-  ArrowUpRight,
-  Download,
-  BarChart3,
-  PieChart,
-  Activity,
-  Target
+  TrendingUp, TrendingDown, Users, FileText, DollarSign, 
+  Calendar, ChevronRight, ArrowUpRight, Download, 
+  BarChart3, PieChart, Activity, Target, ShieldCheck,
+  Zap, FileSpreadsheet, File as FileIcon, MoreHorizontal,
+  Search, Filter, Play, Clock
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { 
+  AreaChart, Area, ResponsiveContainer, BarChart, Bar,
+  XAxis, YAxis, Tooltip, Cell, PieChart as RePie, Pie
+} from 'recharts'
+
+const REPORTS = [
+  {
+    id: 'faturamento',
+    title: 'Faturamento & DRE',
+    desc: 'Análise detalhada de receitas, impostos e margem líquida.',
+    icon: DollarSign,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-500/5',
+    data: [
+      { name: 'Jan', val: 45000 }, { name: 'Fev', val: 52000 },
+      { name: 'Mar', val: 48000 }, { name: 'Abr', val: 61000 },
+    ],
+    type: 'area'
+  },
+  {
+    id: 'produtividade',
+    title: 'Produtividade da Equipe',
+    desc: 'Taxa de conclusão de processos e performance por engenheiro.',
+    icon: Activity,
+    color: 'text-primary',
+    bg: 'bg-primary/5',
+    data: [
+      { name: 'Helena', val: 12 }, { name: 'Marcos', val: 8 },
+      { name: 'Júlia', val: 15 }, { name: 'Pedro', val: 10 },
+    ],
+    type: 'bar'
+  },
+  {
+    id: 'prazos',
+    title: 'Prazos & Gargalos',
+    desc: 'Identificação de etapas com maior tempo de retenção nos órgãos.',
+    icon: Clock,
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/5',
+    data: [
+      { name: 'Prefeitura', value: 45 }, { name: 'RGI', value: 30 },
+      { name: 'INCRA', value: 15 }, { name: 'Outros', value: 10 },
+    ],
+    type: 'pie'
+  },
+]
 
 export default function RelatoriosPage() {
+  const [processing, setProcessing] = useState<string | null>(null)
   
-  const stats = [
-    { label: 'Performance Mensal', value: '+12.5%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-    { label: 'Conversão de Leads', value: '64%', icon: Target, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'Tempo Médio Processo', value: '42 dias', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-50' },
-    { label: 'Documentos Pendentes', value: '18', icon: FileText, color: 'text-amber-500', bg: 'bg-amber-50' },
-  ]
+  const handleExport = (id: string) => {
+    setProcessing(id)
+    setTimeout(() => setProcessing(null), 3000)
+  }
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))] pb-20">
-      {/* PAGE HEADER */}
-      <div className="border-b border-[hsl(var(--border))] bg-white px-8 py-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-slate-900">Relatórios & Analytics</h1>
-            <p className="text-sm text-slate-500 mt-0.5">Visão estratégica de performance, prazos e faturamento</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg transition-colors shadow-sm">
-              <Download className="w-4 h-4" /> Exportar PDF
-            </button>
-          </div>
+    <div className="flex flex-col gap-10">
+      
+      {/* ── HEADER ── */}
+      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+        <div className="flex flex-col gap-1">
+           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Inteligência de Dados</h1>
+           <p className="text-sm text-slate-500 font-medium tracking-tight">Relatórios analíticos para tomada de decisão estratégica.</p>
+        </div>
+        <div className="flex items-center gap-3">
+           <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm text-xs font-bold text-slate-500">
+              <Calendar size={14} /> JAN 2024 — DEZ 2024
+           </div>
+           <button className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all text-slate-400">
+              <Filter size={18} />
+           </button>
         </div>
       </div>
 
-      <div className="px-8 py-8 space-y-8">
-        
-        {/* KPI GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, i) => (
-            <div key={i} className="bg-white border border-[hsl(var(--border))] p-6 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`p-2 ${stat.bg} ${stat.color} rounded-lg`}>
-                  <stat.icon className="w-5 h-5" />
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded">
-                  <ArrowUpRight className="w-3 h-3" /> 8%
-                </div>
-              </div>
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">{stat.label}</p>
-              <h3 className="text-2xl font-bold text-slate-900 mt-1">{stat.value}</h3>
+      {/* ── REPORT GRID ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {REPORTS.map((r, idx) => (
+          <motion.div 
+            key={r.id}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.1 }}
+            className="bg-white border border-slate-200 rounded-[40px] p-8 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group flex flex-col h-full"
+          >
+            <div className="flex items-start justify-between mb-8">
+               <div className={`w-12 h-12 ${r.bg} ${r.color} rounded-2xl flex items-center justify-center shadow-inner`}>
+                  <r.icon size={24} />
+               </div>
+               <button className="p-2 text-slate-300 hover:text-slate-600 transition-all">
+                  <MoreHorizontal size={20} />
+               </button>
             </div>
-          ))}
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* GRÁFICO DE FATURAMENTO (PLACEHOLDER VISUAL) */}
-          <div className="lg:col-span-2 bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                  <BarChart3 className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-900">Projeção de Receita</h2>
-                  <p className="text-xs text-slate-500">Fluxo financeiro dos últimos 6 meses</p>
-                </div>
-              </div>
+            <div className="flex-1 space-y-2 mb-8">
+               <h3 className="text-xl font-bold text-slate-900 tracking-tight group-hover:text-primary transition-colors">{r.title}</h3>
+               <p className="text-xs text-slate-400 font-medium leading-relaxed">{r.desc}</p>
             </div>
-            <div className="p-10 flex items-end justify-between h-64 gap-2">
-              {[40, 65, 45, 90, 75, 100].map((h, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-3">
-                  <div 
-                    className="w-full bg-blue-500 rounded-t-lg transition-all hover:bg-blue-600 cursor-pointer" 
-                    style={{ height: `${h}%` }}
-                  ></div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Mês {i+1}</span>
-                </div>
-              ))}
+
+            {/* Mini Visual Preview */}
+            <div className="h-32 w-full mb-8 bg-slate-50/50 rounded-3xl p-4 flex items-center justify-center overflow-hidden border border-slate-100">
+               {r.type === 'area' && (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={r.data}>
+                       <defs>
+                          <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                             <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          </linearGradient>
+                       </defs>
+                       <Area type="monotone" dataKey="val" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorVal)" />
+                    </AreaChart>
+                 </ResponsiveContainer>
+               )}
+               {r.type === 'bar' && (
+                 <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={r.data}>
+                       <Bar dataKey="val" radius={[4, 4, 4, 4]}>
+                          {r.data.map((_, i) => <Cell key={i} fill={i % 2 === 0 ? '#2D5BFF' : '#6366f1'} opacity={0.8} />)}
+                       </Bar>
+                    </BarChart>
+                 </ResponsiveContainer>
+               )}
+               {r.type === 'pie' && (
+                  <ResponsiveContainer width="100%" height="100%">
+                     <RePie>
+                        <Pie 
+                          data={r.data} dataKey="value" cx="50%" cy="50%" 
+                          innerRadius={25} outerRadius={40} paddingAngle={5}
+                        >
+                           {r.data.map((_, i) => <Cell key={i} fill={['#f59e0b', '#fbbf24', '#fcd34d', '#fef3c7'][i]} />)}
+                        </Pie>
+                     </RePie>
+                  </ResponsiveContainer>
+               )}
             </div>
-          </div>
 
-          {/* DISTRIBUIÇÃO DE PROCESSOS */}
-          <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg">
-                <PieChart className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-sm font-semibold text-slate-900">Mix de Serviços</h2>
-                <p className="text-xs text-slate-500">Distribuição por tipo de processo</p>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+               <button 
+                 onClick={() => handleExport(r.id + '_pdf')}
+                 disabled={!!processing}
+                 className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all disabled:opacity-50"
+               >
+                  {processing === r.id + '_pdf' ? <Clock size={14} className="animate-spin" /> : <FileIcon size={14} />} 
+                  GERAR PDF
+               </button>
+               <button 
+                 onClick={() => handleExport(r.id + '_csv')}
+                 disabled={!!processing}
+                 className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 transition-all disabled:opacity-50"
+               >
+                  {processing === r.id + '_csv' ? <Clock size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />} 
+                  GERAR CSV
+               </button>
             </div>
-            <div className="p-6 space-y-6">
-              {[
-                { label: 'Regularização Urb.', value: 45, color: 'bg-blue-500' },
-                { label: 'Usucapião', value: 25, color: 'bg-purple-500' },
-                { label: 'Desmembramento', value: 20, color: 'bg-amber-500' },
-                { label: 'REURB', value: 10, color: 'bg-slate-400' },
-              ].map((item, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-600">{item.label}</span>
-                    <span className="text-slate-900">{item.value}%</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${item.color}`} style={{ width: `${item.value}%` }}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-
-        {/* RECENT PERFORMANCE TABLE */}
-        <div className="bg-white border border-[hsl(var(--border))] rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-slate-900">Rank de Eficiência por Responsável</h2>
-            <button className="text-xs text-blue-600 font-medium hover:underline flex items-center gap-1">
-              Ver todos <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50 border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Membro da Equipe</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Processos Ativos</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Taxa de Conclusão</th>
-                <th className="px-6 py-3 text-xs font-semibold text-slate-500 uppercase">Ticket Médio</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {[
-                { name: 'Helena Torres', active: 12, rate: '92%', ticket: 'R$ 8.400' },
-                { name: 'Marcos Barros', active: 8, rate: '85%', ticket: 'R$ 7.200' },
-                { name: 'Júlia Tavares', active: 15, rate: '78%', ticket: 'R$ 5.100' },
-              ].map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-800">{row.name}</td>
-                  <td className="px-6 py-4 text-slate-600">{row.active}</td>
-                  <td className="px-6 py-4">
-                    <span className="text-emerald-600 font-bold">{row.rate}</span>
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 font-mono">{row.ticket}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
+          </motion.div>
+        ))}
       </div>
+
+      {/* ── PERFORMANCE TABLE ── */}
+      <div className="bg-white border border-slate-200 rounded-[40px] overflow-hidden shadow-sm mt-6">
+         <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
+            <div>
+               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">Eficiência Operacional</h2>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Performance por Responsável Técnica</p>
+            </div>
+            <button className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] flex items-center gap-2 hover:translate-x-1 transition-transform">
+               EXPANDIR RANKING <ChevronRight size={14} />
+            </button>
+         </div>
+         <div className="overflow-x-auto">
+            <table className="w-full text-left">
+               <thead className="bg-slate-50/50">
+                  <tr>
+                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Membro da Equipe</th>
+                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono text-center">Ativos</th>
+                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono text-center">Concluídos</th>
+                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Taxa de Sucesso</th>
+                     <th className="px-8 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono text-right">Faturamento</th>
+                  </tr>
+               </thead>
+               <tbody className="divide-y divide-slate-50">
+                  {[
+                    { name: 'Helena Torres', active: 12, done: 45, rate: 94, total: 124000 },
+                    { name: 'Marcos Barros', active: 8, done: 32, rate: 88, total: 98000 },
+                    { name: 'Júlia Tavares', active: 15, done: 28, rate: 82, total: 76000 },
+                  ].map((row, i) => (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors group">
+                       <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                                {row.name.charAt(0)}
+                             </div>
+                             <span className="text-sm font-bold text-slate-800">{row.name}</span>
+                          </div>
+                       </td>
+                       <td className="px-8 py-5 text-center text-xs font-bold text-slate-600 font-mono">{row.active}</td>
+                       <td className="px-8 py-5 text-center text-xs font-bold text-slate-600 font-mono">{row.done}</td>
+                       <td className="px-8 py-5">
+                          <div className="flex items-center gap-3">
+                             <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500" style={{ width: `${row.rate}%` }} />
+                             </div>
+                             <span className="text-xs font-bold text-emerald-500 font-mono">{row.rate}%</span>
+                          </div>
+                       </td>
+                       <td className="px-8 py-5 text-right text-xs font-bold text-slate-800 font-mono">
+                          {row.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                       </td>
+                    </tr>
+                  ))}
+               </tbody>
+            </table>
+         </div>
+      </div>
+
+      {/* ── TOAST SIMULATION ── */}
+      <AnimatePresence>
+         {processing && (
+           <motion.div 
+             initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
+             className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 bg-slate-900 text-white px-8 py-4 rounded-3xl shadow-2xl border border-white/10"
+           >
+              <Zap size={18} className="text-primary fill-primary animate-pulse" />
+              <p className="text-xs font-bold uppercase tracking-widest">Processando Relatório Premium...</p>
+              <div className="w-px h-4 bg-white/10 mx-2" />
+              <p className="text-[10px] font-bold text-slate-500 uppercase">Aguarde 3s</p>
+           </motion.div>
+         )}
+      </AnimatePresence>
+
     </div>
   )
 }
