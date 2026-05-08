@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+'use client'
+
+import { useState } from 'react'
 import { X, Save } from 'lucide-react'
 
 export function EditProcessoModal({
@@ -39,55 +41,73 @@ export function EditProcessoModal({
     }
   }
 
+  // Função segura para formatar data para o input
+  const formatDateForInput = (dateStr: string | null) => {
+    if (!dateStr) return ''
+    try {
+      const d = new Date(dateStr)
+      if (isNaN(d.getTime())) return ''
+      return d.toISOString().split('T')[0]
+    } catch {
+      return ''
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <h2 className="text-lg font-bold text-slate-800">Editar Processo</h2>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition-colors">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <h2 className="text-lg font-bold text-slate-900">Editar Detalhes do Processo</h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-colors">
             <X size={20} />
           </button>
         </div>
         
-        <form onSubmit={handleSave} className="p-6 space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600">Tipo de Processo</label>
-            <input name="tipo_regularizacao" defaultValue={processo.tipo_regularizacao} className="input-field" required />
+        <form onSubmit={handleSave} className="p-8 space-y-6">
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Tipo de Regularização</label>
+            <input name="tipo_regularizacao" defaultValue={processo.tipo_regularizacao} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-medium" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-600">Status</label>
-              <select name="status" defaultValue={processo.status} className="select-field">
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Status Operacional</label>
+              <select name="status" defaultValue={processo.status} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold text-blue-600">
                 <option value="em_analise">Em Andamento</option>
                 <option value="protocolo_prefeitura">Protocolado</option>
                 <option value="pendente">Pendência</option>
                 <option value="finalizado">Concluído</option>
                 <option value="aprovado">Aprovado</option>
                 <option value="documentacao_pendente">Doc. Pendente</option>
-                <option value="exigencia_tecnica">Exigência</option>
+                <option value="exigencia_tecnica">Exigência Técnica</option>
               </select>
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-600">Data Previsão / Deadline</label>
-              <input name="data_previsao" type="date" defaultValue={processo.data_deadline ? new Date(processo.data_deadline).toISOString().split('T')[0] : ''} className="input-field" />
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Data de Previsão</label>
+              <input 
+                name="data_previsao" 
+                type="date" 
+                defaultValue={formatDateForInput(processo.data_previsao || processo.data_deadline)} 
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+              />
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600">Responsável</label>
-            <input name="responsavel" defaultValue={processo.responsavel} className="input-field" required />
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Responsável Técnico</label>
+            <input name="responsavel" defaultValue={processo.responsavel} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 font-bold" required />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-600">Observações</label>
-            <textarea name="observacoes" defaultValue={processo.observacoes} className="input-field min-h-[80px]" />
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Observações do Processo</label>
+            <textarea name="observacoes" defaultValue={processo.observacoes} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 resize-none min-h-[100px]" />
           </div>
 
-          <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button type="button" onClick={onClose} disabled={saving} className="btn-outline">Cancelar</button>
-            <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2">
-              <Save size={16} /> {saving ? 'Salvando...' : 'Salvar alterações'}
+          <div className="flex gap-3 pt-4">
+            <button type="button" onClick={onClose} disabled={saving} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-sm">Cancelar</button>
+            <button type="submit" disabled={saving} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm shadow-xl flex items-center justify-center gap-2 transition-all hover:bg-slate-800">
+              {saving ? <Save className="animate-pulse" size={18} /> : <Save size={18} />}
+              {saving ? 'Salvando...' : 'Salvar Alterações'}
             </button>
           </div>
         </form>
