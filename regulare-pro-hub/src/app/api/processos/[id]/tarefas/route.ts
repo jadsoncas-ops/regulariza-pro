@@ -90,18 +90,29 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { id, processoId, titulo } = await req.json()
+    const { id, ids, processoId, titulo } = await req.json()
     
-    await prisma.tarefa.delete({
-      where: { id }
-    })
-
-    await logAction({
-      processoId,
-      acao: `Tarefa Excluída`,
-      modulo: 'TAREFAS',
-      detalhe: titulo
-    })
+    if (ids && Array.isArray(ids)) {
+      await prisma.tarefa.deleteMany({
+        where: { id: { in: ids } }
+      })
+      await logAction({
+        processoId,
+        acao: `Tarefas Excluídas (Lote)`,
+        modulo: 'TAREFAS',
+        detalhe: `${ids.length} tarefas removidas`
+      })
+    } else {
+      await prisma.tarefa.delete({
+        where: { id }
+      })
+      await logAction({
+        processoId,
+        acao: `Tarefa Excluída`,
+        modulo: 'TAREFAS',
+        detalhe: titulo
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

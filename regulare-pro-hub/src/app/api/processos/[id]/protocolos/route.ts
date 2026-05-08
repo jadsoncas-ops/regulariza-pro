@@ -80,18 +80,29 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const { id, processoId, orgao } = await req.json()
+    const { id, ids, processoId, orgao } = await req.json()
     
-    await prisma.protocolo.delete({
-      where: { id }
-    })
-
-    await logAction({
-      processoId,
-      acao: `Protocolo Excluído`,
-      modulo: 'PREFEITURA',
-      detalhe: orgao
-    })
+    if (ids && Array.isArray(ids)) {
+      await prisma.protocolo.deleteMany({
+        where: { id: { in: ids } }
+      })
+      await logAction({
+        processoId,
+        acao: `Protocolos Excluídos (Lote)`,
+        modulo: 'PREFEITURA',
+        detalhe: `${ids.length} protocolos removidos`
+      })
+    } else {
+      await prisma.protocolo.delete({
+        where: { id }
+      })
+      await logAction({
+        processoId,
+        acao: `Protocolo Excluído`,
+        modulo: 'PREFEITURA',
+        detalhe: orgao
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

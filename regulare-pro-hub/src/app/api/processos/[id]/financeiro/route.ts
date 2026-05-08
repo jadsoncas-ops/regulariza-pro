@@ -66,16 +66,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const processoId = (await params).id
-    const { id, descricao } = await req.json()
+    const { id, ids, descricao } = await req.json()
     
-    await prisma.financeiro.delete({ where: { id } })
-
-    await logAction({
-      processoId,
-      acao: `Lançamento Financeiro Excluído`,
-      modulo: 'FINANCEIRO',
-      detalhe: descricao
-    })
+    if (ids && Array.isArray(ids)) {
+      await prisma.financeiro.deleteMany({
+        where: { id: { in: ids } }
+      })
+      await logAction({
+        processoId,
+        acao: `Lançamentos Financeiros Excluídos (Lote)`,
+        modulo: 'FINANCEIRO',
+        detalhe: `${ids.length} transações removidas`
+      })
+    } else {
+      await prisma.financeiro.delete({ where: { id } })
+      await logAction({
+        processoId,
+        acao: `Lançamento Financeiro Excluído`,
+        modulo: 'FINANCEIRO',
+        detalhe: descricao
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {
