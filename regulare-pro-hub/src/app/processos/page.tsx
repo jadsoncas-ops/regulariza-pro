@@ -273,7 +273,7 @@ export default function ProcessosPage() {
                         <StatusBadge status={p.status} />
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-1">
                           <button onClick={() => { setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors" title="Editar">
                             <Edit2 size={16} />
                           </button>
@@ -333,7 +333,7 @@ export default function ProcessosPage() {
                       <div className="block bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group relative">
                         <div className="flex items-center justify-between mb-3">
                           <span className="text-[10px] font-mono font-bold text-blue-600 uppercase bg-blue-50 px-1.5 py-0.5 rounded">{p.codigo_projeto}</span>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
+                          <div className="flex gap-1 absolute right-2 top-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg border border-slate-100 shadow-sm z-10">
                             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setProcessoToEdit(p); setIsEditModalOpen(true) }} className="p-1 text-slate-400 hover:text-blue-600 rounded" title="Editar">
                               <Edit2 size={14} />
                             </button>

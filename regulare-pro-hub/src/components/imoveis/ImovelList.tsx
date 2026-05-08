@@ -221,7 +221,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                       {i.processos.length}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button 
                         onClick={() => openEditModal(i)}
