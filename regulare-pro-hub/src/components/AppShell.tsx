@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Briefcase, Users, Building2, DollarSign,
   FileText, Calendar, Settings, Bell, Plus, MapPin,
   Moon, Sun, Menu, X, ChevronRight, BarChart3, Zap,
-  BarChart2, Search
+  BarChart2, Search, Sparkles, Command
 } from 'lucide-react'
 import GlobalSearch from '@/components/GlobalSearch'
 
@@ -16,24 +17,26 @@ const NAV = [
     section: 'Principal',
     items: [
       { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-      { href: '/processos', label: 'Processos',   icon: Briefcase },
+      { href: '/processos', label: 'Processos',   icon: Briefcase, badge: '42' },
       { href: '/clientes',  label: 'Clientes',    icon: Users },
       { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
     ]
   },
   {
-    section: 'Gestão',
+    section: 'Gestão & IA',
     items: [
       { href: '/financeiro',  label: 'Financeiro',     icon: DollarSign },
-      { href: '/agenda',      label: 'Agenda',         icon: Calendar },
-      { href: '/documentos',  label: 'Documentos',     icon: FileText },
-      { href: '/mapa',        label: 'Mapa',           icon: MapPin },
       { href: '/relatorios',  label: 'Relatórios',     icon: BarChart3 },
+      { href: '/mapa',        label: 'Mapa Zonal',      icon: MapPin },
+      { href: '/alertas',     label: 'Alertas',         icon: Bell },
+      { href: '/ia',          label: 'Assistente IA',   icon: Sparkles },
     ]
   },
   {
-    section: 'Sistema',
+    section: 'Ferramentas',
     items: [
+      { href: '/agenda',      label: 'Agenda',         icon: Calendar },
+      { href: '/documentos',  label: 'Documentos',     icon: FileText },
       { href: '/configuracoes', label: 'Configurações', icon: Settings },
     ]
   },
@@ -44,63 +47,38 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
 
   return (
-    <div className="sidebar h-full flex flex-col" style={{ width: 220 }}>
-
+    <div className="sidebar-premium h-full flex flex-col overflow-hidden">
       {/* ── Logo ── */}
-      <div style={{
-        padding: '16px 14px 14px',
-        borderBottom: '1px solid rgba(255,255,255,0.055)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32,
-            background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-            borderRadius: 9,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 2px 8px rgba(37,99,235,0.35)',
-            flexShrink: 0,
-          }}>
-            <Zap size={15} color="#fff" strokeWidth={2.5} fill="rgba(255,255,255,0.3)" />
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#E5E7EB', letterSpacing: '-0.02em', lineHeight: 1 }}>
-              RegularizaPro
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(107,114,128,0.7)', marginTop: 2, letterSpacing: '0.02em' }}>
-              Hub Imobiliário
-            </div>
-          </div>
+      <div className="p-6 pb-4 flex items-center gap-3">
+        <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(45,91,255,0.4)]">
+          <Zap size={16} className="text-white fill-white/20" />
         </div>
-        {onClose && (
-          <button onClick={onClose} style={{ color: '#4B5563', padding: 4, cursor: 'pointer', background: 'none', border: 'none' }}>
-            <X size={14} />
-          </button>
-        )}
+        <div className="flex flex-col">
+          <span className="text-white font-bold text-sm tracking-tight leading-none uppercase">Regulare Pro</span>
+          <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Hub Imobiliário</span>
+        </div>
       </div>
 
       {/* ── Nav ── */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '8px 8px', scrollbarWidth: 'none' }}>
-        {NAV.map((section, si) => (
-          <div key={section.section}>
-            <span className="sidebar-section-label"
-              style={{ marginTop: si === 0 ? 12 : undefined }}>
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6 scrollbar-hide">
+        {NAV.map((section) => (
+          <div key={section.section} className="space-y-1">
+            <h3 className="px-3 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 opacity-50">
               {section.section}
-            </span>
+            </h3>
             {section.items.map(item => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                className={isActive(item.href) ? 'sidebar-item-active' : 'sidebar-item'}
-                style={{ display: 'flex' }}
+                className={`sidebar-item-premium ${isActive(item.href) ? 'sidebar-item-active-premium' : ''}`}
               >
-                <item.icon size={15} strokeWidth={isActive(item.href) ? 2.2 : 1.75} style={{ flexShrink: 0 }} />
-                <span style={{ flex: 1 }}>{item.label}</span>
-                {isActive(item.href) && (
-                  <ChevronRight size={12} style={{ opacity: 0.5, flexShrink: 0 }} />
+                <item.icon size={16} strokeWidth={isActive(item.href) ? 2.5 : 2} />
+                <span className="flex-1">{item.label}</span>
+                {item.badge && (
+                  <span className="text-[9px] font-bold bg-white/10 px-1.5 py-0.5 rounded-md text-slate-400">
+                    {item.badge}
+                  </span>
                 )}
               </Link>
             ))}
@@ -108,35 +86,15 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         ))}
       </nav>
 
-      {/* ── User ── */}
-      <div style={{
-        padding: '10px 8px',
-        borderTop: '1px solid rgba(255,255,255,0.055)',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 9,
-          padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
-          transition: 'background 0.12s',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-        >
-          <div style={{
-            width: 28, height: 28,
-            background: 'linear-gradient(135deg, #2563EB, #7C3AED)',
-            borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0,
-          }}>
+      {/* ── User Profile ── */}
+      <div className="p-4 border-t border-white/5">
+        <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer group">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-xs font-bold text-white uppercase">
             JC
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#D1D5DB', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Jadson Castro
-            </div>
-            <div style={{ fontSize: 10, color: '#4B5563', marginTop: 1 }}>
-              Engenheiro Civil
-            </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-white truncate">Jadson Castro</p>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Engenheiro Civil</p>
           </div>
         </div>
       </div>
@@ -146,115 +104,87 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [dark, setDark] = useState(false)
   const pathname = usePathname()
-
-  useEffect(() => {
-    const saved = localStorage.getItem('darkMode') === 'true'
-    setDark(saved)
-    document.body.classList.toggle('dark', saved)
-  }, [])
-
-  const toggleDark = () => {
-    const next = !dark
-    setDark(next)
-    document.body.classList.toggle('dark', next)
-    localStorage.setItem('darkMode', String(next))
-  }
 
   const isFullPage = pathname === '/processos/novo'
   if (isFullPage) return <>{children}</>
 
   return (
-    <div style={{
-      display: 'flex', height: '100vh', overflow: 'hidden',
-      backgroundColor: dark ? '#080A0F' : '#F5F7FB',
-    }}>
-
-      {/* Desktop sidebar */}
-      <aside className="hidden lg:block" style={{ width: 220, flexShrink: 0 }}>
+    <div className="flex h-screen overflow-hidden bg-[#FAFAFA]">
+      
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block w-64 flex-shrink-0">
         <SidebarContent />
       </aside>
 
-      {/* Mobile sidebar */}
-      {mobileOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}
-            onClick={() => setMobileOpen(false)} />
-          <div style={{ position: 'relative', zIndex: 10, width: 220 }}>
-            <SidebarContent onClose={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
+      {/* Mobile Sidebar */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 lg:hidden"
+          >
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute inset-y-0 left-0 w-64"
+            >
+              <SidebarContent onClose={() => setMobileOpen(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-
-        {/* ── Topbar ── */}
-        <header className="topbar" style={{ flexShrink: 0 }}>
-
-          {/* Mobile menu toggle */}
-          <button className="lg:hidden" onClick={() => setMobileOpen(true)}
-            style={{ padding: 6, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer', marginRight: 4 }}>
-            <Menu size={18} />
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        
+        {/* Glass Header */}
+        <header className="glass h-16 flex items-center px-6 gap-4 border-b border-slate-200/60 z-30">
+          <button className="lg:hidden p-2 -ml-2 text-slate-500" onClick={() => setMobileOpen(true)}>
+            <Menu size={20} />
           </button>
 
-          {/* Global search */}
-          <div style={{ flex: 1, maxWidth: 380, position: 'relative' }}>
-            <Search size={14} style={{
-              position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)',
-              color: '#9CA3AF', pointerEvents: 'none',
-            }} />
-            <GlobalSearch />
+          {/* Search CMD+K Pattern */}
+          <div className="flex-1 max-w-xl relative group">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <div className="w-full flex items-center gap-2 bg-slate-100/50 border border-slate-200/50 rounded-xl px-10 py-2.5 text-sm text-slate-400 cursor-pointer hover:bg-slate-100 transition-all">
+              <span className="flex-1">Buscar processos, clientes...</span>
+              <div className="flex items-center gap-1 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-slate-500 shadow-sm">
+                <Command size={10} />
+                <span>K</span>
+              </div>
+            </div>
           </div>
 
-          {/* Right side actions */}
-          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
-
-            {/* Dark mode */}
-            <button onClick={toggleDark}
-              style={{
-                width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
-                color: '#9CA3AF', transition: 'background 0.12s, color 0.12s',
-              }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#374151' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF' }}
-            >
-              {dark ? <Sun size={15} strokeWidth={1.75} /> : <Moon size={15} strokeWidth={1.75} />}
+          <div className="flex items-center gap-3 ml-auto">
+            {/* IA Button Sparkles Pattern */}
+            <button className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-all group">
+              <Sparkles size={14} className="text-indigo-500 group-hover:scale-110 transition-transform" />
+              <span>IA Regularização</span>
             </button>
 
-            {/* Notifications */}
-            <button style={{
-              width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRadius: 8, border: 'none', background: 'none', cursor: 'pointer',
-              color: '#9CA3AF', position: 'relative',
-              transition: 'background 0.12s, color 0.12s',
-            }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#F3F4F6'; (e.currentTarget as HTMLElement).style.color = '#374151' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'none'; (e.currentTarget as HTMLElement).style.color = '#9CA3AF' }}
-            >
-              <Bell size={15} strokeWidth={1.75} />
-              <span className="animate-pulse-dot" style={{
-                position: 'absolute', top: 8, right: 8,
-                width: 6, height: 6, background: '#EF4444', borderRadius: '50%',
-                border: '1.5px solid white',
-              }} />
+            <button className="p-2.5 text-slate-500 hover:bg-slate-100 rounded-xl transition-all relative">
+              <Bell size={18} />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full" />
             </button>
 
-            <div style={{ width: 1, height: 20, background: 'rgba(0,0,0,0.08)', margin: '0 4px' }} />
+            <div className="w-px h-6 bg-slate-200 mx-1" />
 
-            {/* CTA */}
-            <Link href="/processos/novo" className="btn-primary" style={{ fontSize: 12, padding: '7px 13px' }}>
-              <Plus size={14} strokeWidth={2.5} />
-              Novo Processo
+            <Link href="/processos/novo" className="btn-premium">
+              <Plus size={18} strokeWidth={2.5} />
+              <span className="hidden sm:inline">Novo Processo</span>
             </Link>
           </div>
         </header>
 
-        {/* ── Page Content ── */}
-        <main style={{ flex: 1, overflowY: 'auto' }}>
-          <div style={{ maxWidth: '100%', margin: '0 auto', padding: '24px 32px' }}>
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#FAFAFA]">
+          <div className="max-w-7xl mx-auto p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {children}
           </div>
         </main>
