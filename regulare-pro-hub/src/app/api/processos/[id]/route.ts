@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { logAction } from '@/lib/logger'
+import { processWorkflowTransition } from '@/lib/workflow-engine'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -39,6 +40,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!processoAtual) {
       return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 })
     }
+
+    const statusChanged = data.status && data.status !== processoAtual.status
+    const oldStatus = processoAtual.status
+    const newStatus = data.status
 
     let imovelId = processoAtual.imovelId
 
@@ -104,7 +109,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 
     // LOGAR MUDANÇA DE STATUS SE HOUVER
-    if (data.status && data.status !== processoAtual.status) {
+    if (statusChanged) {
       await logAction({
         processoId: id,
         acao: `Alteração de Status`,

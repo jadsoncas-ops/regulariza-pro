@@ -292,41 +292,77 @@ export default function DashboardPage() {
           </div>
         </motion.div>
 
-        {/* 5. Processos Recentes (Span 4) */}
-        <motion.div variants={itemVariants} className="col-span-12 lg:col-span-4 bg-white border border-slate-200/50 rounded-3xl p-6 shadow-sm flex flex-col">
+        {/* 5. Inteligência Operacional (Span 4) */}
+        <motion.div variants={itemVariants} className="col-span-12 lg:col-span-4 bg-white border border-slate-200/50 rounded-3xl p-6 shadow-sm flex flex-col h-full">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest font-mono">Ações Recentes</h3>
-            <button className="w-6 h-6 rounded-lg hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors">
-              <Sparkles size={14} />
-            </button>
+            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest font-mono">Inteligência Operacional</h3>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-50 border border-amber-100 text-[9px] font-bold text-amber-600 uppercase">
+              <Clock size={10} /> {processos.filter((p: any) => p.data_previsao && new Date(p.data_previsao) < new Date() && p.status !== 'finalizado').length} Alertas
+            </div>
           </div>
 
-          <div className="flex-1 flex flex-col gap-3">
-            {recentProcessos.map((p: any) => {
-              const s = STATUS[p.status as keyof typeof STATUS]
-              return (
-                <Link key={p.id} href={`/processos/${p.id}`} className="group block p-3 rounded-2xl border border-transparent hover:border-slate-200 hover:bg-slate-50/50 transition-all">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-slate-100 text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all">
-                      {p.codigo_projeto || 'REG.000'}
-                    </span>
-                    <span className="text-[10px] font-bold" style={{ color: s?.color }}>{s?.label}</span>
-                  </div>
-                  <p className="text-[12px] font-semibold text-slate-900 leading-tight mb-1">{p.tipo_regularizacao}</p>
-                  <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
-                    <Target size={10} /> {p.cliente?.nome}
-                  </p>
-                </Link>
-              )
-            })}
-            
-            {recentProcessos.length === 0 && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
-                <Layers size={24} className="text-slate-200 mb-2" />
-                <p className="text-[11px] font-medium text-slate-400">Nenhuma operação ativa</p>
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Próximas Ações */}
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 font-mono">Próximas Ações</p>
+              <div className="space-y-2">
+                {processos
+                  .flatMap((p: any) => (p.tarefas || []).filter((t: any) => t.status === 'pendente').map((t: any) => ({ ...t, processoCodigo: p.codigo_projeto, processoId: p.id })))
+                  .sort((a: any, b: any) => new Date(a.data).getTime() - new Date(b.data).getTime())
+                  .slice(0, 3)
+                  .map((task: any) => (
+                    <Link key={task.id} href={`/processos/${task.processoId}`} className="group block p-3 rounded-2xl bg-slate-50 border border-transparent hover:border-[hsl(231,100%,60%)]/30 transition-all">
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-[9px] font-bold text-[hsl(231,100%,60%)] uppercase tracking-tighter">
+                          {task.processoCodigo || 'REG.000'}
+                        </span>
+                        <span className="text-[9px] font-medium text-slate-400">{new Date(task.data).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <p className="text-[11px] font-bold text-slate-800 leading-tight group-hover:text-slate-950 transition-colors uppercase truncate">{task.titulo}</p>
+                    </Link>
+                  ))
+                }
+                {processos.every((p: any) => !p.tarefas || p.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
+                  <p className="text-[10px] text-slate-400 italic py-2">Nenhuma tarefa pendente no fluxo.</p>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* Operações em Atraso */}
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 font-mono">Alertas de Prazo</p>
+              <div className="space-y-2">
+                {processos
+                  .filter((p: any) => p.data_previsao && new Date(p.data_previsao) < new Date() && p.status !== 'finalizado')
+                  .slice(0, 2)
+                  .map((p: any) => (
+                    <Link key={p.id} href={`/processos/${p.id}`} className="flex items-center gap-3 p-3 rounded-2xl bg-red-50/50 border border-red-100/50 hover:bg-red-50 transition-all">
+                      <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-red-500 shadow-sm">
+                        <Activity size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-bold text-red-900 leading-tight truncate uppercase">{p.tipo_regularizacao}</p>
+                        <p className="text-[9px] font-medium text-red-600 uppercase">Atrasado faz {Math.floor((new Date().getTime() - new Date(p.data_previsao).getTime()) / 86400000)} dias</p>
+                      </div>
+                      <ChevronRight size={12} className="text-red-300" />
+                    </Link>
+                  ))
+                }
+                {processos.filter((p: any) => p.data_previsao && new Date(p.data_previsao) < new Date() && p.status !== 'finalizado').length === 0 && (
+                  <div className="p-3 rounded-2xl bg-emerald-50/50 border border-emerald-100/50 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-emerald-500 shadow-sm">
+                      <CheckCircle2 size={14} />
+                    </div>
+                    <p className="text-[10px] font-bold text-emerald-700 uppercase">Todas as operações no prazo</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+
+          <Link href="/processos" className="mt-6 flex items-center justify-center gap-1.5 w-full py-2 bg-slate-900 hover:bg-slate-800 text-[10px] font-bold text-white uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-slate-900/10">
+            Gerenciar Fluxos <Zap size={12} fill="white" />
+          </Link>
         </motion.div>
 
       </div>

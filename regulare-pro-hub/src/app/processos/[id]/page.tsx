@@ -12,7 +12,7 @@ import {
   Search, Plus, Filter, LayoutGrid, List, TrendingUp,
   MoreVertical, Download, Trash2, RefreshCw, Sparkles, Command,
   Link as LinkIcon, FileCode, FileImage, FileIcon, Eye, Paperclip, 
-  FileCheck, ShieldCheck, Upload, Target, Activity
+  FileCheck, ShieldCheck, Upload, Target, Activity, Layers, Zap
 } from 'lucide-react'
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
@@ -310,272 +310,219 @@ export default function ProcessoDetailPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {/* ── VISÃO GERAL: COMMAND CENTER ── */}
+            {/* ── VISÃO GERAL: PROCESS COMMAND CENTER ── */}
             {tab === 'visao' && (
-              <div className="flex flex-col gap-6 h-full min-h-0">
+              <div className="flex flex-col gap-4 h-full min-h-0">
                 
-                {/* ROW 1: PIPELINE E PROGRESSO */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm shrink-0">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Esteira Operacional</p>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xl font-black text-slate-900 uppercase">
-                          {processo.status === 'finalizado' ? 'Concluído' : 
-                           processo.status === 'cartorio' ? 'Registro em Cartório' :
-                           processo.status === 'protocolo_prefeitura' ? 'Protocolo Prefeitura' :
-                           processo.status === 'projeto' ? 'Elaboração de Projeto' :
-                           processo.status === 'levantamento' ? 'Levantamento Técnico' : 'Análise Inicial'}
-                        </span>
-                        <div className="h-5 w-px bg-slate-200" />
-                        <span className="text-sm font-black text-blue-600">
-                          {Math.round((
-                             (processo.status === 'finalizado' ? 100 :
-                              processo.status === 'cartorio' ? 80 :
-                              processo.status === 'protocolo_prefeitura' ? 60 :
-                              processo.status === 'projeto' ? 40 :
-                              processo.status === 'levantamento' ? 20 : 5)
-                          ))}% COMPLETO
-                        </span>
+                {/* ── ROW 1: SUMMARY (4) + FINANCIAL (8) ── */}
+                <div className="grid grid-cols-12 gap-4 shrink-0">
+                  
+                  {/* Process Summary */}
+                  <div className="col-span-12 md:col-span-4 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                        <Target size={14} className="text-slate-500" /> Detalhes do Projeto
                       </div>
+                      <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-100 text-slate-500">{processo.codigo_projeto || 'N/A'}</span>
                     </div>
-                    <div className="w-64 space-y-2">
-                       <div className="flex justify-between items-end text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                          <span>Progresso Geral</span>
-                          <span>{Math.round(((processo.status === 'finalizado' ? 100 : processo.status === 'cartorio' ? 80 : processo.status === 'protocolo_prefeitura' ? 60 : processo.status === 'projeto' ? 40 : processo.status === 'levantamento' ? 20 : 5)))}%</span>
-                       </div>
-                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <motion.div 
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(processo.status === 'finalizado' ? 100 : processo.status === 'cartorio' ? 80 : processo.status === 'protocolo_prefeitura' ? 60 : processo.status === 'projeto' ? 40 : processo.status === 'levantamento' ? 20 : 5)}%` }}
-                            className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)]"
-                          />
-                       </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-6 gap-2">
-                    {['Entrada', 'Levantamento', 'Projeto', 'Prefeitura', 'Cartório', 'Conclusão'].map((s, i) => {
-                      const steps = ['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado']
-                      const currentIdx = steps.indexOf(processo.status || 'em_analise')
-                      const isPast = i < currentIdx
-                      const isCurrent = i === currentIdx
-                      const timeAvg = i === 1 ? '5 dias' : i === 2 ? '10 dias' : i === 3 ? '45 dias' : i === 4 ? '30 dias' : '--'
-                      
-                      return (
-                        <div key={s} className={`relative flex flex-col p-4 rounded-xl border transition-all ${
-                          isCurrent ? 'bg-blue-50/50 border-blue-200 ring-2 ring-blue-500/5 shadow-sm' : 
-                          isPast ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50 border-transparent opacity-60'
-                        }`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={`text-[9px] font-black uppercase tracking-widest ${isCurrent ? 'text-blue-600' : isPast ? 'text-emerald-600' : 'text-slate-400'}`}>{s}</span>
-                            {isPast && <CheckCircle2 size={12} className="text-emerald-500" />}
-                            {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
-                          </div>
-                          <p className={`text-[10px] font-black ${isCurrent ? 'text-slate-900' : 'text-slate-500'}`}>{isCurrent ? 'EM CURSO' : isPast ? 'CONCLUÍDO' : 'PENDENTE'}</p>
-                          {isCurrent && <p className="text-[8px] font-bold text-blue-500 uppercase mt-1">Média: {timeAvg}</p>}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {/* ROW 2: PAINEL OPERACIONAL */}
-                <div className="grid grid-cols-3 gap-6 h-[25vh] min-h-0 shrink-0">
-                  {/* CARD 1: PRÓXIMA AÇÃO */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-amber-200 transition-all border-l-4 border-l-amber-400">
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500">
-                          <Target size={16} />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Próxima Ação</h3>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-[12px] font-bold text-slate-900 leading-tight uppercase">{processo.tipo_regularizacao}</p>
+                        <p className="text-[10px] text-slate-500 truncate mt-1">Cliente: {processo.cliente?.nome}</p>
                       </div>
                       
-                      {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 1).map((t: any) => (
-                        <div key={t.id} className="space-y-1">
-                          <p className="text-sm font-black text-slate-900 leading-tight uppercase line-clamp-2">{t.titulo}</p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Sugestão: {new Date(t.data).toLocaleDateString('pt-BR')}</p>
+                      <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Localização</p>
+                          <p className="text-[10px] font-medium text-slate-800 truncate">{processo.imovel?.endereco}, {processo.imovel?.numero}</p>
                         </div>
-                      )) || (
-                        <div className="space-y-1">
-                          <p className="text-sm font-black text-slate-900 leading-tight uppercase">
-                            {processo.status === 'em_analise' ? 'Iniciar levantamento cadastral' :
-                             processo.status === 'levantamento' ? 'Elaborar relatório fotográfico' :
-                             processo.status === 'projeto' ? 'Finalizar memorial descritivo' :
-                             processo.status === 'protocolo_prefeitura' ? 'Acompanhar deferimento' : 'Aguardar registro final'}
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Tempo Ativo</p>
+                          <p className="text-[10px] font-medium text-slate-800">
+                            <span className={Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'text-red-500 font-bold' : ''}>
+                              {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias
+                            </span>
                           </p>
-                          <p className="text-[9px] font-bold text-slate-400 uppercase">Ação sugerida pelo sistema</p>
                         </div>
-                      )}
+                      </div>
                     </div>
-                    
-                    <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="w-full mt-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
-                       Executar Ação
-                    </button>
                   </div>
 
-                  {/* CARD 2: PERFORMANCE FINANCEIRA */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-emerald-200 transition-all">
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
-                          <TrendingUp size={16} />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Performance Financeira</h3>
+                  {/* Financial Intelligence */}
+                  <div className="col-span-12 md:col-span-8 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 opacity-50" />
+                    
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-4 relative z-10">
+                      <TrendingUp size={14} className="text-emerald-500" /> Financial Intelligence
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-4 relative z-10">
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Contrato</p>
+                        <p className="text-lg font-bold text-slate-900 tracking-tight">{fmt(stats?.totalContratado || 0)}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-y-4 gap-x-6">
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Contratado</p>
-                          <p className="text-[12px] font-black text-slate-900">{fmt(stats?.totalContratado || 0)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Recebido</p>
-                          <p className="text-[12px] font-black text-emerald-600">{fmt(stats?.totalRecebido || 0)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Custos/Repasses</p>
-                          <p className="text-[12px] font-black text-red-500">{fmt(stats?.totalRepasses || 0)}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Lucro Est.</p>
-                          <p className="text-[12px] font-black text-blue-600">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
-                        </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Recebido</p>
+                        <p className="text-lg font-bold text-emerald-600 tracking-tight">{fmt(stats?.totalRecebido || 0)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Repasses/Custos</p>
+                        <p className="text-lg font-bold text-red-500 tracking-tight">{fmt(stats?.totalRepasses || 0)}</p>
+                      </div>
+                      <div className="pl-4 border-l border-slate-100">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Lucro Estimado</p>
+                        <p className="text-lg font-bold text-[hsl(231,100%,60%)] tracking-tight">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
                       </div>
                     </div>
-                    
-                    <div className="space-y-2 mt-6">
-                      <div className="flex justify-between items-end text-[9px] font-black text-slate-400 uppercase">
-                        <span>Margem Bruta</span>
-                        <span className="text-blue-600">{stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.lucroEstimadoFinal / stats.totalContratado) * 100) : 0}%</span>
-                      </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+
+                    <div className="mt-4 flex items-center gap-3 relative z-10">
+                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
-                          animate={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.max(0, Math.min(100, (stats.lucroEstimadoFinal / stats.totalContratado) * 100)) : 0}%` }}
-                          className="h-full bg-blue-500"
+                          animate={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.max(0, Math.min(100, (stats.totalRecebido / stats.totalContratado) * 100)) : 0}%` }}
+                          className="h-full bg-emerald-500"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* CARD 3: SAÚDE DO PROCESSO */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-blue-200 transition-all">
-                    <div>
-                      <div className="flex items-center gap-2 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
-                          <Activity size={16} />
-                        </div>
-                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Saúde do Projeto</h3>
-                      </div>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">Tempo em andamento</span>
-                          <span className="text-[11px] font-black text-slate-900">{Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">Prazo esperado</span>
-                          <span className="text-[11px] font-black text-slate-900">60 dias</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 mt-4 p-2 bg-slate-50 rounded-xl">
-                      <div className={`w-2 h-2 rounded-full ${
-                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'bg-red-500 animate-pulse' :
-                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 45 ? 'bg-amber-500' : 'bg-emerald-500'
-                      }`} />
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${
-                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'text-red-600' :
-                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 45 ? 'text-amber-600' : 'text-emerald-600'
-                      }`}>
-                        {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'Operação Atrasada' :
-                         Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 45 ? 'Atenção ao Prazo' : 'Dentro do Prazo'}
+                      <span className="text-[9px] font-bold text-emerald-600 font-mono tracking-tighter">
+                        {stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}% RECEBIDO
                       </span>
                     </div>
                   </div>
+
                 </div>
 
-                {/* ROW 3: DETALHES E HISTÓRICO */}
-                <div className="grid grid-cols-3 gap-6 h-[30vh] min-h-0 overflow-hidden shrink-0">
-                  {/* CARD 1: DOSSIÊ DO PROJETO */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
-                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-4 border-b border-slate-50 pb-2">Dossiê de Ativos</h3>
-                     <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Cliente / Proprietário</p>
-                          <p className="text-[11px] font-black text-slate-900 truncate uppercase">{processo.cliente?.nome}</p>
-                          <p className="text-[9px] font-bold text-slate-500 font-mono">{processo.cliente?.cpf_cnpj}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Localização</p>
-                          <p className="text-[11px] font-black text-slate-900 truncate uppercase">{processo.imovel?.endereco}, {processo.imovel?.numero}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">Matrícula</p>
-                            <p className="text-[10px] font-black text-slate-700 font-mono">{processo.imovel?.num_matricula || 'N/A'}</p>
+                {/* ── ROW 2: PIPELINE (8) + NEXT ACTIONS (4) ── */}
+                <div className="grid grid-cols-12 gap-4 h-[35vh] min-h-[250px] shrink-0">
+                  
+                  {/* Workflow Pipeline */}
+                  <div className="col-span-12 md:col-span-8 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col h-full">
+                    <div className="flex items-center justify-between mb-4 shrink-0">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                        <Layers size={14} className="text-blue-500" /> Workflow Pipeline
+                      </div>
+                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
+                        Etapa Atual: {STATUS_LABELS[processo.status] || processo.status}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 overflow-x-auto flex items-center gap-3 custom-scrollbar pb-2">
+                      {['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado'].map((s, i, arr) => {
+                        const currentIdx = arr.indexOf(processo.status || 'em_analise')
+                        const isPast = i < currentIdx
+                        const isCurrent = i === currentIdx
+                        const label = STATUS_LABELS[s] || s
+                        
+                        return (
+                          <div key={s} className={`relative flex-1 min-w-[120px] flex flex-col p-4 rounded-xl border transition-all h-full justify-between ${
+                            isCurrent ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-500/20 shadow-sm' : 
+                            isPast ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50 border-transparent opacity-60'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-[9px] font-black uppercase tracking-widest ${isCurrent ? 'text-blue-600' : isPast ? 'text-emerald-600' : 'text-slate-400'}`}>0{i+1}</span>
+                              {isPast && <CheckCircle2 size={12} className="text-emerald-500" />}
+                              {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
+                            </div>
+                            
+                            <div className="mt-4">
+                              <p className={`text-[11px] font-bold leading-tight ${isCurrent ? 'text-slate-900' : 'text-slate-600'}`}>{label}</p>
+                              <p className={`text-[9px] font-medium uppercase mt-1 ${isCurrent ? 'text-blue-500' : isPast ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                {isCurrent ? 'EM PROGRESSO' : isPast ? 'CONCLUÍDO' : 'PENDENTE'}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-[8px] font-bold text-slate-400 uppercase">Inscrição</p>
-                            <p className="text-[10px] font-black text-slate-700 font-mono">{processo.imovel?.inscricao_imobiliaria || 'N/A'}</p>
-                          </div>
-                        </div>
-                     </div>
+                        )
+                      })}
+                    </div>
                   </div>
 
-                  {/* CARD 2: DOCUMENTOS DO PROCESSO */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
-                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2">
-                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Repositório ({processo.documentos?.length || 0})</h3>
-                        <button onClick={() => setTab('documentos')} className="text-[9px] font-black text-blue-600 uppercase hover:underline">Ver Todos</button>
+                  {/* Tasks / Next Actions */}
+                  <div className="col-span-12 md:col-span-4 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col h-full border-l-4 border-l-amber-400">
+                    <div className="flex items-center justify-between mb-4 shrink-0">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-800 uppercase tracking-[0.1em] font-mono">
+                        <Zap size={14} className="text-amber-500 fill-amber-500/20" /> Next Actions
+                      </div>
+                      <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="p-1 hover:bg-slate-50 rounded text-slate-400">
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                      {processo.tarefas?.filter((t: any) => t.status === 'pendente').map((t: any) => (
+                        <div key={t.id} onClick={() => { setTarefaToEdit(t); setIsTaskModalOpen(true) }} className="p-3 rounded-xl border border-slate-100 hover:border-slate-300 bg-slate-50/50 cursor-pointer group transition-all">
+                          <p className="text-[11px] font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors">{t.titulo}</p>
+                          <p className="text-[9px] font-medium text-slate-500 mt-1 flex items-center gap-1">
+                            <Clock size={10} /> {new Date(t.data).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      ))}
+                      {(!processo.tarefas || processo.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
+                        <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
+                          <CheckCircle2 size={24} className="text-emerald-500 mb-2" />
+                          <p className="text-[10px] font-medium text-slate-500 uppercase">Nenhuma ação pendente</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* ── ROW 3: DOCUMENTS (6) + ACTIVITY TIMELINE (6) ── */}
+                <div className="grid grid-cols-12 gap-4 flex-1 min-h-[200px]">
+                  
+                  {/* Documents Automation */}
+                  <div className="col-span-12 md:col-span-6 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col min-h-0">
+                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2 shrink-0">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                          <FileText size={14} /> Automation Hub (Docs)
+                        </div>
+                        <button onClick={() => setTab('documentos')} className="text-[9px] font-bold text-primary uppercase hover:underline">Ver Todos</button>
                      </div>
                      <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
-                        {processo.documentos?.slice(0, 3).map((d: any) => (
-                          <div key={d.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl group hover:bg-white border border-transparent hover:border-slate-100 transition-all">
-                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 shadow-sm">
+                        {processo.documentos?.slice(0, 4).map((d: any) => (
+                          <div key={d.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
+                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
                                 <FileText size={14} />
                              </div>
                              <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-black text-slate-800 truncate uppercase">{d.nome}</p>
-                                <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date(d.createdAt).toLocaleDateString('pt-BR')}</p>
+                                <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{d.nome}</p>
+                                <p className="text-[8px] font-medium text-slate-400 uppercase">{d.categoria} • {new Date(d.createdAt).toLocaleDateString('pt-BR')}</p>
                              </div>
                           </div>
                         ))}
                         {(!processo.documentos || processo.documentos.length === 0) && (
-                          <p className="text-[9px] text-slate-300 font-black uppercase text-center py-8">Nenhum documento</p>
+                          <div className="flex flex-col items-center justify-center py-6 opacity-50">
+                            <FileText size={20} className="text-slate-400 mb-2" />
+                            <p className="text-[9px] text-slate-500 font-bold uppercase">Nenhum documento</p>
+                          </div>
                         )}
                      </div>
                   </div>
 
-                  {/* CARD 3: ATIVIDADES RECENTES */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
-                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-4 border-b border-slate-50 pb-2">Log de Operação</h3>
-                     <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
-                        {processo.logs?.slice(0, 5).map((log: any, i: number) => (
-                          <div key={i} className="flex gap-3 relative">
-                             {i !== 4 && <div className="absolute left-1.5 top-3 bottom-0 w-px bg-slate-100" />}
-                             <div className="w-3 h-3 rounded-full bg-slate-200 border-2 border-white relative z-10 shrink-0 mt-0.5" />
+                  {/* Activity Timeline */}
+                  <div className="col-span-12 md:col-span-6 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col min-h-0">
+                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2 shrink-0">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                          <Activity size={14} /> Activity Timeline
+                        </div>
+                     </div>
+                     <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar pl-2">
+                        {processo.logs?.slice(0, 6).map((log: any, i: number) => (
+                          <div key={i} className="flex gap-4 relative">
+                             {i !== 5 && <div className="absolute left-[5px] top-4 bottom-[-16px] w-[2px] bg-slate-100" />}
+                             <div className="w-3 h-3 rounded-full bg-slate-200 border-2 border-white relative z-10 shrink-0 mt-0.5 shadow-sm" />
                              <div>
                                 <p className="text-[10px] font-bold text-slate-800 leading-tight uppercase">{log.acao}</p>
-                                <p className="text-[8px] text-slate-400 uppercase font-bold">{new Date(log.createdAt).toLocaleDateString('pt-BR')} • {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                <p className="text-[8px] text-slate-400 uppercase font-medium mt-0.5 font-mono">{new Date(log.createdAt).toLocaleDateString('pt-BR')} • {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                              </div>
                           </div>
                         ))}
                         {(!processo.logs || processo.logs.length === 0) && (
-                           processo.tarefas?.slice(0, 5).map((t: any, i: number) => (
-                             <div key={i} className="flex gap-3 relative">
-                                {i !== 4 && <div className="absolute left-1.5 top-3 bottom-0 w-px bg-slate-100" />}
-                                <div className="w-3 h-3 rounded-full bg-blue-100 border-2 border-white relative z-10 shrink-0 mt-0.5" />
-                                <div>
-                                   <p className="text-[10px] font-bold text-slate-800 leading-tight uppercase">TAREFA: {t.titulo}</p>
-                                   <p className="text-[8px] text-slate-400 uppercase font-bold">{t.status}</p>
-                                </div>
-                             </div>
-                           ))
+                          <p className="text-[9px] text-slate-400 font-bold uppercase text-center py-6">Sem atividades recentes</p>
                         )}
                      </div>
                   </div>
+
                 </div>
 
               </div>

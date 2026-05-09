@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Briefcase, Users, Building2, DollarSign,
   FileText, Calendar, Settings, Bell, Plus,
   BarChart3, Search, Sparkles, Command, ChevronLeft,
-  ChevronRight, ChevronDown, Zap
+  ChevronRight, Zap
 } from 'lucide-react'
 import GlobalSearch from '@/components/GlobalSearch'
 
@@ -50,165 +50,154 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname])
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
-  const W = collapsed ? 60 : 228
+  const W = collapsed ? 70 : 220
 
   return (
-    <div className="app-shell" style={{ '--sidebar-width': `${W}px` } as any}>
+    <div className="flex h-screen w-full bg-slate-50/50 overflow-hidden font-sans">
 
-      {/* ── HEADER ──────────────────────────────────────────── */}
-      <header className="header-premium" style={{ gridColumn: '1 / -1' }}>
-
-        {/* Logo */}
-        <div className="flex items-center gap-3 shrink-0" style={{ width: W - 16 }}>
-          <div className="w-7 h-7 rounded-lg bg-[hsl(231,100%,60%)] flex items-center justify-center shadow-md shrink-0">
-            <Zap size={14} className="text-white fill-white/30" />
+      {/* ── SIDEBAR ─────────────────────────────────────────── */}
+      <motion.aside 
+        initial={false}
+        animate={{ width: W }}
+        className="relative bg-white border-r border-slate-200/60 flex flex-col z-50 shrink-0"
+      >
+        {/* Top Header / Logo Area */}
+        <div className="h-[64px] flex items-center px-5 border-b border-slate-100 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center shadow-lg shadow-slate-900/10 shrink-0">
+            <Zap size={16} className="text-white fill-white/20" />
           </div>
           <AnimatePresence>
             {!collapsed && (
               <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'auto' }}
-                exit={{ opacity: 0, width: 0 }}
-                className="flex flex-col overflow-hidden"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                className="ml-3 flex flex-col overflow-hidden"
               >
-                <span className="text-[12px] font-bold text-slate-900 leading-none tracking-tight whitespace-nowrap">Regulare Pro</span>
-                <span className="text-[9px] font-medium text-slate-400 uppercase tracking-widest mt-0.5 whitespace-nowrap">Command Center</span>
+                <span className="text-sm font-bold text-slate-900 leading-tight tracking-tight whitespace-nowrap">Regulare Pro</span>
+                <span className="text-[9px] font-bold text-[hsl(231,100%,60%)] uppercase tracking-[0.2em] whitespace-nowrap">Command Center</span>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Global search */}
-        <div className="flex-1 flex justify-center">
-          <button
-            onClick={() => setIsSearchOpen(true)}
-            className="cmd-bar w-full max-w-md group"
-          >
-            <Search size={13} className="text-slate-400 group-hover:text-slate-600 transition-colors shrink-0" />
-            <span className="flex-1 text-left text-[12px] text-slate-400">Pesquisar em tudo...</span>
-            <div className="flex items-center gap-0.5 bg-white border border-slate-200 px-1.5 py-0.5 rounded-md text-[9px] font-bold text-slate-400 shadow-sm mono">
-              <Command size={9} />K
-            </div>
-          </button>
-        </div>
-
-        {/* Right actions */}
-        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-          <button className="btn btn-ghost btn-sm gap-1.5 text-indigo-600 bg-indigo-50 hover:bg-indigo-100">
-            <Sparkles size={12} />
-            <span className="hidden md:inline font-semibold">IA Assist</span>
-          </button>
-
-          <Link href="/processos/novo" className="btn btn-primary btn-sm">
-            <Plus size={13} strokeWidth={2.5} />
-            <span className="hidden sm:inline">Lançar</span>
-          </Link>
-
-          <div className="w-px h-5 bg-slate-200 mx-1" />
-
-          <button className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-slate-100 rounded-lg transition-colors relative">
-            <Bell size={15} />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 border border-white rounded-full" />
-          </button>
-
-          <div className="flex items-center gap-2 ml-1 pl-3 border-l border-slate-100 cursor-pointer group">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-slate-700 to-slate-950 flex items-center justify-center text-[10px] font-bold text-white uppercase shadow-sm">
-              JC
-            </div>
-            <ChevronDown size={11} className="text-slate-400 group-hover:text-slate-600 transition-colors" />
-          </div>
-        </div>
-      </header>
-
-      <div className="workspace-container">
-        {/* ── SIDEBAR ─────────────────────────────────────────── */}
-        <aside className="sidebar-premium" style={{ width: W }}>
-          <div className="flex-1 py-3 flex flex-col overflow-y-auto overflow-x-hidden scrollbar-hide">
-
-            {/* Nav sections */}
-            {!collapsed && (
-              <p className="nav-section-label">Workspace</p>
-            )}
-
-            <div className="px-2 space-y-0.5">
-              {NAV_MAIN.map(item => (
+        {/* Navigation Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-6 px-3 space-y-8 scrollbar-hide">
+          
+          {/* Main Navigation */}
+          <div>
+            {!collapsed && <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 mb-3">Workspace</p>}
+            <nav className="space-y-1">
+              {NAV_MAIN.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={`sidebar-item-premium ${isActive(item.href) ? 'sidebar-item-active-premium' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative group ${
+                    isActive(item.href) 
+                      ? 'bg-[hsl(231,100%,60%)] text-white shadow-lg shadow-blue-500/20' 
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
                 >
-                  <div className={`flex items-center justify-center shrink-0 ${collapsed ? 'w-full' : 'w-4'}`}>
-                    <item.icon
-                      size={collapsed ? 18 : 15}
-                      strokeWidth={isActive(item.href) ? 2.5 : 2}
-                      className={isActive(item.href) ? 'text-[hsl(231,100%,70%)]' : ''}
-                    />
-                  </div>
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 text-ellipsis overflow-hidden">{item.label}</span>
-                      {item.badge && processCount > 0 && (
-                        <span className="text-[9px] font-bold bg-[hsl(231,100%,60%)] text-white px-1.5 py-0.5 rounded-md">
-                          {processCount}
-                        </span>
-                      )}
-                    </>
+                  <item.icon size={18} strokeWidth={isActive(item.href) ? 2.5 : 2} />
+                  {!collapsed && <span className="text-[13px] font-semibold">{item.label}</span>}
+                  {item.badge && !collapsed && processCount > 0 && (
+                    <span className="ml-auto bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-md">
+                      {processCount}
+                    </span>
+                  )}
+                  {collapsed && (
+                    <div className="absolute left-14 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                      {item.label}
+                    </div>
                   )}
                 </Link>
               ))}
-            </div>
+            </nav>
+          </div>
 
-            <div className={`my-3 ${collapsed ? 'mx-3' : 'mx-3'} h-px bg-white/[0.05]`} />
-
-            {!collapsed && (
-              <p className="nav-section-label">Ferramentas</p>
-            )}
-
-            <div className="px-2 space-y-0.5">
-              {NAV_TOOLS.map(item => (
+          {/* Tools Navigation */}
+          <div>
+            {!collapsed && <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 mb-3">Intelligence</p>}
+            <nav className="space-y-1">
+              {NAV_TOOLS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  title={collapsed ? item.label : undefined}
-                  className={`sidebar-item-premium ${isActive(item.href) ? 'sidebar-item-active-premium' : ''}`}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all relative group ${
+                    isActive(item.href) 
+                      ? 'bg-slate-100 text-slate-900' 
+                      : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
                 >
-                  <div className={`flex items-center justify-center shrink-0 ${collapsed ? 'w-full' : 'w-4'}`}>
-                    <item.icon
-                      size={collapsed ? 18 : 15}
-                      strokeWidth={isActive(item.href) ? 2.5 : 2}
-                      className={isActive(item.href) ? 'text-[hsl(231,100%,70%)]' : ''}
-                    />
-                  </div>
-                  {!collapsed && <span className="flex-1 text-ellipsis overflow-hidden">{item.label}</span>}
+                  <item.icon size={18} strokeWidth={2} />
+                  {!collapsed && <span className="text-[13px] font-semibold">{item.label}</span>}
+                  {collapsed && (
+                    <div className="absolute left-14 bg-slate-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">
+                      {item.label}
+                    </div>
+                  )}
                 </Link>
               ))}
-            </div>
+            </nav>
           </div>
+        </div>
 
-          {/* Collapse toggle */}
-          <div className="p-2 border-t border-white/[0.05]">
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="sidebar-item-premium w-full justify-center"
+        {/* Footer Area */}
+        <div className="p-4 border-t border-slate-100">
+          <button 
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-full h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 hover:bg-slate-100 transition-all border border-slate-200/50"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
+      </motion.aside>
+
+      {/* ── MAIN CONTENT ────────────────────────────────────── */}
+      <main className="flex-1 flex flex-col min-w-0 h-screen relative bg-[url('/grid.svg')] bg-repeat">
+        
+        {/* Global Header */}
+        <header className="h-[64px] bg-white border-b border-slate-200/60 px-6 flex items-center justify-between z-40">
+          <div className="flex-1 max-w-xl">
+             <button
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-3 w-full bg-slate-50 border border-slate-200 h-10 px-4 rounded-xl text-slate-400 hover:border-slate-300 hover:bg-slate-100/50 transition-all group"
             >
-              <div className={`flex items-center justify-center ${collapsed ? 'w-full' : 'w-4'}`}>
-                {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              <Search size={14} className="group-hover:text-slate-600" />
+              <span className="text-xs">Quick Search Project or Task...</span>
+              <div className="ml-auto flex items-center gap-1 bg-white border border-slate-200 px-1.5 py-0.5 rounded shadow-sm text-[10px] font-black text-slate-400 font-mono">
+                <Command size={10} /> K
               </div>
-              {!collapsed && <span className="flex-1 text-[11px]">Recolher</span>}
             </button>
           </div>
-        </aside>
 
-        {/* ── MAIN ────────────────────────────────────────────── */}
-        <main className="workspace-content">
-          <div className="scroll-container">
-            <div className="max-w-[1600px] mx-auto animate-fade-up">
-              {children}
+          <div className="flex items-center gap-3 ml-6">
+            <button className="flex items-center gap-2 px-4 h-10 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-bold hover:bg-indigo-100 transition-all border border-indigo-100">
+               <Sparkles size={14} className="fill-indigo-600/20" /> IA ASSIST
+            </button>
+            <div className="w-[1px] h-6 bg-slate-200 mx-1" />
+            <div className="flex items-center gap-3 pl-2">
+              <button className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 hover:bg-slate-50 relative border border-slate-200/50">
+                <Bell size={18} />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 border-2 border-white rounded-full" />
+              </button>
+              <div className="w-10 h-10 rounded-xl bg-[hsl(231,100%,60%)] flex items-center justify-center text-white font-black text-xs shadow-md border border-white/20">
+                 JC
+              </div>
             </div>
           </div>
-        </main>
-      </div>
+        </header>
+
+        {/* Dynamic Viewport */}
+        <div className="flex-1 overflow-hidden h-[calc(100vh-64px)]">
+           <div className="h-full w-full overflow-y-auto bg-slate-50/30 p-6 md:p-8 scrollbar-premium">
+              <div className="max-w-[1600px] mx-auto animate-fade-up">
+                {children}
+              </div>
+           </div>
+        </div>
+
+      </main>
 
       <GlobalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
     </div>
