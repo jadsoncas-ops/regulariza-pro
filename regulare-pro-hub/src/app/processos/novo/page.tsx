@@ -442,6 +442,22 @@ function WizardContent() {
               </div>
 
               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-12 gap-4">
+                <div className="col-span-12 flex justify-center mb-2">
+                  <button 
+                    onClick={() => setImovelData(prev => ({
+                      ...prev,
+                      cep: clienteData.cep,
+                      endereco: clienteData.endereco,
+                      numero: clienteData.numero,
+                      bairro: clienteData.bairro,
+                      cidade: clienteData.cidade,
+                      estado: clienteData.estado
+                    }))}
+                    className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+                  >
+                    <MapPin size={12} /> APROVEITAR ENDEREÇO DO CLIENTE
+                  </button>
+                </div>
                 <div className="col-span-3">
                   <Label>CEP</Label>
                   <div className="relative">
