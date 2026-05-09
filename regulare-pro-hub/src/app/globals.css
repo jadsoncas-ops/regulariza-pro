@@ -301,8 +301,23 @@
 }
 
 /* Legacy alias (keeps existing code working) */
-.btn-premium { @apply btn btn-primary; }
-.btn-secondary-premium { @apply btn btn-secondary; }
+.btn-premium {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--r-md); font-size: 12px; font-weight: 600;
+  letter-spacing: -0.005em; transition: all 150ms; cursor: pointer; border: none; outline: none; white-space: nowrap;
+  background: hsl(var(--brand)); color: white; box-shadow: 0 1px 2px rgb(0 0 0 / 0.15), inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+.btn-premium:hover { background: hsl(var(--brand-hover)); box-shadow: var(--shadow-sm); }
+.btn-premium:active { transform: scale(0.97); }
+
+.btn-secondary-premium {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 14px; border-radius: var(--r-md); font-size: 12px; font-weight: 600;
+  letter-spacing: -0.005em; transition: all 150ms; cursor: pointer; border: 1px solid hsl(var(--border)); outline: none; white-space: nowrap;
+  background: hsl(var(--surface)); color: hsl(var(--text-primary)); box-shadow: var(--shadow-xs);
+}
+.btn-secondary-premium:hover { background: hsl(var(--surface-alt)); }
+.btn-secondary-premium:active { transform: scale(0.97); }
 
 /* ── Badge / Pill ─────────────────────────────────────────── */
 .badge {
