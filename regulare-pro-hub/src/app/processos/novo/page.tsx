@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 import LocationPicker from '@/components/imoveis/LocationPicker'
+import { PROCESS_TEMPLATES, getTemplateList } from '@/lib/templates'
 
 // --- COMPONENTES UI AUXILIARES ---
 function Label({ children, help }: { children: React.ReactNode; help?: string }) {
@@ -41,19 +42,6 @@ function Input({ ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
   )
 }
 
-// --- CONSTANTES E MOCK DATA ---
-const NATUREZAS = [
-  { id: 'regularizacao', label: 'Regularização Imobiliária', icon: Building2, desc: 'Fluxo completo de legalização' },
-  { id: 'obra', label: 'Administração de Obra', icon: Settings2, desc: 'Gestão e acompanhamento técnico' },
-  { id: 'projeto', label: 'Projeto Arquitetônico', icon: Layers, desc: 'Criação e detalhamento técnico' },
-  { id: 'habitese', label: 'Habite-se', icon: CheckCircle2, desc: 'Obtenção de certificado de conclusão' },
-  { id: 'averbacao', label: 'Averbação', icon: ClipboardList, desc: 'Atualização de matrícula no cartório' },
-  { id: 'desmembramento', label: 'Desmembramento', icon: Sparkles, desc: 'Divisão ou unificação de áreas' },
-  { id: 'consultoria', label: 'Consultoria Técnica', icon: HelpCircle, desc: 'Análise e parecer especializado' },
-  { id: 'laudo', label: 'Laudo Técnico', icon: FileText, desc: 'Perícia e vistorias detalhadas' },
-  { id: 'levantamento', label: 'Levantamento Técnico', icon: MapPin, desc: 'Medições e cadastros in loco' },
-]
-
 const CATALOGO_ATIVIDADES = [
   { id: '1', nome: 'Levantamento cadastral', categoria: 'Levantamentos' },
   { id: '2', nome: 'Relatório fotográfico', categoria: 'Levantamentos' },
@@ -76,14 +64,16 @@ const CATALOGO_ATIVIDADES = [
   { id: '19', nome: 'Administração de Obra', categoria: 'Gestão de obra' },
 ]
 
-const ESCOPOS_SUGERIDOS: Record<string, string[]> = {
-  regularizacao: ['1', '2', '3', '4', '5', '6', '7', '8', '10', '11', '12'],
-  obra: ['15', '16', '8', '13', '19'],
-  projeto: ['1', '3', '4', '6'],
-  habitese: ['5', '10', '11'],
-  averbacao: ['11', '12', '18'],
-  levantamento: ['1', '2', '14', '13'],
-}
+const NATUREZAS = getTemplateList().map(t => ({
+  id: t.id,
+  label: t.label,
+  icon: t.icon === 'Building2' ? Building2 : 
+        t.icon === 'Settings2' ? Settings2 : 
+        t.icon === 'Layers' ? Layers : 
+        t.icon === 'ClipboardList' ? ClipboardList : Sparkles,
+  desc: t.description,
+  basePrice: t.basePrice
+}))
 
 // --- PÁGINA PRINCIPAL ---
 export default function NovoProjetoWizard() {
@@ -226,12 +216,15 @@ function WizardContent() {
     }
   }, [processo.codigo])
 
-  // LÓGICA DE GERAÇÃO DE ESCOPO
+  // LÓGICA DE GERAÇÃO DE ESCOPO (SMART TEMPLATES)
   useEffect(() => {
-    if (processo.natureza && ESCOPOS_SUGERIDOS[processo.natureza]) {
-      const atividadesIds = ESCOPOS_SUGERIDOS[processo.natureza]
-      const atividades = atividadesIds.map(id => CATALOGO_ATIVIDADES.find(a => a.id === id)).filter(Boolean)
-      setProcesso(prev => ({ ...prev, atividades }))
+    if (processo.natureza && PROCESS_TEMPLATES[processo.natureza]) {
+      const template = PROCESS_TEMPLATES[processo.natureza]
+      setProcesso(prev => ({ 
+        ...prev, 
+        atividades: template.stages.map((s:any) => ({ nome: s.titulo })), 
+        valorTotal: template.basePrice ? String(template.basePrice) : prev.valorTotal 
+      }))
     }
   }, [processo.natureza])
 

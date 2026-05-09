@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { PROCESS_TEMPLATES } from '@/lib/templates'
 
 export async function POST(request: Request) {
   try {
@@ -148,6 +149,51 @@ export async function POST(request: Request) {
               status: desp.status,
               data_vencimento: new Date(desp.data),
               data_pagamento: desp.status === 'pago' ? new Date(desp.data) : null
+            }
+          })
+        }
+      }
+      
+      // 5. INJEÇÃO DE SMART TEMPLATES (Workflow Stages e Checklist Documental)
+      const template = PROCESS_TEMPLATES[data.processo.natureza] || PROCESS_TEMPLATES['regularizacao']
+      
+      if (template) {
+        // Criar Workflow Stages (Tarefas e Protocolos)
+        for (const stage of template.stages) {
+          if (stage.tipo === 'tarefa') {
+            await tx.tarefa.create({
+              data: {
+                processoId: processo.id,
+                titulo: stage.titulo.toUpperCase(),
+                descricao: `Gerado automaticamente via template: ${template.label.toUpperCase()}`,
+                status: 'pendente',
+                prioridade: 'normal',
+                data: new Date() // data inicial, pode ser ajustada no front
+              }
+            })
+          } else if (stage.tipo === 'protocolo') {
+            await tx.protocolo.create({
+              data: {
+                processoId: processo.id,
+                orgao: stage.orgao.toUpperCase(),
+                numero_protocolo: 'PENDENTE',
+                status: 'analise',
+                data: new Date()
+              }
+            })
+          }
+        }
+
+        // Criar Checklist de Documentos
+        for (const doc of template.documents) {
+          await tx.documento.create({
+            data: {
+              processoId: processo.id,
+              nome: doc.nome ? doc.nome.toUpperCase() : 'DOCUMENTO',
+              tipo: 'pdf',
+              categoria: doc.categoria.toUpperCase(),
+              url: 'PENDENTE',
+              status: 'pendente'
             }
           })
         }
