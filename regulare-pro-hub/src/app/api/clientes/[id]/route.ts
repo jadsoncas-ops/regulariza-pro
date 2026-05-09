@@ -49,6 +49,7 @@ export async function PATCH(
         cidade: data.cidade || null,
         estado: data.estado || null,
         cep: data.cep || null,
+        rg_ie: data.rg_ie || null,
         observacoes: data.observacoes || null,
       }
     })

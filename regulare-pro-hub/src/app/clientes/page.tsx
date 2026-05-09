@@ -55,14 +55,25 @@ export default function ClientesPage() {
   , [clientes, selectedId])
 
   const financialStats = useMemo(() => {
-    if (!selectedCliente || !selectedCliente.financeiro) return { pendente: 0, recebido: 0 }
-    const pendente = selectedCliente.financeiro
+    if (!selectedCliente || !selectedCliente.financeiro) return { totalContrato: 0, recebido: 0, pendenteReceber: 0, pendentePagar: 0 }
+    
+    const totalContrato = selectedCliente.financeiro
+      .filter((f: any) => f.tipo === 'receita')
+      .reduce((acc: number, f: any) => acc + f.valor, 0)
+      
+    const recebido = selectedCliente.financeiro
+      .filter((f: any) => f.tipo === 'receita')
+      .reduce((acc: number, f: any) => acc + (f.valor_pago || 0), 0)
+      
+    const pendenteReceber = selectedCliente.financeiro
       .filter((f: any) => f.tipo === 'receita' && f.status === 'pendente')
       .reduce((acc: number, f: any) => acc + (f.valor - (f.valor_pago || 0)), 0)
-    const recebido = selectedCliente.financeiro
-      .filter((f: any) => f.tipo === 'receita' && (f.status === 'pago' || f.status === 'recebido'))
-      .reduce((acc: number, f: any) => acc + (f.valor_pago || 0), 0)
-    return { pendente, recebido }
+      
+    const pendentePagar = selectedCliente.financeiro
+      .filter((f: any) => f.tipo === 'despesa' && f.status === 'pendente')
+      .reduce((acc: number, f: any) => acc + (f.valor - (f.valor_pago || 0)), 0)
+
+    return { totalContrato, recebido, pendenteReceber, pendentePagar }
   }, [selectedCliente])
 
   const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -75,9 +86,6 @@ export default function ClientesPage() {
         <div className="p-4 border-b border-slate-100 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">Clientes</h2>
-            <Link href="/clientes/novo" className="p-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition-all">
-              <Plus size={16} strokeWidth={2.5} />
-            </Link>
           </div>
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -302,14 +310,22 @@ export default function ClientesPage() {
 
                 {tab === 'financeiro' && (
                   <div className="space-y-10">
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="p-6 bg-slate-900 rounded-[32px] text-white shadow-xl shadow-slate-200">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono mb-2">SALDO EM ABERTO</p>
-                          <p className="text-2xl font-bold tracking-tight">{fmt(financialStats.pendente)}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                       <div className="p-5 bg-slate-900 rounded-[24px] text-white shadow-lg border border-slate-800">
+                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest font-mono mb-2">TOTAL CONTRATOS</p>
+                          <p className="text-xl font-bold tracking-tight">{fmt(financialStats.totalContrato)}</p>
                        </div>
-                       <div className="p-6 bg-emerald-500 border border-emerald-400 rounded-[32px] text-white shadow-xl shadow-emerald-100">
-                          <p className="text-[10px] font-bold text-emerald-100/60 uppercase tracking-widest font-mono mb-2">TOTAL RECEBIDO</p>
-                          <p className="text-2xl font-bold tracking-tight">{fmt(financialStats.recebido)}</p>
+                       <div className="p-5 bg-emerald-500 rounded-[24px] text-white shadow-lg border border-emerald-400">
+                          <p className="text-[9px] font-bold text-emerald-100/60 uppercase tracking-widest font-mono mb-2">TOTAL RECEBIDO</p>
+                          <p className="text-xl font-bold tracking-tight">{fmt(financialStats.recebido)}</p>
+                       </div>
+                       <div className="p-5 bg-white rounded-[24px] text-slate-900 shadow-sm border border-slate-200">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2">PENDENTE RECEBER</p>
+                          <p className="text-xl font-bold tracking-tight text-primary">{fmt(financialStats.pendenteReceber)}</p>
+                       </div>
+                       <div className="p-5 bg-white rounded-[24px] text-slate-900 shadow-sm border border-slate-200">
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-2">PENDENTE PAGAR</p>
+                          <p className="text-xl font-bold tracking-tight text-red-500">{fmt(financialStats.pendentePagar)}</p>
                        </div>
                     </div>
                     <div className="space-y-4">

@@ -95,7 +95,7 @@ function WizardContent() {
   // ESTADO GLOBAL DO WIZARD
   const [formData, setFormData] = useState({
     cliente: { 
-      nome: '', cpf_cnpj: '', telefone: '', email: '', 
+      nome: '', cpf_cnpj: '', rg_ie: '', telefone: '', email: '', 
       cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
       observacoes: '' 
     },
@@ -510,7 +510,7 @@ function WizardContent() {
                   onClick={() => {
                     setClientMode('novo')
                     setSelectedClienteId('')
-                    setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
+                    setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', rg_ie: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
                   }}
                   className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${clientMode === 'novo' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
@@ -577,7 +577,7 @@ function WizardContent() {
                           <button 
                             onClick={() => {
                               setSelectedClienteId('')
-                              setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
+                              setFormData(prev => ({ ...prev, cliente: { nome: '', cpf_cnpj: '', rg_ie: '', telefone: '', email: '', cep: '', endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', observacoes: '' } }))
                             }}
                             className="p-2 hover:bg-blue-100 text-blue-400 rounded-xl transition-colors"
                           >
@@ -616,6 +616,10 @@ function WizardContent() {
                       <div className="md:col-span-2">
                         <Label>E-mail Principal</Label>
                         <Input type="email" placeholder="cliente@email.com" value={formData.cliente.email} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))} />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>RG / Inscrição Estadual</Label>
+                        <Input placeholder="RG ou IE" value={formData.cliente.rg_ie} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, rg_ie: e.target.value}}))} />
                       </div>
                     </div>
                   </div>

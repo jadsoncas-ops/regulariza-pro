@@ -18,7 +18,7 @@ export async function POST(request: Request) {
             nome: data.cliente.nome.toUpperCase(),
             cpf_cnpj: data.cliente.cpf_cnpj,
             telefone: data.cliente.telefone,
-            email: data.cliente.email.toUpperCase(),
+            email: data.cliente.email?.toUpperCase() || null,
             cep: data.cliente.cep,
             endereco: data.cliente.endereco?.toUpperCase() || null,
             numero: data.cliente.numero,
@@ -27,6 +27,22 @@ export async function POST(request: Request) {
             estado: data.cliente.estado?.toUpperCase() || null,
             observacoes: data.cliente.observacoes?.toUpperCase() || null,
             status: 'ativo'
+          }
+        })
+      } else {
+        // Atualizar dados do cliente caso tenham sido alterados no Wizard
+        cliente = await tx.cliente.update({
+          where: { id: cliente.id },
+          data: {
+            nome: data.cliente.nome.toUpperCase(),
+            telefone: data.cliente.telefone,
+            email: data.cliente.email?.toUpperCase() || null,
+            cep: data.cliente.cep,
+            endereco: data.cliente.endereco?.toUpperCase() || null,
+            numero: data.cliente.numero,
+            bairro: data.cliente.bairro?.toUpperCase() || null,
+            cidade: data.cliente.cidade?.toUpperCase() || null,
+            estado: data.cliente.estado?.toUpperCase() || null,
           }
         })
       }
