@@ -843,7 +843,7 @@ function WizardContent() {
                       <div><Label>Área Terreno</Label><Input type="number" value={formData.imovel.area_terreno} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_terreno: e.target.value}}))} /></div>
                       <div><Label>Área Constr.</Label><Input type="number" value={formData.imovel.area_construida} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, area_construida: e.target.value}}))} /></div>
                       <div><Label>Matrícula</Label><Input value={formData.imovel.num_matricula} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, num_matricula: e.target.value}}))} /></div>
-                      <div><Label>Zoneamento</Label><Input value={formData.imovel.zoneamento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, zoneamento: e.target.value}}))} /></div>
+                      <div><Label>ZONA</Label><Input value={formData.imovel.zoneamento} onChange={e => setFormData(prev => ({...prev, imovel: {...prev.imovel, zoneamento: e.target.value}}))} /></div>
                     </div>
                   </div>
                 </div>

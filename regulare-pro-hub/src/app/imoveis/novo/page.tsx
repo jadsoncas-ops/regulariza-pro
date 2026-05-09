@@ -190,7 +190,7 @@ function NovoImovelContent() {
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Observações Adicionais</label>
-              <textarea name="observacoes" value={formData.observacoes} onChange={handleInputChange} rows={3} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 resize-none" placeholder="Ex: Zoneamento, restrições ambientais, etc..."></textarea>
+              <textarea name="observacoes" value={formData.observacoes} onChange={handleInputChange} rows={3} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 resize-none" placeholder="Ex: ZONA, restrições ambientais, etc..."></textarea>
             </div>
           </div>
 

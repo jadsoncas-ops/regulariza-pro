@@ -242,7 +242,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                              <p className="text-sm font-bold text-slate-800">{selectedImovel.area_construida}m²</p>
                           </div>
                           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Zoneamento</p>
+                             <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">ZONA</p>
                              <p className="text-sm font-bold text-slate-800 truncate">{selectedImovel.zoneamento || 'R1'}</p>
                           </div>
                        </div>
@@ -330,7 +330,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                     <input name="num_matricula" defaultValue={selectedImovel?.num_matricula || ''} placeholder="Nº Matrícula" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                     <input name="area_terreno" type="number" step="0.01" defaultValue={selectedImovel?.area_terreno || ''} placeholder="Área Terreno (m²)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                     <input name="area_construida" type="number" step="0.01" defaultValue={selectedImovel?.area_construida || ''} placeholder="Área Constr. (m²)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="zoneamento" defaultValue={selectedImovel?.zoneamento || ''} placeholder="Zoneamento" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                    <input name="zoneamento" defaultValue={selectedImovel?.zoneamento || ''} placeholder="ZONA" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
                   </div>
                 </div>
 

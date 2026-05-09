@@ -131,7 +131,7 @@ export default function ImovelDetailPage() {
                       <TechnicalField icon={Ruler} label="Área do Terreno" value={imovel.area_terreno ? `${imovel.area_terreno} m²` : null} />
                       <TechnicalField icon={Building2} label="Área Construída" value={imovel.area_construida ? `${imovel.area_construida} m²` : null} />
                       <TechnicalField icon={Layers} label="Inscrição Imobiliária" value={imovel.inscricao_imobiliaria} />
-                      <TechnicalField icon={ShieldCheck} label="Zoneamento" value={imovel.zoneamento} highlight />
+                      <TechnicalField icon={ShieldCheck} label="ZONA" value={imovel.zoneamento} highlight />
                    </div>
                 </div>
 
