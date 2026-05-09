@@ -9,7 +9,8 @@ import {
   Loader2, MapPin, Calculator, Info, Search,
   Copy, HelpCircle, Plus, X, ChevronDown, ChevronUp,
   Briefcase, Trash2, Calendar, Wallet, TrendingUp, TrendingDown, CheckCircle2,
-  Settings2, Sparkles, ClipboardList, ListTodo, Layers, GripVertical, SearchIcon
+  Settings2, Sparkles, ClipboardList, ListTodo, Layers, GripVertical, SearchIcon,
+  FileText
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
 
