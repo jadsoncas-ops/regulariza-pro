@@ -115,7 +115,7 @@ export default function DashboardPage() {
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
   }
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 15 },
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
   }
