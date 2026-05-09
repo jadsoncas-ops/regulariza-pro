@@ -102,6 +102,8 @@ function WizardContent() {
   const [loading, setLoading] = useState(false)
   const [isSearchingCep, setIsSearchingCep] = useState(false)
   
+  const [notification, setNotification] = useState<string | null>(null)
+  
   // ESTADO DO PROCESSO
   const [processo, setProcesso] = useState({
     tipo: 'completo', // completo, parcial, iniciado, isolado
@@ -126,6 +128,50 @@ function WizardContent() {
     cep: '', endereco: '', numero: '', bairro: '', cidade: '', estado: '',
     num_matricula: '', area_terreno: '', area_construida: ''
   })
+
+  // PERSISTÊNCIA E SEGURANÇA
+  useEffect(() => {
+    const draft = localStorage.getItem('process_builder_draft')
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft)
+        if (confirm('Detectamos um rascunho de cadastro. Deseja retomar de onde parou?')) {
+          setProcesso(parsed.processo)
+          setClienteData(parsed.clienteData)
+          setImovelData(parsed.imovelData)
+          setStep(parsed.step)
+        } else {
+          localStorage.removeItem('process_builder_draft')
+        }
+      } catch (e) { localStorage.removeItem('process_builder_draft') }
+    }
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (step > 1) {
+        localStorage.setItem('process_builder_draft', JSON.stringify({ processo, clienteData, imovelData, step }))
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [processo, clienteData, imovelData, step])
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification])
+
+  const handleSafeExit = () => {
+    if (step > 1) {
+      if (confirm('Sair agora irá salvar seu progresso como rascunho. Deseja sair?')) {
+        router.push('/dashboard')
+      }
+    } else {
+      router.push('/dashboard')
+    }
+  }
 
   // AUXILIARES DE BUSCA
   const [existingClientes, setExistingClientes] = useState<any[]>([])
@@ -228,9 +274,9 @@ function WizardContent() {
       {/* ── HEADER — Command Center Style ── */}
       <header className="h-[52px] bg-slate-950 border-b border-white/10 flex items-center justify-between px-6 shrink-0 z-50">
         <div className="flex items-center gap-4">
-          <Link href="/processos" className="p-2 text-slate-400 hover:text-white transition-colors">
+          <button onClick={handleSafeExit} className="p-2 text-slate-400 hover:text-white transition-colors">
             <ArrowLeft size={16} />
-          </Link>
+          </button>
           <div className="flex flex-col">
             <span className="text-[11px] font-black text-white uppercase tracking-tighter leading-none">Process Builder</span>
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Etapa {step} de 7</span>
@@ -243,7 +289,7 @@ function WizardContent() {
           ))}
         </div>
 
-        <button onClick={() => router.back()} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-300">
+        <button onClick={handleSafeExit} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-300">
           Cancelar
         </button>
       </header>
@@ -577,24 +623,39 @@ function WizardContent() {
                   {/* Quick Add Form */}
                   <div className="bg-blue-600 p-3 rounded-xl shadow-lg space-y-2">
                     <p className="text-[9px] font-black text-white/70 uppercase tracking-widest">Nova Atividade no Catálogo</p>
-                    <div className="flex gap-1">
+                    <div className="space-y-1.5">
                       <input 
+                        id="new-atv-name"
                         type="text" placeholder="Nome da atividade..."
-                        className="flex-1 bg-white/10 border border-white/10 rounded-md px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-white/30 outline-none focus:bg-white/20 transition-all"
-                        onKeyDown={async (e) => {
-                          if (e.key === 'Enter') {
-                            const val = e.currentTarget.value
-                            if (!val) return
-                            // Simula salvamento ou adiciona localmente
-                            const newItem = { id: Date.now().toString(), nome: val, categoria: 'Personalizado' }
-                            setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, newItem] }))
-                            e.currentTarget.value = ''
-                          }
-                        }}
+                        className="w-full bg-white/10 border border-white/10 rounded-md px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-white/30 outline-none focus:bg-white/20 transition-all"
                       />
-                      <button className="bg-white text-blue-600 p-1.5 rounded-md hover:bg-blue-50 transition-colors">
-                        <Plus size={14} />
-                      </button>
+                      <div className="flex gap-1">
+                        <select 
+                          id="new-atv-cat"
+                          className="flex-1 bg-white/10 border border-white/10 rounded-md px-2 py-1.5 text-[10px] font-bold text-white outline-none focus:bg-white/20 transition-all"
+                        >
+                          <option value="Prefeitura" className="text-slate-900">Prefeitura</option>
+                          <option value="Cartório" className="text-slate-900">Cartório</option>
+                          <option value="Gestão de Obra" className="text-slate-900">Gestão de Obra</option>
+                          <option value="Projetos" className="text-slate-900">Projetos</option>
+                          <option value="Consultoria" className="text-slate-900">Consultoria</option>
+                          <option value="Documentação" className="text-slate-900">Documentação</option>
+                        </select>
+                        <button 
+                          onClick={() => {
+                            const name = (document.getElementById('new-atv-name') as HTMLInputElement).value
+                            const cat = (document.getElementById('new-atv-cat') as HTMLSelectElement).value
+                            if (!name) return
+                            const newItem = { id: Date.now().toString(), nome: name, categoria: cat }
+                            setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, newItem] }))
+                            setNotification(`"${name}" adicionado ao fluxo!`)
+                            ;(document.getElementById('new-atv-name') as HTMLInputElement).value = ''
+                          }}
+                          className="bg-white text-blue-600 p-1.5 rounded-md hover:bg-blue-50 transition-colors"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -621,9 +682,8 @@ function WizardContent() {
                               <button 
                                 key={item.id}
                                 onClick={() => {
-                                  if (!processo.atividades.find(a => a.id === item.id)) {
-                                    setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, { ...item, id: Date.now().toString() }] }))
-                                  }
+                                  setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, { ...item, id: Date.now().toString() }] }))
+                                  setNotification(`"${item.nome}" adicionado!`)
                                 }}
                                 className="flex items-center justify-between p-2 rounded-lg bg-slate-50/50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all text-left group"
                               >
@@ -721,6 +781,23 @@ function WizardContent() {
         </AnimatePresence>
 
       </main>
+
+      {/* ── NOTIFICATION TOAST ── */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, x: 50 }}
+            animate={{ opacity: 1, y: 0, x: 0 }}
+            exit={{ opacity: 0, y: 50, scale: 0.8 }}
+            className="fixed bottom-8 right-8 z-[100] bg-slate-900 text-white px-6 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3"
+          >
+            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <Check size={16} />
+            </div>
+            <p className="text-[10px] font-black uppercase tracking-widest">{notification}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   )
