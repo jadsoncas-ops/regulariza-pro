@@ -70,6 +70,9 @@ const CATALOGO_ATIVIDADES = [
   { id: '14', nome: 'Levantamento topográfico', categoria: 'Levantamentos' },
   { id: '15', nome: 'Cronoanálise', categoria: 'Gestão de obra' },
   { id: '16', nome: 'Cotação de fornecedores', categoria: 'Gestão de obra' },
+  { id: '17', nome: 'Fração Ideal', categoria: 'Prefeitura' },
+  { id: '18', nome: 'Instituição e Convenção', categoria: 'Cartório' },
+  { id: '19', nome: 'Administração de Obra', categoria: 'Gestão de obra' },
 ]
 
 const ESCOPOS_SUGERIDOS: Record<string, string[]> = {
@@ -152,7 +155,33 @@ function WizardContent() {
   const nextStep = () => setStep(s => s + 1)
   const prevStep = () => setStep(s => s - 1)
 
-  const handleFinalSubmit = async () => {
+  // BUSCA DE CEP
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'cliente' | 'imovel') => {
+    const rawValue = e.target.value
+    const cleanCep = rawValue.replace(/\D/g, '')
+    
+    if (target === 'cliente') setClienteData(p => ({ ...p, cep: rawValue }))
+    else setImovelData(p => ({ ...p, cep: rawValue }))
+
+    if (cleanCep.length === 8) {
+      setIsSearchingCep(true)
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          const updates = {
+            endereco: data.logradouro.toUpperCase(),
+            bairro: data.bairro.toUpperCase(),
+            cidade: data.localidade.toUpperCase(),
+            estado: data.uf.toUpperCase(),
+          }
+          if (target === 'cliente') setClienteData(p => ({ ...p, ...updates }))
+          else setImovelData(p => ({ ...p, ...updates }))
+        }
+      } catch (e) { console.error(e) }
+      finally { setIsSearchingCep(false) }
+    }
+  }
     setLoading(true)
     try {
       const selectedNatureza = NATUREZAS.find(n => n.id === processo.natureza)
@@ -368,10 +397,23 @@ function WizardContent() {
                   )}
                 </div>
               ) : (
-                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-2 gap-4">
-                  <div className="col-span-2"><Label>Nome Completo *</Label><Input value={clienteData.nome} onChange={e => setClienteData(p => ({...p, nome: e.target.value}))} /></div>
-                  <div><Label>CPF / CNPJ *</Label><Input value={clienteData.cpf_cnpj} onChange={e => setClienteData(p => ({...p, cpf_cnpj: e.target.value}))} /></div>
-                  <div><Label>Telefone *</Label><Input value={clienteData.telefone} onChange={e => setClienteData(p => ({...p, telefone: e.target.value}))} /></div>
+                  <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="col-span-2"><Label>Nome Completo *</Label><Input value={clienteData.nome} onChange={e => setClienteData(p => ({...p, nome: e.target.value}))} /></div>
+                    <div><Label>CPF / CNPJ *</Label><Input value={clienteData.cpf_cnpj} onChange={e => setClienteData(p => ({...p, cpf_cnpj: e.target.value}))} /></div>
+                    <div><Label>Telefone *</Label><Input value={clienteData.telefone} onChange={e => setClienteData(p => ({...p, telefone: e.target.value}))} /></div>
+                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 rounded-2xl">
+                      <div>
+                        <Label>CEP</Label>
+                        <div className="relative">
+                          <Input value={clienteData.cep} onChange={e => handleCepChange(e, 'cliente')} placeholder="00000-000" />
+                          {isSearchingCep && <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />}
+                        </div>
+                      </div>
+                      <div className="md:col-span-2"><Label>Endereço</Label><Input value={clienteData.endereco} onChange={e => setClienteData(p => ({...p, endereco: e.target.value}))} /></div>
+                      <div><Label>Bairro</Label><Input value={clienteData.bairro} onChange={e => setClienteData(p => ({...p, bairro: e.target.value}))} /></div>
+                      <div><Label>Cidade</Label><Input value={clienteData.cidade} onChange={e => setClienteData(p => ({...p, cidade: e.target.value}))} /></div>
+                      <div><Label>UF</Label><Input value={clienteData.estado} onChange={e => setClienteData(p => ({...p, estado: e.target.value}))} /></div>
+                    </div>
                   <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-slate-50">
                     <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
                     <button onClick={nextStep} className="btn-premium">Continuar <ChevronRight size={14} /></button>
@@ -393,7 +435,13 @@ function WizardContent() {
               </div>
 
               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-12 gap-4">
-                <div className="col-span-4"><Label>CEP</Label><Input value={imovelData.cep} onChange={e => setImovelData(p => ({...p, cep: e.target.value}))} /></div>
+                <div className="col-span-4">
+                  <Label>CEP</Label>
+                  <div className="relative">
+                    <Input value={imovelData.cep} onChange={e => handleCepChange(e, 'imovel')} placeholder="00000-000" />
+                    {isSearchingCep && <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />}
+                  </div>
+                </div>
                 <div className="col-span-8"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData(p => ({...p, endereco: e.target.value}))} /></div>
                 <div className="col-span-3"><Label>Número</Label><Input value={imovelData.numero} onChange={e => setImovelData(p => ({...p, numero: e.target.value}))} /></div>
                 <div className="col-span-5"><Label>Bairro</Label><Input value={imovelData.bairro} onChange={e => setImovelData(p => ({...p, bairro: e.target.value}))} /></div>
@@ -463,8 +511,31 @@ function WizardContent() {
                       </div>
                     )}
                   </div>
-                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center shrink-0">
-                    <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Voltar</button>
+                    <button 
+                      onClick={async () => {
+                        const selectedNatureza = NATUREZAS.find(n => n.id === processo.natureza)
+                        const nomeModelo = prompt('Nome do Modelo:', selectedNatureza?.label)
+                        if (!nomeModelo) return
+                        
+                        try {
+                          await fetch('/api/servicos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              nome: nomeModelo,
+                              sigla: (selectedNatureza?.label || 'MOD').substring(0, 3),
+                              categoria: 'MODELO',
+                              subservicos: processo.atividades.map(a => a.nome)
+                            })
+                          })
+                          alert('Modelo salvo com sucesso!')
+                        } catch (e) { alert('Erro ao salvar modelo') }
+                      }}
+                      className="text-[10px] font-black text-blue-600 uppercase tracking-widest px-4 hover:text-blue-700 transition-colors"
+                    >
+                      Salvar como Modelo
+                    </button>
+                    <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
                     <button onClick={handleFinalSubmit} disabled={loading} className="btn-premium py-2.5 px-8">
                       {loading ? <Loader2 size={16} className="animate-spin" /> : <>Finalizar e Abrir Workspace <ChevronRight size={16} /></>}
                     </button>
@@ -474,8 +545,34 @@ function WizardContent() {
 
               {/* Right: Catalog */}
               <div className="w-80 flex flex-col shrink-0 min-h-0">
-                <div className="mb-4 flex flex-col gap-2">
+                <div className="mb-4 flex flex-col gap-3">
                   <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Catálogo de Atividades</h3>
+                  
+                  {/* Quick Add Form */}
+                  <div className="bg-blue-600 p-3 rounded-xl shadow-lg space-y-2">
+                    <p className="text-[9px] font-black text-white/70 uppercase tracking-widest">Nova Atividade no Catálogo</p>
+                    <div className="flex gap-1">
+                      <input 
+                        type="text" placeholder="Nome da atividade..."
+                        className="flex-1 bg-white/10 border border-white/10 rounded-md px-2 py-1.5 text-[10px] font-bold text-white placeholder:text-white/30 outline-none focus:bg-white/20 transition-all"
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            const val = e.currentTarget.value
+                            if (!val) return
+                            // Simula salvamento ou adiciona localmente
+                            const newItem = { id: Date.now().toString(), nome: val, categoria: 'Personalizado' }
+                            // Aqui poderíamos chamar uma API para persistir
+                            setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, newItem] }))
+                            e.currentTarget.value = ''
+                          }
+                        }}
+                      />
+                      <button className="bg-white text-blue-600 p-1.5 rounded-md hover:bg-blue-50 transition-colors">
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="relative">
                     <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input 
@@ -488,7 +585,7 @@ function WizardContent() {
 
                 <div className="flex-1 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col min-h-0">
                   <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-                    {['Levantamentos', 'Documentação', 'Projetos', 'Protocolos', 'Prefeitura', 'Cartório', 'Gestão de obra', 'Consultoria'].map(cat => {
+                    {['Levantamentos', 'Documentação', 'Projetos', 'Protocolos', 'Prefeitura', 'Cartório', 'Gestão de obra', 'Consultoria', 'Personalizado'].map(cat => {
                       const items = CATALOGO_ATIVIDADES.filter(a => a.categoria === cat && a.nome.toLowerCase().includes(catalogSearch.toLowerCase()))
                       if (items.length === 0) return null
                       return (
