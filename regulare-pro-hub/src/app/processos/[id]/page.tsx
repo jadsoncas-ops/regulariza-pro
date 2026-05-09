@@ -562,32 +562,8 @@ export default function ProcessoDetailPage() {
             {/* ── FINANCEIRO ── */}
             {tab === 'financeiro' && (
               <div className="space-y-6">
-                 {/* SUMMARY CARDS */}
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm relative overflow-hidden group">
-                       <div className="absolute -right-2 -top-2 opacity-[0.03] group-hover:scale-110 transition-transform text-slate-900">
-                          <FileText size={80} />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Contrato Total</p>
-                       <p className="text-xl font-black text-slate-900">{fmt(stats?.totalContratado || 0)}</p>
-                       <div className="mt-2 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-slate-900 animate-pulse" />
-                          <span className="text-[9px] font-bold text-slate-500 uppercase">Valor Nominal</span>
-                       </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm relative overflow-hidden group">
-                       <div className="absolute -right-2 -top-2 opacity-[0.03] group-hover:scale-110 transition-transform text-emerald-600">
-                          <TrendingUp size={80} />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Recebido / Saldo</p>
-                       <p className="text-xl font-black text-emerald-600">{fmt(stats?.totalRecebido || 0)}</p>
-                       <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">A Receber:</span>
-                          <span className="text-[10px] font-bold text-amber-600 font-mono">{fmt(stats?.totalAReceber || 0)}</span>
-                       </div>
-                    </div>
-                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 shrink-0">
+                {/* SUMMARY CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 shrink-0">
                     <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-blue-200 transition-all">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Contrato Total</p>
                        <p className="text-2xl font-black text-slate-900 leading-none">{fmt(stats?.totalContratado || 0)}</p>
