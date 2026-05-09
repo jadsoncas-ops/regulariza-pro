@@ -11,11 +11,12 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import GoogleMapEmbed from './GoogleMapEmbed'
 import LocationPicker from './LocationPicker'
+import ImoveisGlobalMap from './ImoveisGlobalMap'
 
 interface Imovel {
   id: string
   clienteId: string
-  cliente: { nome: string; cpf_cnpj: string }
+  cliente: { id: string; nome: string; cpf_cnpj: string }
   endereco: string
   bairro: string | null
   cidade: string | null
@@ -46,6 +47,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   const [selectedImovel, setSelectedImovel] = useState<Imovel | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
   
   // States for reactive form fields
   const [formAddress, setFormAddress] = useState({
@@ -150,15 +152,21 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
       
       {/* ── TOOLBAR ── */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-        <div className="relative w-full max-w-xl">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input 
-            type="text"
-            placeholder="Buscar por matrícula, endereço ou proprietário..."
-            className="w-full bg-white border border-slate-200 pl-12 pr-6 py-4 rounded-[20px] text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex items-center gap-6 flex-1 w-full max-w-4xl">
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Buscar por matrícula, endereço ou proprietário..."
+              className="w-full bg-white border border-slate-200 pl-12 pr-6 py-4 rounded-[20px] text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-[20px] shrink-0 shadow-inner">
+             <button onClick={() => setViewMode('grid')} className={`px-6 py-2.5 rounded-[15px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'grid' ? 'bg-white text-primary shadow-lg ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}>Grelha</button>
+             <button onClick={() => setViewMode('map')} className={`px-6 py-2.5 rounded-[15px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'map' ? 'bg-white text-primary shadow-lg ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}>Mapa Geral</button>
+          </div>
         </div>
         <button 
           onClick={() => initModal(null)}
@@ -168,75 +176,79 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
         </button>
       </div>
 
-      {/* ── CARD GRID ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-        {filteredImoveis.map((i, idx) => (
-          <motion.div 
-            key={i.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className="bg-white border border-slate-200 rounded-[32px] p-2 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group flex flex-col cursor-pointer overflow-hidden"
-            onClick={() => openDrawer(i)}
-          >
-            <div className="relative h-48 rounded-[24px] overflow-hidden bg-slate-100 mb-6 group-hover:shadow-lg transition-all">
-               <GoogleMapEmbed 
-                  address={`${i.endereco}, ${i.bairro}, ${i.cidade} - ${i.estado}`}
-                  latitude={i.latitude}
-                  longitude={i.longitude}
-                  zoom={14}
-                  className="w-full h-full"
-               />
-               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-               <div className="absolute top-4 left-4 pointer-events-none">
-                  <span className="text-[10px] font-bold text-white bg-primary px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
-                    {i.zoneamento || 'RESIDENCIAL'}
-                  </span>
-               </div>
-               <div className="absolute bottom-4 left-4 text-white pointer-events-none">
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">MATRÍCULA</p>
-                  <p className="text-sm font-bold font-mono">{i.num_matricula || 'N/A'}</p>
-               </div>
-               <div className="absolute bottom-4 right-4 text-white flex items-center gap-2 pointer-events-none">
-                  <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
-                    <Maximize2 size={14} />
-                  </div>
-               </div>
-            </div>
+      {/* ── CONTENT AREA ── */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          {filteredImoveis.map((i, idx) => (
+            <motion.div 
+              key={i.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="bg-white border border-slate-200 rounded-[32px] p-2 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group flex flex-col cursor-pointer overflow-hidden"
+              onClick={() => openDrawer(i)}
+            >
+              <div className="relative h-48 rounded-[24px] overflow-hidden bg-slate-100 mb-6 group-hover:shadow-lg transition-all">
+                 <GoogleMapEmbed 
+                    address={`${i.endereco}, ${i.bairro}, ${i.cidade} - ${i.estado}`}
+                    latitude={i.latitude}
+                    longitude={i.longitude}
+                    zoom={14}
+                    className="w-full h-full"
+                 />
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                 <div className="absolute top-4 left-4 pointer-events-none">
+                    <span className="text-[10px] font-bold text-white bg-primary px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
+                      {i.zoneamento || 'RESIDENCIAL'}
+                    </span>
+                 </div>
+                 <div className="absolute bottom-4 left-4 text-white pointer-events-none">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">MATRÍCULA</p>
+                    <p className="text-sm font-bold font-mono">{i.num_matricula || 'N/A'}</p>
+                 </div>
+                 <div className="absolute bottom-4 right-4 text-white flex items-center gap-2 pointer-events-none">
+                    <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                      <Maximize2 size={14} />
+                    </div>
+                 </div>
+              </div>
 
-            <div className="px-4 pb-6 space-y-4">
-               <div>
-                  <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-primary transition-colors line-clamp-1">{i.endereco}</h3>
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-tight">{i.bairro} • {i.cidade}/{i.estado}</p>
-               </div>
+              <div className="px-4 pb-6 space-y-4">
+                 <div>
+                    <h3 className="text-lg font-bold text-slate-900 leading-tight group-hover:text-primary transition-colors line-clamp-1">{i.endereco}</h3>
+                    <p className="text-xs text-slate-400 font-medium uppercase tracking-tight">{i.bairro} • {i.cidade}/{i.estado}</p>
+                 </div>
 
-               <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                  <div className="flex flex-col">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ÁREA TERRENO</span>
-                     <span className="text-sm font-bold text-slate-800">{i.area_terreno || '—'} m²</span>
-                  </div>
-                  <div className="flex flex-col items-end">
-                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROCESSOS</span>
-                     <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${i.processos.length > 0 ? 'bg-primary' : 'bg-slate-300'}`} />
-                        <span className="text-sm font-bold text-slate-800">{i.processos.length} ativos</span>
-                     </div>
-                  </div>
-               </div>
+                 <div className="flex items-center justify-between pt-4 border-t border-slate-50">
+                    <div className="flex flex-col">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ÁREA TERRENO</span>
+                       <span className="text-sm font-bold text-slate-800">{i.area_terreno || '—'} m²</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROCESSOS</span>
+                       <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${i.processos.length > 0 ? 'bg-primary' : 'bg-slate-300'}`} />
+                          <span className="text-sm font-bold text-slate-800">{i.processos.length} ativos</span>
+                       </div>
+                    </div>
+                 </div>
 
-               <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-                  <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[10px] text-slate-500">
-                    {i.cliente.nome.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROPRIETÁRIO</p>
-                    <p className="text-xs font-bold text-slate-800 truncate">{i.cliente.nome}</p>
-                  </div>
-               </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+                 <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-[10px] text-slate-500">
+                      {i.cliente.nome.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">PROPRIETÁRIO</p>
+                      <p className="text-xs font-bold text-slate-800 truncate">{i.cliente.nome}</p>
+                    </div>
+                 </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <ImoveisGlobalMap imoveis={filteredImoveis as any} />
+      )}
 
       {/* ── LATERAL DRAWER ── */}
       <AnimatePresence>
