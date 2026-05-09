@@ -15,6 +15,11 @@ import {
 import { motion } from 'framer-motion'
 
 export default function FinanceiroPage() {
+  const [registros, setRegistros] = useState<any[]>([])
+  const [processos, setProcessos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [tipo, setTipo] = useState('')
   const [viewMode, setViewMode] = useState<'list' | 'process'>('list')
 
   useEffect(() => {
