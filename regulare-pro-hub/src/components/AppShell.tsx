@@ -13,24 +13,37 @@ import {
 } from 'lucide-react'
 import GlobalSearch from '@/components/GlobalSearch'
 
-const NAV = [
-  { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
-  { href: '/processos', label: 'Processos',   icon: Briefcase, badge: '42' },
-  { href: '/clientes',  label: 'Clientes',    icon: Users },
-  { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
-  { href: '/financeiro',  label: 'Financeiro', icon: DollarSign },
-  { href: '/relatorios',  label: 'Relatórios', icon: BarChart3 },
-  { href: '/agenda',      label: 'Agenda',     icon: Calendar },
-  { href: '/documentos',  label: 'Documentos', icon: FileText },
-  { href: '/configuracoes', label: 'Configurações', icon: Settings },
-]
-
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(true)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [processCount, setProcessCount] = useState<number>(0)
   const pathname = usePathname()
   
+  useEffect(() => {
+    fetch('/api/processos')
+      .then(r => r.json())
+      .then(d => {
+        if (Array.isArray(d)) {
+          // Apenas processos que não estão finalizados
+          setProcessCount(d.filter((p: any) => p.status !== 'finalizado').length)
+        }
+      })
+      .catch(() => {})
+  }, [pathname])
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/')
+
+  const NAV = [
+    { href: '/dashboard', label: 'Dashboard',   icon: LayoutDashboard },
+    { href: '/processos', label: 'Processos',   icon: Briefcase, badge: processCount > 0 ? processCount.toString() : undefined },
+    { href: '/clientes',  label: 'Clientes',    icon: Users },
+    { href: '/imoveis',   label: 'Imóveis',     icon: Building2 },
+    { href: '/financeiro',  label: 'Financeiro', icon: DollarSign },
+    { href: '/relatorios',  label: 'Relatórios', icon: BarChart3 },
+    { href: '/agenda',      label: 'Agenda',     icon: Calendar },
+    { href: '/documentos',  label: 'Documentos', icon: FileText },
+    { href: '/configuracoes', label: 'Configurações', icon: Settings },
+  ]
 
   return (
     <div className="app-shell bg-[#FDFDFD]">

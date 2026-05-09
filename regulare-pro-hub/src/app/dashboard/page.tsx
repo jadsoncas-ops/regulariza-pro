@@ -195,10 +195,10 @@ export default function DashboardPage() {
           <div className="flex-1 flex flex-col justify-center gap-6">
             <div className="space-y-3">
               {[
-                { label: 'Entrada', count: ativos, color: 'bg-blue-500', p: 100 },
-                { label: 'Levantamento', count: processos.filter((p:any)=>p.status==='levantamento').length, color: 'bg-indigo-500', p: 80 },
-                { label: 'Protocolo', count: processos.filter((p:any)=>p.status==='protocolo_prefeitura').length, color: 'bg-purple-500', p: 60 },
-                { label: 'Finalizado', count: processos.filter((p:any)=>p.status==='finalizado').length, color: 'bg-emerald-500', p: 40 },
+                { label: 'Entrada', count: processos.filter((p:any)=>p.status==='em_analise').length, color: 'bg-amber-400', p: 100 },
+                { label: 'Levantamento', count: processos.filter((p:any)=>p.status==='levantamento').length, color: 'bg-blue-400', p: 80 },
+                { label: 'Prefeitura', count: processos.filter((p:any)=>p.status==='protocolo_prefeitura').length, color: 'bg-purple-500', p: 60 },
+                { label: 'Conclusão', count: processos.filter((p:any)=>p.status==='finalizado').length, color: 'bg-emerald-500', p: 40 },
               ].map((s, i) => (
                 <div key={i} className="space-y-1">
                   <div className="flex items-center justify-between text-[10px] font-bold uppercase">
