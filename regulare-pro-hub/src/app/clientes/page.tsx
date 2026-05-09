@@ -55,21 +55,22 @@ export default function ClientesPage() {
   , [clientes, selectedId])
 
   const financialStats = useMemo(() => {
-    if (!selectedCliente || !selectedCliente.financeiro) return { totalContrato: 0, recebido: 0, pendenteReceber: 0, pendentePagar: 0 }
+    if (!selectedCliente) return { totalContrato: 0, recebido: 0, pendenteReceber: 0, pendentePagar: 0 }
     
-    const totalContrato = selectedCliente.financeiro
-      .filter((f: any) => f.tipo === 'receita')
-      .reduce((acc: number, f: any) => acc + f.valor, 0)
+    // O valor total do contrato vem da soma do campo valor_total de todos os processos do cliente
+    const totalContrato = (selectedCliente.processos || [])
+      .reduce((acc: number, p: any) => acc + (p.valor_total || 0), 0)
       
-    const recebido = selectedCliente.financeiro
+    // O total recebido é a soma do valor_pago de todos os registros de receita
+    const recebido = (selectedCliente.financeiro || [])
       .filter((f: any) => f.tipo === 'receita')
       .reduce((acc: number, f: any) => acc + (f.valor_pago || 0), 0)
       
-    const pendenteReceber = selectedCliente.financeiro
-      .filter((f: any) => f.tipo === 'receita' && f.status === 'pendente')
-      .reduce((acc: number, f: any) => acc + (f.valor - (f.valor_pago || 0)), 0)
+    // Pendente a receber é a diferença entre o total do contrato e o que já foi recebido
+    const pendenteReceber = Math.max(0, totalContrato - recebido)
       
-    const pendentePagar = selectedCliente.financeiro
+    // Pendente a pagar são as despesas lançadas que ainda não foram totalmente pagas
+    const pendentePagar = (selectedCliente.financeiro || [])
       .filter((f: any) => f.tipo === 'despesa' && f.status === 'pendente')
       .reduce((acc: number, f: any) => acc + (f.valor - (f.valor_pago || 0)), 0)
 
