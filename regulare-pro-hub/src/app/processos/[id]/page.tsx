@@ -64,12 +64,13 @@ export default function ProcessoDetailPage() {
     const totalLancadoReceita = processo.financeiro?.filter((f:any)=>f.tipo==='receita').reduce((a:number,b:any)=>a+b.valor,0) || 0;
     const totalAReceber = Math.max(0, totalContratado - totalRecebido);
     
-    // Repasses (Parceiros/Comissões)
-    const totalRepasses = processo.financeiro?.filter((f:any)=>f.is_repasse).reduce((a:number,b:any)=>a+b.valor,0) || 0;
-    const totalRepassesPagos = processo.financeiro?.filter((f:any)=>f.is_repasse && f.status === 'pago').reduce((a:number,b:any)=>a+b.valor,0) || 0;
+    // Repasses e Custos (Toda despesa vinculada ao processo)
+    const totalRepasses = processo.financeiro?.filter((f:any)=>f.tipo === 'despesa' || f.is_repasse).reduce((a:number,b:any)=>a+b.valor,0) || 0;
+    const totalRepassesPagos = processo.financeiro?.filter((f:any)=>(f.tipo === 'despesa' || f.is_repasse) && f.status === 'pago').reduce((a:number,b:any)=>a+b.valor,0) || 0;
     const totalRepassesPendentes = totalRepasses - totalRepassesPagos;
     
     // Lucro e Saldo
+    // Lucro = Valor Total do Contrato - Total de Custos/Repasses
     const lucroEstimadoFinal = totalContratado - totalRepasses;
     const saldoEmContaAtual = totalRecebido - totalRepassesPagos;
     
