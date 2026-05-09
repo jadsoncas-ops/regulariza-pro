@@ -587,28 +587,49 @@ export default function ProcessoDetailPage() {
                           <span className="text-[10px] font-bold text-amber-600 font-mono">{fmt(stats?.totalAReceber || 0)}</span>
                        </div>
                     </div>
-                    
-                    <div className="bg-white border border-slate-200 p-5 rounded-[28px] shadow-sm relative overflow-hidden group">
-                       <div className="absolute -right-2 -top-2 opacity-[0.03] group-hover:scale-110 transition-transform text-indigo-600">
-                          <Users size={80} />
-                       </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Repasses Totais</p>
-                       <p className="text-xl font-black text-slate-900">{fmt(stats?.totalRepasses || 0)}</p>
-                       <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[9px] font-bold text-slate-400 uppercase">Pagos:</span>
-                          <span className="text-[10px] font-bold text-indigo-600 font-mono">{fmt(stats?.totalRepassesPagos || 0)}</span>
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 shrink-0">
+                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-blue-200 transition-all">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Contrato Total</p>
+                       <p className="text-2xl font-black text-slate-900 leading-none">{fmt(stats?.totalContratado || 0)}</p>
+                       <div className="mt-4 flex items-center gap-2">
+                          <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                             <div className="h-full bg-blue-500" style={{ width: '100%' }} />
+                          </div>
+                          <span className="text-[9px] font-bold text-slate-400">100%</span>
                        </div>
                     </div>
 
-                    <div className="bg-slate-900 p-5 rounded-[28px] shadow-xl relative overflow-hidden group">
-                       <div className="absolute -right-2 -top-2 opacity-10 group-hover:scale-110 transition-transform text-white">
-                          <DollarSign size={80} />
+                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-emerald-200 transition-all">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Recebido</p>
+                       <p className="text-2xl font-black text-emerald-600 leading-none">{fmt(stats?.totalRecebido || 0)}</p>
+                       <div className="mt-4 flex items-center gap-2">
+                          <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                             <div className="h-full bg-emerald-500" style={{ width: `${stats?.totalContratado ? (stats.totalRecebido / stats.totalContratado) * 100 : 0}%` }} />
+                          </div>
+                          <span className="text-[9px] font-bold text-emerald-600">{stats?.totalContratado ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</span>
                        </div>
-                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Lucro Estimado</p>
-                       <p className="text-xl font-black text-white">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
-                       <div className="mt-2 flex items-center justify-between">
-                          <span className="text-[9px] font-bold text-white/40 uppercase">Saldo Atual:</span>
-                          <span className="text-[10px] font-bold text-emerald-400 font-mono">{fmt(stats?.saldoEmContaAtual || 0)}</span>
+                    </div>
+
+                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-red-200 transition-all">
+                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Custos / Repasses</p>
+                       <p className="text-2xl font-black text-red-500 leading-none">{fmt(stats?.totalRepasses || 0)}</p>
+                       <div className="mt-4 flex items-center gap-2">
+                          <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
+                             <div className="h-full bg-red-500" style={{ width: `${stats?.totalContratado ? (stats.totalRepasses / stats.totalContratado) * 100 : 0}%` }} />
+                          </div>
+                          <span className="text-[9px] font-bold text-red-500">{stats?.totalContratado ? Math.round((stats.totalRepasses / stats.totalContratado) * 100) : 0}%</span>
+                       </div>
+                    </div>
+
+                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl relative overflow-hidden group">
+                       <div className="absolute -right-2 -top-2 opacity-10 group-hover:scale-110 transition-transform text-white">
+                          <Sparkles size={80} />
+                       </div>
+                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 font-mono">Lucro Estimado</p>
+                       <p className="text-2xl font-black text-white leading-none">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
+                       <div className="mt-4 flex items-center justify-between">
+                          <span className="text-[9px] font-black text-white/40 uppercase">Saldo em Conta:</span>
+                          <span className="text-[10px] font-black text-emerald-400 font-mono tracking-tight">{fmt(stats?.saldoEmContaAtual || 0)}</span>
                        </div>
                     </div>
                  </div>
@@ -869,33 +890,46 @@ export default function ProcessoDetailPage() {
                        </div>
                     </div>
 
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-1 gap-3 overflow-y-auto pr-1 max-h-[60vh] custom-scrollbar">
                        {(!processo.tarefas || processo.tarefas.length === 0) ? (
-                          <div className="py-20 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Nenhuma tarefa cadastrada</div>
+                          <div className="py-20 text-center flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl">
+                             <ListTodo size={40} className="text-slate-100 mb-4" />
+                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Aguardando definição operacional</p>
+                          </div>
                        ) : processo.tarefas.map((t: any) => (
-                          <div key={t.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${selectedTasks.includes(t.id) ? 'border-primary bg-primary/5 shadow-md' : t.status === 'concluido' ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-primary/20 hover:shadow-sm'}`}>
-                             <input 
-                               type="checkbox" 
-                               checked={selectedTasks.includes(t.id)}
-                               onChange={() => {
-                                  if (selectedTasks.includes(t.id)) setSelectedTasks(selectedTasks.filter(id => id !== t.id))
-                                  else setSelectedTasks([...selectedTasks, t.id])
-                               }}
-                               className="accent-primary w-4 h-4 cursor-pointer"
-                             />
-                             <button onClick={() => handleToggleTarefa(t.id, t.status)} className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${t.status === 'concluido' ? 'bg-primary border-primary' : 'border-slate-300 bg-white'}`}>
-                                {t.status === 'concluido' && <Check size={12} className="text-white" />}
-                             </button>
+                          <div key={t.id} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all group ${selectedTasks.includes(t.id) ? 'border-primary bg-primary/5 shadow-md' : t.status === 'concluido' ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-primary/20 hover:shadow-sm'}`}>
+                             <div className="flex items-center gap-3">
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedTasks.includes(t.id)}
+                                  onChange={() => {
+                                     if (selectedTasks.includes(t.id)) setSelectedTasks(selectedTasks.filter(id => id !== t.id))
+                                     else setSelectedTasks([...selectedTasks, t.id])
+                                  }}
+                                  className="accent-primary w-4 h-4 cursor-pointer"
+                                />
+                                <button onClick={() => handleToggleTarefa(t.id, t.status)} className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${t.status === 'concluido' ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-slate-200 bg-white group-hover:border-primary'}`}>
+                                   {t.status === 'concluido' && <Check size={14} className="text-white" strokeWidth={3} />}
+                                </button>
+                             </div>
+                             
                              <div className="flex-1 min-w-0">
-                                <p className={`text-sm font-bold tracking-tight ${t.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>{t.titulo}</p>
-                                <div className="flex items-center gap-3 mt-1 text-[9px] font-bold uppercase tracking-tight font-mono">
-                                   <span className={t.prioridade === 'urgente' ? 'text-red-500' : 'text-primary'}>{t.prioridade}</span>
-                                   <span className="text-slate-400 flex items-center gap-1"><Calendar size={10}/> {new Date(t.data).toLocaleDateString('pt-BR')}</span>
+                                <p className={`text-[13px] font-black tracking-tight uppercase leading-none ${t.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{t.titulo}</p>
+                                <div className="flex items-center gap-4 mt-2">
+                                   <div className="flex items-center gap-1">
+                                      <div className={`w-1.5 h-1.5 rounded-full ${t.prioridade === 'urgente' ? 'bg-red-500' : 'bg-blue-500'}`} />
+                                      <span className={`text-[9px] font-black uppercase tracking-widest ${t.prioridade === 'urgente' ? 'text-red-500' : 'text-slate-400'}`}>{t.prioridade}</span>
+                                   </div>
+                                   <div className="h-3 w-px bg-slate-200" />
+                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                                      <Calendar size={10} strokeWidth={2.5}/> {new Date(t.data).toLocaleDateString('pt-BR')}
+                                   </span>
                                 </div>
                              </div>
-                             <div className="flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => { setTarefaToEdit(t); setIsTaskModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors"><Edit size={14} /></button>
-                                <button onClick={() => handleDeleteTarefa(t.id, t.titulo)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"><Trash2 size={14} /></button>
+
+                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => { setTarefaToEdit(t); setIsTaskModalOpen(true) }} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"><Edit size={14} /></button>
+                                <button onClick={() => handleDeleteTarefa(t.id, t.titulo)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={14} /></button>
                              </div>
                           </div>
                        ))}
@@ -986,39 +1020,58 @@ export default function ProcessoDetailPage() {
                        </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                        {(!processo.protocolos || processo.protocolos.length === 0) ? (
-                          <div className="md:col-span-2 py-20 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest border-2 border-dashed border-slate-100 rounded-2xl">Aguardando protocolos</div>
+                          <div className="lg:col-span-3 py-20 text-center flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl">
+                             <Building2 size={40} className="text-slate-100 mb-4" />
+                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhum protocolo ativo em órgãos</p>
+                          </div>
                        ) : processo.protocolos.map((prot: any) => (
-                          <div key={prot.id} className={`p-6 rounded-2xl border transition-all ${selectedProtocolos.includes(prot.id) ? 'bg-primary/5 border-primary shadow-md' : 'bg-white border-slate-200 hover:border-primary/20 hover:shadow-sm'}`}>
-                             <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                   <input 
-                                     type="checkbox" 
-                                     checked={selectedProtocolos.includes(prot.id)}
-                                     onChange={() => {
-                                        if (selectedProtocolos.includes(prot.id)) setSelectedProtocolos(selectedProtocolos.filter(id => id !== prot.id))
-                                        else setSelectedProtocolos([...selectedProtocolos, prot.id])
-                                     }}
-                                     className="accent-primary w-4 h-4 cursor-pointer"
-                                   />
-                                   <div className="w-9 h-9 bg-slate-50 border border-slate-100 rounded-lg flex items-center justify-center font-bold text-primary text-[10px] uppercase font-mono shadow-sm">
-                                     {prot.orgao.substring(0, 2)}
+                          <div key={prot.id} className={`p-6 rounded-3xl border transition-all group ${selectedProtocolos.includes(prot.id) ? 'bg-primary/5 border-primary shadow-lg' : 'bg-white border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-slate-200/40'}`}>
+                             <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-4">
+                                   <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-white text-xs uppercase shadow-lg shadow-slate-900/20">
+                                      {prot.orgao.substring(0, 2)}
                                    </div>
                                    <div>
-                                      <p className="text-xs font-bold text-slate-800 tracking-tight uppercase">{prot.orgao}</p>
-                                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest font-mono">ID: {prot.numero_protocolo}</p>
+                                      <p className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{prot.orgao}</p>
+                                      <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest font-mono">#{prot.numero_protocolo}</p>
                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                   <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight ${prot.status === 'concluido' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-primary/5 text-primary border border-primary/10'}`}>{prot.status}</span>
-                                   <button onClick={() => { setProtocoloToEdit(prot); setIsProtocoloModalOpen(true) }} className="p-1.5 text-slate-300 hover:text-primary transition-colors"><Edit size={14}/></button>
-                                   <button onClick={() => handleDeleteProtocolo(prot.id, prot.orgao)} className="p-1.5 text-slate-300 hover:text-red-600 transition-colors"><Trash2 size={14}/></button>
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedProtocolos.includes(prot.id)}
+                                  onChange={() => {
+                                     if (selectedProtocolos.includes(prot.id)) setSelectedProtocolos(selectedProtocolos.filter(id => id !== prot.id))
+                                     else setSelectedProtocolos([...selectedProtocolos, prot.id])
+                                  }}
+                                  className="accent-primary w-5 h-5 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                                />
+                             </div>
+
+                             <div className="space-y-4">
+                                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl">
+                                   <span className="text-[9px] font-black text-slate-400 uppercase">Status do Protocolo</span>
+                                   <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${prot.status === 'concluido' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'}`}>{prot.status}</span>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-3">
+                                   <div className="p-3 border border-slate-50 rounded-2xl">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Abertura</p>
+                                      <p className="text-[11px] font-black text-slate-900 font-mono">{new Date(prot.data).toLocaleDateString('pt-BR')}</p>
+                                   </div>
+                                   <div className="p-3 border border-slate-50 rounded-2xl">
+                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Prazo</p>
+                                      <p className={`text-[11px] font-black font-mono ${prot.prazo && new Date(prot.prazo) < new Date() ? 'text-red-500' : 'text-slate-900'}`}>
+                                         {prot.prazo ? new Date(prot.prazo).toLocaleDateString('pt-BR') : 'ANÁLISE'}
+                                      </p>
+                                   </div>
                                 </div>
                              </div>
-                             <div className="grid grid-cols-2 gap-4 mt-6 pt-4 border-t border-slate-50">
-                                <div><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-1">ENTRADA</p><p className="text-xs font-bold text-slate-700">{new Date(prot.data).toLocaleDateString('pt-BR')}</p></div>
-                                <div><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-1">PREVISÃO</p><p className="text-xs font-bold text-slate-700">{prot.prazo ? new Date(prot.prazo).toLocaleDateString('pt-BR') : 'EM ANÁLISE'}</p></div>
+
+                             <div className="flex items-center gap-2 mt-6 pt-6 border-t border-slate-50">
+                                <button onClick={() => { setProtocoloToEdit(prot); setIsProtocoloModalOpen(true) }} className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all">Editar</button>
+                                <button onClick={() => handleDeleteProtocolo(prot.id, prot.orgao)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16}/></button>
                              </div>
                           </div>
                        ))}

@@ -20,11 +20,22 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   
   useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setIsSearchOpen(true)
+      }
+      if (e.key === 'Escape') setIsSearchOpen(false)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  useEffect(() => {
     fetch('/api/processos')
       .then(r => r.json())
       .then(d => {
         if (Array.isArray(d)) {
-          // Apenas processos que não estão finalizados
           setProcessCount(d.filter((p: any) => p.status !== 'finalizado').length)
         }
       })
