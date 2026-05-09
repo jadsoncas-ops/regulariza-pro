@@ -286,11 +286,18 @@ export default function ProcessosPage() {
                          <span className="text-lg font-black">{selectedProcesso.valor_total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                       </div>
                       <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-400 w-[65%]" />
+                        <div 
+                          className="h-full bg-emerald-400" 
+                          style={{ width: `${selectedProcesso.valor_total && selectedProcesso.financeiro ? Math.min(100, (selectedProcesso.financeiro.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0) / selectedProcesso.valor_total) * 100) : 0}%` }}
+                        />
                       </div>
                       <div className="mt-3 flex justify-between text-[10px] font-bold">
-                        <span className="text-emerald-400 uppercase">Recebido: R$ 35k</span>
-                        <span className="text-slate-500 uppercase">Pendente: R$ 15k</span>
+                        <span className="text-emerald-400 uppercase">
+                          Recebido: {selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
+                        <span className="text-slate-500 uppercase">
+                          Pendente: {Math.max(0, (selectedProcesso.valor_total || 0) - (selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0))).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </span>
                       </div>
                     </div>
                   </div>

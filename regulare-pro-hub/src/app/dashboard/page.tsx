@@ -116,9 +116,9 @@ export default function DashboardPage() {
       {/* ── ROW 1: COMMAND KPIs (Height: ~15vh) ── */}
       <div className="grid grid-cols-5 gap-4 shrink-0">
         <StatCard label="Processos Ativos" value={ativos} icon={Activity} color="bg-indigo-600" />
-        <StatCard label="Volume de Contratos" value={fmt(totalContratos)} icon={FileText} color="bg-slate-900" />
+        <StatCard label="Receita Bruta" value={fmt(totalContratos)} icon={FileText} color="bg-slate-900" />
+        <StatCard label="Lucro Estimado" value={fmt(totalContratos - despesas.reduce((s:number, f:any)=>s+f.valor, 0))} icon={TrendingUp} color="bg-blue-600" />
         <StatCard label="Total Recebido" value={fmt(totalRecebido)} icon={CheckCircle2} color="bg-emerald-500" />
-        <StatCard label="A Receber" value={fmt(pendenteReceber)} icon={Wallet} color="bg-blue-500" />
         <StatCard label="A Pagar" value={fmt(pendentePagar)} icon={Receipt} color="bg-red-500" />
       </div>
 

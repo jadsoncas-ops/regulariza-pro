@@ -410,7 +410,7 @@ export default function ProcessoDetailPage() {
                         </div>
                         <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Performance Financeira</h3>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-y-4 gap-x-6">
                         <div>
                           <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Contratado</p>
                           <p className="text-[12px] font-black text-slate-900">{fmt(stats?.totalContratado || 0)}</p>
@@ -419,19 +419,27 @@ export default function ProcessoDetailPage() {
                           <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Recebido</p>
                           <p className="text-[12px] font-black text-emerald-600">{fmt(stats?.totalRecebido || 0)}</p>
                         </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Custos/Repasses</p>
+                          <p className="text-[12px] font-black text-red-500">{fmt(stats?.totalRepasses || 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Lucro Est.</p>
+                          <p className="text-[12px] font-black text-blue-600">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="space-y-2 mt-4">
+                    <div className="space-y-2 mt-6">
                       <div className="flex justify-between items-end text-[9px] font-black text-slate-400 uppercase">
-                        <span>Progresso</span>
-                        <span className="text-emerald-600">{stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</span>
+                        <span>Margem Bruta</span>
+                        <span className="text-blue-600">{stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.lucroEstimadoFinal / stats.totalContratado) * 100) : 0}%</span>
                       </div>
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <motion.div 
                           initial={{ width: 0 }}
-                          animate={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.min(100, (stats.totalRecebido / stats.totalContratado) * 100) : 0}%` }}
-                          className="h-full bg-emerald-500"
+                          animate={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.max(0, Math.min(100, (stats.lucroEstimadoFinal / stats.totalContratado) * 100)) : 0}%` }}
+                          className="h-full bg-blue-500"
                         />
                       </div>
                     </div>
