@@ -77,10 +77,10 @@ const CATALOGO_ATIVIDADES = [
 
 const ESCOPOS_SUGERIDOS: Record<string, string[]> = {
   regularizacao: ['1', '2', '3', '4', '5', '6', '7', '8', '10', '11', '12'],
-  obra: ['15', '16', '8', '13'],
+  obra: ['15', '16', '8', '13', '19'],
   projeto: ['1', '3', '4', '6'],
   habitese: ['5', '10', '11'],
-  averbacao: ['11', '12'],
+  averbacao: ['11', '12', '18'],
   levantamento: ['1', '2', '14', '13'],
 }
 
@@ -111,6 +111,8 @@ function WizardContent() {
     clienteId: '',
     imovelId: '',
     valorTotal: '0',
+    receitas: [] as any[],
+    despesas: [] as any[],
     codigo: '',
     observacoes: ''
   })
@@ -182,6 +184,8 @@ function WizardContent() {
       finally { setIsSearchingCep(false) }
     }
   }
+
+  const handleFinalSubmit = async () => {
     setLoading(true)
     try {
       const selectedNatureza = NATUREZAS.find(n => n.id === processo.natureza)
@@ -196,8 +200,8 @@ function WizardContent() {
         },
         financeiro: {
           valorTotal: processo.valorTotal,
-          receitas: [],
-          despesas: []
+          receitas: processo.receitas,
+          despesas: processo.despesas
         },
         clienteId: processo.clienteId || null,
         imovelId: processo.imovelId || null
@@ -229,12 +233,12 @@ function WizardContent() {
           </Link>
           <div className="flex flex-col">
             <span className="text-[11px] font-black text-white uppercase tracking-tighter leading-none">Process Builder</span>
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Etapa {step} de 6</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Etapa {step} de 7</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {[1, 2, 3, 4, 5, 6].map(i => (
+          {[1, 2, 3, 4, 5, 6, 7].map(i => (
             <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i <= step ? 'w-8 bg-blue-500' : 'w-4 bg-white/10'}`} />
           ))}
         </div>
@@ -511,6 +515,7 @@ function WizardContent() {
                       </div>
                     )}
                   </div>
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-between items-center shrink-0">
                     <button 
                       onClick={async () => {
                         const selectedNatureza = NATUREZAS.find(n => n.id === processo.natureza)
@@ -535,10 +540,10 @@ function WizardContent() {
                     >
                       Salvar como Modelo
                     </button>
-                    <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
-                    <button onClick={handleFinalSubmit} disabled={loading} className="btn-premium py-2.5 px-8">
-                      {loading ? <Loader2 size={16} className="animate-spin" /> : <>Finalizar e Abrir Workspace <ChevronRight size={16} /></>}
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
+                      <button onClick={nextStep} className="btn-premium py-2.5 px-8">Continuar <ChevronRight size={16} /></button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -561,7 +566,6 @@ function WizardContent() {
                             if (!val) return
                             // Simula salvamento ou adiciona localmente
                             const newItem = { id: Date.now().toString(), nome: val, categoria: 'Personalizado' }
-                            // Aqui poderíamos chamar uma API para persistir
                             setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, newItem] }))
                             e.currentTarget.value = ''
                           }
@@ -611,6 +615,83 @@ function WizardContent() {
                       )
                     })}
                   </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* PASSO 7: FINANCEIRO DETALHADO */}
+          {step === 7 && (
+            <motion.div 
+              key="step7" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+              className="max-w-5xl w-full space-y-6"
+            >
+              <div className="text-center space-y-2 mb-4">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Financeiro do Processo</h2>
+                <p className="text-sm text-slate-500 font-medium">Configure as receitas do cliente e os repasses de parceiros</p>
+              </div>
+
+              <div className="grid grid-cols-12 gap-6 h-[500px]">
+                {/* Receitas */}
+                <div className="col-span-6 flex flex-col min-h-0 bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp size={16} className="text-emerald-500" />
+                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Receitas (Cliente)</span>
+                    </div>
+                    <button onClick={() => setProcesso(prev => ({ ...prev, receitas: [...prev.receitas, { id: Date.now().toString(), descricao: `Parcela ${prev.receitas.length + 1}`, valor: '0', data: new Date().toISOString().split('T')[0], status: 'pendente' }] }))} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-md transition-all"><Plus size={16} /></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+                    {processo.receitas.map((rec: any) => (
+                      <div key={rec.id} className="grid grid-cols-12 gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl relative group">
+                        <div className="col-span-5"><Label>Descrição</Label><input className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold" value={rec.descricao} onChange={e => setProcesso(p => ({...p, receitas: p.receitas.map((r: any) => r.id === rec.id ? {...r, descricao: e.target.value} : r)}))} /></div>
+                        <div className="col-span-3"><Label>Valor</Label><input type="number" className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold" value={rec.valor} onChange={e => setProcesso(p => ({...p, receitas: p.receitas.map((r: any) => r.id === rec.id ? {...r, valor: e.target.value} : r)}))} /></div>
+                        <div className="col-span-4 flex items-end gap-2">
+                          <div className="flex-1"><Label>Data</Label><input type="date" className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold" value={rec.data} onChange={e => setProcesso(p => ({...p, receitas: p.receitas.map((r: any) => r.id === rec.id ? {...r, data: e.target.value} : r)}))} /></div>
+                          <button onClick={() => setProcesso(p => ({...p, receitas: p.receitas.filter((r: any) => r.id !== rec.id)}))} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    ))}
+                    {processo.receitas.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-30 text-[10px] font-black uppercase tracking-widest"><TrendingUp size={24} className="mb-2" />Sem parcelas lançadas</div>}
+                  </div>
+                </div>
+
+                {/* Despesas */}
+                <div className="col-span-6 flex flex-col min-h-0 bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+                  <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                    <div className="flex items-center gap-2">
+                      <TrendingDown size={16} className="text-red-500" />
+                      <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Despesas (Parceiros/Custos)</span>
+                    </div>
+                    <button onClick={() => setProcesso(prev => ({ ...prev, despesas: [...prev.despesas, { id: Date.now().toString(), parceiro: '', servico: '', valor: '0', data: new Date().toISOString().split('T')[0], status: 'pendente' }] }))} className="p-1 text-red-600 hover:bg-red-50 rounded-md transition-all"><Plus size={16} /></button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+                    {processo.despesas.map((des: any) => (
+                      <div key={des.id} className="grid grid-cols-12 gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl relative group">
+                        <div className="col-span-5"><Label>Parceiro</Label><input className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold" value={des.parceiro} onChange={e => setProcesso(p => ({...p, despesas: p.despesas.map((d: any) => d.id === des.id ? {...d, parceiro: e.target.value} : d)}))} /></div>
+                        <div className="col-span-3"><Label>Valor</Label><input type="number" className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold" value={des.valor} onChange={e => setProcesso(p => ({...p, despesas: p.despesas.map((d: any) => d.id === des.id ? {...d, valor: e.target.value} : d)}))} /></div>
+                        <div className="col-span-4 flex items-end gap-2">
+                          <div className="flex-1"><Label>Data</Label><input type="date" className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-[10px] font-bold" value={des.data} onChange={e => setProcesso(p => ({...p, despesas: p.despesas.map((d: any) => d.id === des.id ? {...d, data: e.target.value} : d)}))} /></div>
+                          <button onClick={() => setProcesso(p => ({...p, despesas: p.despesas.filter((d: any) => d.id !== des.id)}))} className="p-1.5 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                    ))}
+                    {processo.despesas.length === 0 && <div className="h-full flex flex-col items-center justify-center opacity-30 text-[10px] font-black uppercase tracking-widest"><TrendingDown size={24} className="mb-2" />Sem despesas lançadas</div>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center p-6 bg-slate-900 rounded-3xl text-white shadow-xl">
+                <div className="flex gap-8">
+                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Contrato</p><p className="text-xl font-black">R$ {parseFloat(processo.valorTotal).toLocaleString('pt-BR')}</p></div>
+                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Despesas</p><p className="text-xl font-black text-red-400">R$ {processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0).toLocaleString('pt-BR')}</p></div>
+                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro Previsto</p><p className="text-xl font-black text-emerald-400">R$ {(parseFloat(processo.valorTotal) - processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0)).toLocaleString('pt-BR')}</p></div>
+                </div>
+                <div className="flex gap-3">
+                  <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 hover:text-white transition-colors">Voltar</button>
+                  <button onClick={handleFinalSubmit} disabled={loading} className="btn-premium py-3 px-10">
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <>Concluir Cadastro <Check size={18} /></>}
+                  </button>
                 </div>
               </div>
             </motion.div>

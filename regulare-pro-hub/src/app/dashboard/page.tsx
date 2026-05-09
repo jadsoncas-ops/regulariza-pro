@@ -114,11 +114,12 @@ export default function DashboardPage() {
     <div className="flex flex-col h-[calc(100vh-80px)] gap-4 overflow-hidden">
       
       {/* ── ROW 1: COMMAND KPIs (Height: ~15vh) ── */}
-      <div className="grid grid-cols-4 gap-4 shrink-0">
-        <StatCard label="Contratos Totais" value={fmt(totalContratos)} trend={15} icon={FileText} color="bg-slate-900" />
-        <StatCard label="Total Recebido" value={fmt(totalRecebido)} trend={22} icon={CheckCircle2} color="bg-emerald-500" />
-        <StatCard label="Pendente Receber" value={fmt(pendenteReceber)} trend={-5} icon={Wallet} color="bg-blue-500" />
-        <StatCard label="Pendente Pagar" value={fmt(pendentePagar)} trend={2} icon={Receipt} color="bg-red-500" />
+      <div className="grid grid-cols-5 gap-4 shrink-0">
+        <StatCard label="Processos Ativos" value={ativos} icon={Activity} color="bg-indigo-600" />
+        <StatCard label="Volume de Contratos" value={fmt(totalContratos)} icon={FileText} color="bg-slate-900" />
+        <StatCard label="Total Recebido" value={fmt(totalRecebido)} icon={CheckCircle2} color="bg-emerald-500" />
+        <StatCard label="A Receber" value={fmt(pendenteReceber)} icon={Wallet} color="bg-blue-500" />
+        <StatCard label="A Pagar" value={fmt(pendentePagar)} icon={Receipt} color="bg-red-500" />
       </div>
 
       {/* ── ROW 2: ANALYSIS & FLOW (Height: ~40vh) ── */}
