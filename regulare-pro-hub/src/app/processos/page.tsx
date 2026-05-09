@@ -2,25 +2,27 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
-import { 
-  Plus, Search, Briefcase, Clock, ChevronRight, X, LayoutGrid, List, 
-  Filter, User, Trash2, ExternalLink, Command, Sparkles, SlidersHorizontal,
-  ArrowUpRight, MapPin, Calendar, Info, GitBranch, DollarSign, ListTodo,
-  MoreVertical, CheckCircle2, ChevronLeft
+import {
+  Plus, Search, Briefcase, Clock, ChevronRight, X, LayoutGrid, List,
+  User, Trash2, ExternalLink, SlidersHorizontal,
+  ArrowUpRight, MapPin, Calendar, DollarSign,
+  CheckCircle2, ChevronLeft, Filter, MoreHorizontal,
+  Circle, Layers, TrendingUp
 } from 'lucide-react'
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ─── Status config padronizado ────────────────────────────────────────────────
-export const STATUS_CONFIG: Record<string, { label: string; dot: string; badge: string }> = {
-  em_analise:           { label: 'Entrada',       dot: 'bg-amber-400',  badge: 'bg-amber-50 text-amber-700 border-amber-100' },
-  levantamento:         { label: 'Levantamento',  dot: 'bg-blue-400',   badge: 'bg-blue-50 text-blue-700 border-blue-100' },
-  projeto:              { label: 'Projeto',       dot: 'bg-indigo-500', badge: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
-  protocolo_prefeitura: { label: 'Prefeitura',    dot: 'bg-purple-500', badge: 'bg-purple-50 text-purple-700 border-purple-100' },
-  cartorio:             { label: 'Cartório',      dot: 'bg-orange-500', badge: 'bg-orange-50 text-orange-700 border-orange-100' },
-  finalizado:           { label: 'Conclusão',     dot: 'bg-emerald-500',badge: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+export const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; badge: string }> = {
+  em_analise:           { label: 'Entrada',      color: '#F59E0B', bg: '#FFFBEB', badge: 'badge-amber' },
+  levantamento:         { label: 'Levantamento', color: '#3B82F6', bg: '#EFF6FF', badge: 'badge-blue' },
+  projeto:              { label: 'Projeto',       color: '#6366F1', bg: '#EEF2FF', badge: 'badge-purple' },
+  protocolo_prefeitura: { label: 'Prefeitura',   color: '#8B5CF6', bg: '#F5F3FF', badge: 'badge-purple' },
+  cartorio:             { label: 'Cartório',      color: '#F97316', bg: '#FFF7ED', badge: 'badge-amber' },
+  finalizado:           { label: 'Conclusão',     color: '#10B981', bg: '#ECFDF5', badge: 'badge-green' },
 }
+
+const fmtK = (v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : `R$${v.toFixed(0)}`
 
 export default function ProcessosPage() {
   const [processos, setProcessos] = useState<any[]>([])
@@ -28,29 +30,20 @@ export default function ProcessosPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [view, setView] = useState<'list' | 'board'>('board')
-  
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [processoToDelete, setProcessoToDelete] = useState<any>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [processoToEdit, setProcessoToEdit] = useState<any>(null)
 
   const fetchData = () => {
-    fetch('/api/processos')
-      .then(r => r.json())
-      .then(d => {
-        setProcessos(Array.isArray(d) ? d : [])
-        setLoading(false)
-      })
+    fetch('/api/processos').then(r => r.json())
+      .then(d => { setProcessos(Array.isArray(d) ? d : []); setLoading(false) })
       .catch(() => setLoading(false))
   }
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  useEffect(() => { fetchData() }, [])
 
   const handleDelete = async () => {
     if (!processoToDelete) return
@@ -58,8 +51,7 @@ export default function ProcessosPage() {
     try {
       const res = await fetch(`/api/processos/${processoToDelete.id}`, { method: 'DELETE' })
       if (res.ok) {
-        setIsDeleteModalOpen(false)
-        setProcessoToDelete(null)
+        setIsDeleteModalOpen(false); setProcessoToDelete(null)
         if (selectedId === processoToDelete.id) setSelectedId(null)
         fetchData()
       }
@@ -76,270 +68,383 @@ export default function ProcessosPage() {
     return matchSearch && matchStatus
   }), [processos, search, statusFilter])
 
-  const getDays = (d: string) => {
-    if (!d) return null
-    return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000)
-  }
-
   const selectedProcesso = useMemo(() => processos.find(p => p.id === selectedId), [processos, selectedId])
 
+  /* per-status stats */
+  const stats = useMemo(() => {
+    const ativos = processos.filter(p => p.status !== 'finalizado').length
+    const totalContratos = processos.reduce((s, p) => s + (p.valor_total || 0), 0)
+    const totalRecebido = processos.reduce((s, p) =>
+      s + (p.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((a: number, b: any) => a + b.valor, 0) || 0), 0)
+    return { ativos, totalContratos, totalRecebido }
+  }, [processos])
+
   return (
-    <div className="flex h-full overflow-hidden">
-      
-      {/* ── CENTRAL WORKSPACE ── */}
-      <div className={`flex flex-col flex-1 min-w-0 transition-all duration-300 ${selectedId ? 'mr-0' : ''}`}>
-        
-        {/* Workspace Header */}
-        <div className="p-4 border-b border-slate-200 bg-white flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-4">
-            <h1 className="text-sm font-black text-slate-900 uppercase tracking-widest font-mono">Processos</h1>
-            <div className="h-4 w-px bg-slate-200" />
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setView('board')} 
-                className={`p-1.5 rounded-md transition-all ${view === 'board' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <LayoutGrid size={14} />
-              </button>
-              <button 
-                onClick={() => setView('list')} 
-                className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                <List size={14} />
-              </button>
-            </div>
+    <div className="flex h-full overflow-hidden" style={{ height: 'calc(100vh - 48px)', margin: '-20px' }}>
+
+      {/* ── LEFT: WORKSPACE ──────────────────────────────────── */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+        {/* Workspace header */}
+        <div className="px-5 py-3 border-b border-slate-100 bg-white flex items-center gap-3 shrink-0">
+          <h1 className="text-[14px] font-semibold text-slate-900">Processos</h1>
+          <span className="badge badge-slate mono">{processos.length}</span>
+
+          <div className="flex-1" />
+
+          {/* Search */}
+          <div className="relative">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Filtrar..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input pl-8 pr-3 py-1.5 text-[12px] w-44 h-8 rounded-lg"
+            />
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative group">
-              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Filtrar..."
-                className="bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-[11px] font-medium outline-none focus:ring-2 focus:ring-primary/10 w-48 transition-all"
-                value={search} onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-            <Link href="/processos/novo" className="btn-premium py-1.5 px-3 text-[10px]">
-              <Plus size={14} strokeWidth={2.5} />
-              NOVO
-            </Link>
+          {/* Status filter */}
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="input py-1.5 text-[12px] w-auto h-8 rounded-lg pr-7"
+          >
+            <option value="">Todos os status</option>
+            {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+              <option key={k} value={k}>{v.label}</option>
+            ))}
+          </select>
+
+          {/* View toggle */}
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5 gap-0.5">
+            <button
+              onClick={() => setView('board')}
+              className={`p-1.5 rounded-md transition-all ${view === 'board' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              <LayoutGrid size={14} />
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`p-1.5 rounded-md transition-all ${view === 'list' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              <List size={14} />
+            </button>
+          </div>
+
+          <Link href="/processos/novo" className="btn btn-primary btn-sm">
+            <Plus size={13} strokeWidth={2.5} /> Novo
+          </Link>
+        </div>
+
+        {/* Summary bar */}
+        <div className="px-5 py-2 bg-slate-50/50 border-b border-slate-100 flex items-center gap-6 shrink-0">
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <div className="dot dot-blue" />
+            <span className="text-secondary">{stats.ativos} ativos</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <DollarSign size={11} className="text-slate-400" />
+            <span className="font-semibold text-slate-700">{fmtK(stats.totalContratos)}</span>
+            <span className="text-secondary">em contratos</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px]">
+            <TrendingUp size={11} className="text-emerald-500" />
+            <span className="font-semibold text-emerald-700">{fmtK(stats.totalRecebido)}</span>
+            <span className="text-secondary">recebido</span>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto scroll-container p-4">
-          {view === 'board' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 min-w-[1200px] h-full">
-              {Object.keys(STATUS_CONFIG).map(colId => {
-                const col = STATUS_CONFIG[colId]
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-auto page-scroll p-5">
+          {loading ? (
+            <div className="flex items-center justify-center h-40 gap-3">
+              <div className="w-5 h-5 border-2 border-[hsl(231,100%,60%)] border-t-transparent rounded-full animate-spin" />
+              <p className="text-[12px] text-secondary">Carregando processos...</p>
+            </div>
+          ) : view === 'board' ? (
+
+            /* BOARD VIEW */
+            <div className="flex gap-4 min-w-[1100px] h-full">
+              {Object.entries(STATUS_CONFIG).map(([colId, col]) => {
                 const procs = filtered.filter(p => p.status === colId)
                 return (
-                  <div key={colId} className="flex flex-col gap-3 min-w-0">
-                    <div className="flex items-center justify-between px-1">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{col.label}</span>
-                      <span className="text-[10px] font-mono font-bold text-slate-400">{procs.length}</span>
+                  <div key={colId} className="kanban-col flex-1 min-w-[180px]">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <div className="flex items-center gap-2">
+                        <div className="dot" style={{ background: col.color }} />
+                        <span className="text-[11px] font-semibold text-slate-600">{col.label}</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-secondary bg-slate-100 px-1.5 py-0.5 rounded-md">{procs.length}</span>
                     </div>
-                    <div className="space-y-3">
-                      {procs.map(p => (
-                        <div 
-                          key={p.id} 
-                          onClick={() => setSelectedId(p.id)}
-                          className={`compact-card cursor-pointer transition-all border-l-2 ${selectedId === p.id ? 'border-l-primary bg-primary/5 ring-1 ring-primary/10' : 'border-l-transparent hover:border-l-slate-300'}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-mono font-black text-slate-400">{p.codigo_projeto || 'REG.000'}</span>
-                            <div className={`w-1.5 h-1.5 rounded-full ${col.dot}`} />
-                          </div>
-                          <h4 className="text-[11px] font-bold text-slate-900 mb-2 leading-tight line-clamp-2">{p.tipo_regularizacao}</h4>
-                          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-bold uppercase truncate">
-                            <User size={10} className="text-slate-300" />
-                            {p.cliente?.nome}
-                          </div>
+
+                    <div className="space-y-2">
+                      {procs.map(p => {
+                        const recebido = p.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((a: number, b: any) => a + b.valor, 0) || 0
+                        return (
+                          <motion.div
+                            key={p.id}
+                            layout
+                            onClick={() => setSelectedId(p.id === selectedId ? null : p.id)}
+                            className={`kanban-card ${selectedId === p.id ? 'border-[hsl(231,100%,60%)] shadow-[0_0_0_2px_hsl(231,100%,60%/0.2)]' : ''}`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="mono text-[9px] font-semibold text-secondary">{p.codigo_projeto || 'REG.000'}</span>
+                              <div className="dot" style={{ background: col.color }} />
+                            </div>
+                            <p className="text-[12px] font-semibold text-slate-900 leading-tight mb-2 line-clamp-2">{p.tipo_regularizacao}</p>
+                            <div className="flex items-center gap-1.5 text-[10px] text-secondary mb-3">
+                              <User size={9} className="shrink-0" />
+                              <span className="truncate">{p.cliente?.nome}</span>
+                            </div>
+                            {p.valor_total && (
+                              <div className="pt-2 border-t border-slate-100">
+                                <div className="flex items-center justify-between text-[10px] mb-1">
+                                  <span className="text-secondary">Recebido</span>
+                                  <span className="font-semibold text-slate-700">{fmtK(recebido)}</span>
+                                </div>
+                                <div className="progress-track">
+                                  <div
+                                    className="progress-fill"
+                                    style={{ width: `${Math.min(100, (recebido / p.valor_total) * 100)}%`, background: col.color }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </motion.div>
+                        )
+                      })}
+                      {procs.length === 0 && (
+                        <div className="border-2 border-dashed border-slate-100 rounded-xl p-4 text-center">
+                          <Circle size={16} className="text-slate-200 mx-auto mb-1" />
+                          <p className="text-[10px] text-slate-300">Nenhum processo</p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </div>
                 )
               })}
             </div>
+
           ) : (
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-              <table className="w-full text-left">
+
+            /* LIST VIEW */
+            <div className="card overflow-hidden">
+              <table className="data-table">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Código</th>
-                    <th className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Processo</th>
-                    <th className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
-                    <th className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-4 py-2 text-right"></th>
+                  <tr>
+                    <th>Código</th>
+                    <th>Processo</th>
+                    <th>Cliente</th>
+                    <th>Status</th>
+                    <th>Contrato</th>
+                    <th>Recebido</th>
+                    <th></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filtered.map(p => (
-                    <tr 
-                      key={p.id} 
-                      onClick={() => setSelectedId(p.id)}
-                      className={`hover:bg-slate-50 cursor-pointer transition-colors ${selectedId === p.id ? 'bg-primary/5' : ''}`}
-                    >
-                      <td className="px-4 py-3 font-mono text-[10px] font-bold text-blue-600">{p.codigo_projeto || 'REG.000'}</td>
-                      <td className="px-4 py-3 text-[11px] font-bold text-slate-900">{p.tipo_regularizacao}</td>
-                      <td className="px-4 py-3 text-[11px] font-bold text-slate-600">{p.cliente?.nome}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[p.status]?.dot || 'bg-slate-300'}`} />
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">{STATUS_CONFIG[p.status]?.label || p.status}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <ChevronRight size={14} className="text-slate-300 ml-auto" />
-                      </td>
-                    </tr>
-                  ))}
+                <tbody>
+                  {filtered.map(p => {
+                    const s = STATUS_CONFIG[p.status]
+                    const recebido = p.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((a: number, b: any) => a + b.valor, 0) || 0
+                    return (
+                      <tr
+                        key={p.id}
+                        onClick={() => setSelectedId(p.id === selectedId ? null : p.id)}
+                        className={`cursor-pointer ${selectedId === p.id ? 'bg-[hsl(231,100%,60%/0.04)]' : ''}`}
+                      >
+                        <td><span className="mono text-[10px] font-semibold text-[hsl(231,100%,60%)]">{p.codigo_projeto || '—'}</span></td>
+                        <td><p className="font-semibold text-slate-900">{p.tipo_regularizacao}</p></td>
+                        <td><p className="text-secondary">{p.cliente?.nome}</p></td>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            <div className="dot" style={{ background: s?.color }} />
+                            <span className="text-[11px] font-medium" style={{ color: s?.color }}>{s?.label}</span>
+                          </div>
+                        </td>
+                        <td><span className="font-semibold text-slate-800">{p.valor_total ? fmtK(p.valor_total) : '—'}</span></td>
+                        <td>
+                          <span className="font-semibold text-emerald-600">{fmtK(recebido)}</span>
+                        </td>
+                        <td>
+                          <Link
+                            href={`/processos/${p.id}`}
+                            onClick={e => e.stopPropagation()}
+                            className="btn btn-ghost btn-xs"
+                          >
+                            <ArrowUpRight size={12} />
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
+              {filtered.length === 0 && (
+                <div className="p-12 text-center">
+                  <Layers size={28} className="text-slate-200 mx-auto mb-2" />
+                  <p className="text-[12px] font-medium text-secondary">Nenhum resultado encontrado</p>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* ── SIDE DETAIL PANEL ── */}
+      {/* ── RIGHT: DETAIL PANEL ──────────────────────────────── */}
       <AnimatePresence>
         {selectedId && (
-          <motion.div 
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="w-[450px] border-l border-slate-200 bg-white shadow-2xl z-20 flex flex-col"
+          <motion.aside
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: 400, opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+            className="border-l border-slate-100 bg-white shrink-0 flex flex-col overflow-hidden"
+            style={{ height: 'calc(100vh - 48px)' }}
           >
             {selectedProcesso ? (
               <>
-                <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 shrink-0">
+                {/* Panel header */}
+                <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setSelectedId(null)} className="p-1.5 hover:bg-slate-200 rounded-md transition-colors">
-                      <ChevronLeft size={16} className="text-slate-500" />
+                    <button
+                      onClick={() => setSelectedId(null)}
+                      className="btn btn-ghost btn-xs p-1.5"
+                    >
+                      <X size={14} />
                     </button>
-                    <span className="text-[10px] font-black text-slate-900 font-mono uppercase tracking-widest">Detalhes do Processo</span>
+                    <span className="mono text-[10px] font-semibold text-secondary">{selectedProcesso.codigo_projeto}</span>
+                    <div className="badge" style={{
+                      background: STATUS_CONFIG[selectedProcesso.status]?.bg,
+                      color: STATUS_CONFIG[selectedProcesso.status]?.color,
+                      borderColor: STATUS_CONFIG[selectedProcesso.status]?.color + '30'
+                    }}>
+                      {STATUS_CONFIG[selectedProcesso.status]?.label}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => { setProcessoToEdit(selectedProcesso); setIsEditModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-primary transition-colors">
-                      <SlidersHorizontal size={16} />
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => { setProcessoToEdit(selectedProcesso); setIsEditModalOpen(true) }}
+                      className="btn btn-ghost btn-xs p-1.5"
+                    >
+                      <SlidersHorizontal size={13} />
                     </button>
-                    <button onClick={() => { setProcessoToDelete(selectedProcesso); setIsDeleteModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                      <Trash2 size={16} />
+                    <button
+                      onClick={() => { setProcessoToDelete(selectedProcesso); setIsDeleteModalOpen(true) }}
+                      className="btn btn-ghost btn-xs p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 size={13} />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto scroll-container p-6 space-y-8">
-                  {/* Header Info */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 font-mono">
-                        {selectedProcesso.codigo_projeto}
-                      </span>
-                      <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${STATUS_CONFIG[selectedProcesso.status]?.badge}`}>
-                        {STATUS_CONFIG[selectedProcesso.status]?.label}
-                      </div>
-                    </div>
-                    <h2 className="text-xl font-black text-slate-900 leading-tight">{selectedProcesso.tipo_regularizacao}</h2>
+                {/* Panel content */}
+                <div className="flex-1 overflow-y-auto page-scroll p-5 space-y-5">
+
+                  {/* Title */}
+                  <div>
+                    <h2 className="text-[17px] font-bold text-slate-900 leading-tight">{selectedProcesso.tipo_regularizacao}</h2>
+                    <p className="text-[12px] text-secondary mt-1">Aberto em {new Date(selectedProcesso.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                   </div>
 
-                  {/* Quick Cards */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Cliente</p>
-                      <p className="text-xs font-bold text-slate-800">{selectedProcesso.cliente?.nome}</p>
+                  {/* Quick info */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="card-flat p-3">
+                      <p className="input-label mb-1">Cliente</p>
+                      <p className="text-[12px] font-semibold text-slate-800 truncate">{selectedProcesso.cliente?.nome}</p>
                     </div>
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Data Início</p>
-                      <p className="text-xs font-bold text-slate-800">{new Date(selectedProcesso.createdAt).toLocaleDateString('pt-BR')}</p>
+                    <div className="card-flat p-3">
+                      <p className="input-label mb-1">Responsável</p>
+                      <p className="text-[12px] font-semibold text-slate-800 truncate">{selectedProcesso.responsavel || '—'}</p>
                     </div>
                   </div>
 
-                  {/* Property Info */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <MapPin size={14} className="text-primary" />
-                      <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Localização</h3>
-                    </div>
-                    <div className="p-4 border border-slate-100 rounded-2xl bg-white shadow-sm space-y-2">
-                      <p className="text-xs font-bold text-slate-700">{selectedProcesso.imovel?.endereco}, {selectedProcesso.imovel?.numero}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{selectedProcesso.imovel?.bairro} • {selectedProcesso.imovel?.cidade}/{selectedProcesso.imovel?.estado}</p>
-                      <div className="pt-2 mt-2 border-t border-slate-50 flex items-center justify-between">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Matrícula</span>
-                        <span className="text-[10px] font-mono font-bold text-slate-800">{selectedProcesso.imovel?.num_matricula || 'N/A'}</span>
+                  {/* Localização */}
+                  {selectedProcesso.imovel && (
+                    <div className="card p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <MapPin size={13} className="text-[hsl(231,100%,60%)]" />
+                        <h4 className="text-[11px] font-semibold text-secondary uppercase tracking-wider">Localização do Imóvel</h4>
                       </div>
+                      <p className="text-[12px] font-semibold text-slate-800">
+                        {selectedProcesso.imovel.endereco}{selectedProcesso.imovel.numero ? `, ${selectedProcesso.imovel.numero}` : ''}
+                      </p>
+                      <p className="text-[11px] text-secondary mt-1">
+                        {[selectedProcesso.imovel.bairro, selectedProcesso.imovel.cidade, selectedProcesso.imovel.estado].filter(Boolean).join(' · ')}
+                      </p>
+                      {selectedProcesso.imovel.num_matricula && (
+                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider">Matrícula</span>
+                          <span className="mono text-[11px] font-semibold text-slate-700">{selectedProcesso.imovel.num_matricula}</span>
+                        </div>
+                      )}
                     </div>
-                  </div>
+                  )}
 
-                  {/* Finance Overview */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <DollarSign size={14} className="text-emerald-500" />
-                      <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Financeiro</h3>
-                    </div>
-                    <div className="bg-slate-900 rounded-2xl p-5 text-white">
-                      <div className="flex justify-between items-center mb-4">
-                         <span className="text-[10px] font-bold text-slate-400 uppercase">Total Contrato</span>
-                         <span className="text-lg font-black">{selectedProcesso.valor_total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                  {/* Financial */}
+                  <div className="rounded-xl overflow-hidden" style={{ background: '#0d0e12' }}>
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Financeiro</span>
+                        <span className="text-[16px] font-bold text-white">
+                          {selectedProcesso.valor_total?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) || '—'}
+                        </span>
                       </div>
-                      <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-emerald-400" 
-                          style={{ width: `${selectedProcesso.valor_total && selectedProcesso.financeiro ? Math.min(100, (selectedProcesso.financeiro.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0) / selectedProcesso.valor_total) * 100) : 0}%` }}
+                      <div className="progress-track" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${selectedProcesso.valor_total && selectedProcesso.financeiro
+                              ? Math.min(100, ((selectedProcesso.financeiro.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((a: number, b: any) => a + b.valor, 0) || 0) / selectedProcesso.valor_total) * 100)
+                              : 0}%`,
+                            background: '#10B981'
+                          }}
                         />
                       </div>
-                      <div className="mt-3 flex justify-between text-[10px] font-bold">
-                        <span className="text-emerald-400 uppercase">
-                          Recebido: {(selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-semibold">
+                        <span className="text-emerald-400">
+                          Rec: {(selectedProcesso.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((a: number, b: any) => a + b.valor, 0) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
-                        <span className="text-slate-500 uppercase">
-                          Pendente: {Math.max(0, (selectedProcesso.valor_total || 0) - (selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        <span className="text-slate-500">
+                          Pend: {Math.max(0, (selectedProcesso.valor_total || 0) - (selectedProcesso.financeiro?.filter((f: any) => f.tipo === 'receita' && f.status === 'pago').reduce((a: number, b: any) => a + b.valor, 0) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Link */}
-                  <Link 
-                    href={`/processos/${selectedProcesso.id}`} 
-                    className="flex items-center justify-center gap-2 w-full py-3 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all border border-slate-200"
+                  {/* Open workspace */}
+                  <Link
+                    href={`/processos/${selectedProcesso.id}`}
+                    className="btn btn-secondary w-full justify-center gap-2"
                   >
-                    Abrir Workspace Completo <ExternalLink size={14} />
+                    Abrir Workspace Completo <ExternalLink size={13} />
                   </Link>
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 text-center gap-4">
-                <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center animate-spin">
-                  <Sparkles size={24} className="text-slate-200" />
-                </div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Carregando contexto...</p>
+              <div className="flex-1 flex items-center justify-center p-12">
+                <div className="w-6 h-6 border-2 border-slate-200 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-          </motion.div>
+          </motion.aside>
         )}
       </AnimatePresence>
 
-      <EditProcessoModal 
+      <EditProcessoModal
         isOpen={isEditModalOpen}
         onClose={() => { setIsEditModalOpen(false); setProcessoToEdit(null) }}
         processo={processoToEdit}
         onSuccess={fetchData}
       />
-
-      <DeleteConfirmModal 
+      <DeleteConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => { setIsDeleteModalOpen(false); setProcessoToDelete(null) }}
         onConfirm={handleDelete}
         loading={isDeleting}
         title="Excluir Processo?"
         description={
-          <div className="text-xs space-y-2">
+          <div className="text-[12px] space-y-2">
             <p>Remover permanentemente <strong>{processoToDelete?.codigo_projeto}</strong>?</p>
-            <p className="text-red-500 font-bold uppercase tracking-widest text-[10px]">Ação irreversível.</p>
+            <p className="text-red-500 font-semibold uppercase tracking-widest text-[10px]">Ação irreversível.</p>
           </div>
         }
       />

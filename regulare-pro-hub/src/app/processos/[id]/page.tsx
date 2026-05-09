@@ -206,80 +206,94 @@ export default function ProcessoDetailPage() {
   }
 
   if (loading && !processo) return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center gap-4">
-      <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center animate-pulse">
-        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-      </div>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] font-mono">Sincronizando Operação...</p>
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
+      <div className="w-8 h-8 border-2 border-[hsl(231,100%,60%)] border-t-transparent rounded-full animate-spin" />
+      <p className="text-[11px] font-semibold text-secondary uppercase tracking-widest">Carregando processo...</p>
     </div>
   )
 
   if (!processo) return (
-    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
-      <div className="text-center p-12">
-         <X size={48} className="text-red-500 mx-auto mb-4 opacity-20"/>
-         <h2 className="text-xl font-bold text-slate-900">Processo não encontrado</h2>
-         <Link href="/processos" className="btn-premium mt-8 inline-flex">Voltar para Central</Link>
-      </div>
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+      <X size={32} className="text-slate-200" />
+      <p className="text-[13px] font-semibold text-secondary">Processo não encontrado</p>
+      <Link href="/processos" className="btn btn-primary btn-sm">Voltar para Processos</Link>
     </div>
   )
 
   const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+  const STATUS_LABELS: Record<string, string> = {
+    em_analise: 'Entrada', levantamento: 'Levantamento', projeto: 'Projeto',
+    protocolo_prefeitura: 'Prefeitura', cartorio: 'Cartório', finalizado: 'Conclusão'
+  }
+  const STATUS_COLORS: Record<string, string> = {
+    em_analise: '#F59E0B', levantamento: '#3B82F6', projeto: '#6366F1',
+    protocolo_prefeitura: '#8B5CF6', cartorio: '#F97316', finalizado: '#10B981'
+  }
+  const statusColor = STATUS_COLORS[processo.status] || '#64748B'
+  const statusLabel = STATUS_LABELS[processo.status] || processo.status
+  const diasAberto = Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)
+
   return (
-    <div className="flex flex-col gap-8">
-      
-      {/* ── HEADER ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
-        <div className="flex items-center gap-4">
-          <Link href="/processos" className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm group">
-            <ArrowLeft size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
-          </Link>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 uppercase tracking-wider">
-                {processo.codigo_projeto || `#${processo.id.substring(0,8).toUpperCase()}`}
-              </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">/ OPERAÇÃO EM CURSO</span>
-              <div className="h-1 w-1 rounded-full bg-slate-300" />
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Aberto há {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase">{processo.tipo_regularizacao}</h1>
+    <div className="flex flex-col" style={{ margin: '-20px', height: 'calc(100vh - 48px)', overflow: 'hidden' }}>
+
+      {/* ── PROCESS HEADER ── */}
+      <div className="px-6 py-4 bg-white border-b border-slate-100 flex items-center gap-4 shrink-0">
+        <Link href="/processos" className="btn btn-ghost btn-xs p-1.5">
+          <ArrowLeft size={15} />
+        </Link>
+
+        <div className="h-4 w-px bg-slate-200" />
+
+        <div className="flex items-center gap-2 text-[11px] text-secondary">
+          <Link href="/processos" className="hover:text-slate-700 transition-colors">Processos</Link>
+          <ChevronRight size={11} />
+          <span className="mono font-semibold text-[hsl(231,100%,60%)]">{processo.codigo_projeto || 'REG.000'}</span>
+        </div>
+
+        <div className="flex-1">
+          <h1 className="text-[15px] font-bold text-slate-900 leading-tight">{processo.tipo_regularizacao}</h1>
+          <div className="flex items-center gap-3 mt-0.5">
+            <span className="text-[11px] text-secondary">{processo.cliente?.nome}</span>
+            <span className="text-slate-200">·</span>
+            <span className="text-[11px] text-secondary flex items-center gap-1">
+              <Calendar size={10} /> Aberto há {diasAberto} {diasAberto === 1 ? 'dia' : 'dias'}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex flex-col items-end pr-4 border-r border-slate-200">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">STATUS ATUAL</span>
-            <span className="text-[11px] font-black text-primary uppercase bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10">{processo.status?.replace(/_/g, ' ') || 'ATIVO'}</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <div
+            className="badge"
+            style={{ background: statusColor + '15', color: statusColor, borderColor: statusColor + '30', fontWeight: 600 }}
+          >
+            <div className="dot" style={{ background: statusColor }} />
+            {statusLabel}
           </div>
-          
-          <button onClick={() => setIsEditProcessoModalOpen(true)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all text-slate-500 hover:text-primary shadow-sm">
-            <Edit size={16} />
+
+          <button onClick={() => setIsEditProcessoModalOpen(true)} className="btn btn-secondary btn-xs gap-1.5">
+            <Edit size={12} /> Editar
           </button>
-          <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-all text-red-500 shadow-sm">
-            <Trash2 size={16} />
+          <button onClick={() => setIsDeleteModalOpen(true)} className="btn btn-xs btn-ghost p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50">
+            <Trash2 size={13} />
           </button>
         </div>
       </div>
 
-
       {/* ── TABS ── */}
-      <div className="border-b border-slate-200 flex items-center gap-1 overflow-x-auto scrollbar-hide shrink-0">
+      <div className="tab-bar shrink-0">
         {TABS.map(t => (
-          <button 
+          <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-[0.15em] transition-all relative ${
-              tab === t.id ? 'text-primary' : 'text-slate-400 hover:text-slate-600'
-            }`}
+            className={`tab-item ${tab === t.id ? 'active' : ''}`}
           >
-            <t.icon size={13} strokeWidth={tab === t.id ? 3 : 2} />
+            <t.icon size={13} strokeWidth={tab === t.id ? 2.5 : 2} />
             {t.label}
             {tab === t.id && (
-              <motion.div 
+              <motion.div
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_12px_rgba(45,91,255,0.8)]"
+                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[hsl(231,100%,60%)]"
               />
             )}
           </button>
@@ -287,7 +301,7 @@ export default function ProcessoDetailPage() {
       </div>
 
       {/* ── TAB CONTENT ── */}
-      <div className="min-h-[500px]">
+      <div className="flex-1 overflow-y-auto page-scroll" style={{ padding: '24px 24px' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
