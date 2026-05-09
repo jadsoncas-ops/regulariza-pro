@@ -60,6 +60,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
     cep: ''
   })
   const [coords, setCoords] = useState<{lat: number | null, lng: number | null}>({ lat: null, lng: null })
+  const [isSearchingCep, setIsSearchingCep] = useState(false)
 
   const router = useRouter()
 
