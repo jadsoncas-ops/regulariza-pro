@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useMemo } from 'react'
+import { AlertCircle } from 'lucide-react'
 
 interface Imovel {
   id: string
@@ -47,9 +48,11 @@ export default function ImoveisGlobalMap({ imoveis }: ImoveisGlobalMapProps) {
       if (!containerRef.current || mapRef.current) return
 
       // Encontrar centro médio ou padrão (Brasil centro)
-      const validImoveis = imoveis.filter(i => i.latitude && i.longitude)
+      const validImoveis = imoveis.filter(i => i.latitude !== null && i.longitude !== null)
+      console.log('Valid Imoveis for Map:', validImoveis.length, validImoveis)
+      
       const center: [number, number] = validImoveis.length > 0
-        ? [validImoveis[0].latitude!, validImoveis[0].longitude!]
+        ? [Number(validImoveis[0].latitude), Number(validImoveis[0].longitude)]
         : [-15.7801, -47.9292]
 
       const map = L.map(containerRef.current, {
@@ -68,17 +71,18 @@ export default function ImoveisGlobalMap({ imoveis }: ImoveisGlobalMapProps) {
 
       validImoveis.forEach(imovel => {
         const color = clientColorMap[imovel.cliente.id]
+        const filterId = `shadow-${imovel.id.replace(/[^a-z0-9]/gi, '')}`
 
         const svgPin = `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="46" viewBox="0 0 36 46">
           <defs>
-            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <filter id="${filterId}" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur in="SourceAlpha" stdDeviation="2" />
               <feOffset dx="0" dy="2" result="offsetblur" />
               <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
               <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
-          <path d="M18 0C8.059 0 0 8.059 0 18c0 14 18 28 18 28s18-14 18-28c0-9.941-8.059-18-18-18z" fill="${color}" filter="url(#shadow)"/>
+          <path d="M18 0C8.059 0 0 8.059 0 18c0 14 18 28 18 28s18-14 18-28c0-9.941-8.059-18-18-18z" fill="${color}" filter="url(#${filterId})"/>
           <circle cx="18" cy="18" r="8" fill="white" opacity="0.9"/>
           <circle cx="18" cy="18" r="4" fill="${color}"/>
         </svg>`
@@ -123,14 +127,14 @@ export default function ImoveisGlobalMap({ imoveis }: ImoveisGlobalMapProps) {
             </a>
           </div>`
 
-        L.marker([imovel.latitude!, imovel.longitude!], { icon })
+        L.marker([Number(imovel.latitude), Number(imovel.longitude)], { icon })
           .bindPopup(popupContent, { maxWidth: 300 })
           .addTo(map)
       })
 
       // Ajustar bounds se houver mais de um marcador
       if (validImoveis.length > 1) {
-        const bounds = L.latLngBounds(validImoveis.map(i => [i.latitude!, i.longitude!]))
+        const bounds = L.latLngBounds(validImoveis.map(i => [Number(i.latitude), Number(i.longitude)]))
         map.fitBounds(bounds, { padding: [50, 50] })
       }
 
@@ -156,15 +160,26 @@ export default function ImoveisGlobalMap({ imoveis }: ImoveisGlobalMapProps) {
       <div ref={containerRef} className="w-full h-full" />
       
       {/* Legenda de Clientes Flutuante */}
-      <div className="absolute top-6 left-6 z-[1000] bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-white shadow-xl max-w-[200px]">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Legenda por Cliente</p>
+      <div className="absolute top-6 left-6 z-[1000] bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-white shadow-xl max-w-[220px]">
+        <div className="flex justify-between items-center mb-3">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Legenda por Cliente</p>
+          <span className="text-[9px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-full">
+            {imoveis.filter(i => i.latitude !== null && i.longitude !== null).length}/{imoveis.length} PINs
+          </span>
+        </div>
         <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 scrollbar-hide">
           {Object.entries(clientColorMap).map(([id, color]) => {
-            const cliente = imoveis.find(i => i.cliente.id === id)?.cliente.nome
+            const clienteImoveis = imoveis.filter(i => i.cliente.id === id)
+            const clienteNome = clienteImoveis[0]?.cliente.nome
+            const hasCoords = clienteImoveis.some(i => i.latitude !== null && i.longitude !== null)
+            
             return (
-              <div key={id} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full shrink-0" style={{ background: color }} />
-                <span className="text-[10px] font-bold text-slate-700 truncate">{cliente}</span>
+              <div key={id} className={`flex items-center justify-between gap-2 ${!hasCoords ? 'opacity-40' : ''}`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-3 h-3 rounded-full shrink-0" style={{ background: color }} />
+                  <span className="text-[10px] font-bold text-slate-700 truncate">{clienteNome}</span>
+                </div>
+                {!hasCoords && <AlertCircle size={10} className="text-amber-500 shrink-0" />}
               </div>
             )
           })}
