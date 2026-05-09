@@ -50,12 +50,12 @@ export default function DashboardPage() {
       fetch('/api/clientes').then(r => r.json()).catch(() => []),
       fetch('/api/imoveis').then(r => r.json()).catch(() => []),
       fetch('/api/financeiro').then(r => r.json()).catch(() => []),
-    ]).then(([processos, clientes, imoveis, financeiro]) => {
+    ]).then(([processos, clientes, imoveis, financeData]) => {
       setData({
         processos: Array.isArray(processos) ? processos : [],
         clientes: Array.isArray(clientes) ? clientes : [],
         imoveis: Array.isArray(imoveis) ? imoveis : [],
-        financeiro: Array.isArray(financeiro) ? financeiro : [],
+        financeiro: Array.isArray(financeData?.financeiro) ? financeData.financeiro : [],
       })
       setLoading(false)
     })

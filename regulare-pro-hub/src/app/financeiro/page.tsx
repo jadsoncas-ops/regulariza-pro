@@ -57,7 +57,7 @@ export default function FinanceiroPage() {
     const aReceberTotal = aReceberProcessos + aReceberAvulso;
 
     // 3. A Pagar (Todas as despesas pendentes)
-    const aPagar = registros.filter(r => r.tipo === 'despesa' && r.status !== 'pago').reduce((s, r) => s + r.valor, 0);
+    const aPagar = registros.filter(r => r.tipo === 'despesa' && r.status !== 'pago').reduce((s, r) => s + (r.valor - (r.valor_pago || 0)), 0);
 
     // 4. Inadimplência (Receitas pendentes com vencimento passado)
     const inadimplente = registros

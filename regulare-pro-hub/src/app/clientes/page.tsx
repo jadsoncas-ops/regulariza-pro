@@ -302,6 +302,14 @@ export default function ClientesPage() {
                                  <p className="text-[8px] font-bold text-emerald-100/60 uppercase mb-1">Total Recebido</p>
                                  <p className="text-sm font-black">{fmt(financialStats.recebido)}</p>
                               </div>
+                              <div className="p-4 bg-blue-500 rounded-2xl text-white">
+                                 <p className="text-[8px] font-bold text-blue-100/60 uppercase mb-1">A Receber</p>
+                                 <p className="text-sm font-black">{fmt(financialStats.pendenteReceber)}</p>
+                              </div>
+                              <div className="p-4 bg-rose-500 rounded-2xl text-white">
+                                 <p className="text-[8px] font-bold text-rose-100/60 uppercase mb-1">A Pagar</p>
+                                 <p className="text-sm font-black">{fmt(financialStats.pendentePagar)}</p>
+                              </div>
                            </div>
                            <div className="space-y-3">
                               <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Últimos Lançamentos</h4>
