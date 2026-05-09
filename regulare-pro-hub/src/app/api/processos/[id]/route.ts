@@ -135,33 +135,12 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     }
 
     // 1️⃣ Apagar o processo
+    // O Prisma cuidará de apagar tarefas, documentos, checklists, etc. via Cascade no Schema se configurado,
+    // ou apagamos manualmente se necessário. No nosso schema, muitos estão com Cascade.
     await prisma.processo.delete({ where: { id } })
 
-    // 2️⃣ Verificar se o imóvel está vinculado a outros processos
-    if (processo.imovelId) {
-      const outrosProcessosImovel = await prisma.processo.count({
-        where: { imovelId: processo.imovelId }
-      })
-      if (outrosProcessosImovel === 0) {
-        // Excluir imóvel automaticamente se não estiver em outro processo
-        await prisma.imovel.delete({ where: { id: processo.imovelId } })
-      }
-    }
-
-    // 3️⃣ Verificar se o cliente possui mais imóveis ou processos
-    if (processo.clienteId) {
-      const outrosProcessosCliente = await prisma.processo.count({
-        where: { clienteId: processo.clienteId }
-      })
-      const outrosImoveisCliente = await prisma.imovel.count({
-        where: { clienteId: processo.clienteId }
-      })
-      
-      if (outrosProcessosCliente === 0 && outrosImoveisCliente === 0) {
-        // Excluir cliente automaticamente se não possuir mais nada
-        await prisma.cliente.delete({ where: { id: processo.clienteId } })
-      }
-    }
+    // Nota: Mantemos o Cliente e o Imóvel no banco de dados, pois eles fazem parte 
+    // da carteira de ativos e contatos da empresa, mesmo sem processos ativos.
 
     // 4️⃣ Reorganizar a numeração dos processos (codigo_projeto)
     const allProcessos = await prisma.processo.findMany({
