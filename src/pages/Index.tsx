@@ -8,12 +8,12 @@ import { AlertsPanel } from "@/components/dashboard/AlertsPanel";
 
 const Index = () => {
   return (
-    <AppLayout title="Dashboard" subtitle="Visão geral do seu negócio em tempo real">
+    <AppLayout title="Dashboard" subtitle="Sua mesa, em uma única vista.">
       <HeroSection />
       <KpiGrid />
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2"><RevenueChart /></div>
-        <div><AlertsPanel /></div>
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-3"><RevenueChart /></div>
+        <div className="xl:col-span-2"><AlertsPanel /></div>
       </div>
       <PipelinePreview />
       <MovementsTable />
