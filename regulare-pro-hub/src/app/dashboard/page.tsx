@@ -3,15 +3,14 @@
 import { useEffect, useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
-  Users, Building2, DollarSign, TrendingUp, TrendingDown,
-  Clock, CheckCircle2, ArrowRight, FileText,
-  Wallet, Activity, ChevronRight, AlertCircle,
-  ArrowUpRight, Zap, Calendar, MapPin, Receipt,
-  MoreHorizontal, Plus, Circle, Layers
+  Layers, TrendingUp, TrendingDown,
+  Activity, ArrowUpRight, Zap, Target,
+  FileText, CheckCircle2, Receipt, Clock,
+  ChevronRight, Sparkles, Plus, Wallet,
+  BarChart3, BrainCircuit
 } from 'lucide-react'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts'
 import { motion } from 'framer-motion'
 
@@ -19,56 +18,26 @@ const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', curren
 const fmtK = (v: number) => v >= 1000 ? `R$${(v / 1000).toFixed(0)}k` : fmt(v)
 
 const STATUS = {
-  em_analise:           { label: 'Entrada',      color: '#F59E0B', bg: '#FFF7ED' },
-  levantamento:         { label: 'Levantamento', color: '#3B82F6', bg: '#EFF6FF' },
-  projeto:              { label: 'Projeto',       color: '#6366F1', bg: '#EEF2FF' },
-  protocolo_prefeitura: { label: 'Prefeitura',   color: '#8B5CF6', bg: '#F5F3FF' },
-  cartorio:             { label: 'Cartório',      color: '#F97316', bg: '#FFF7ED' },
-  finalizado:           { label: 'Conclusão',     color: '#10B981', bg: '#ECFDF5' },
-}
-
-function KpiCard({ label, value, sub, icon: Icon, trend, accent = '#3358FF' }: any) {
-  const positive = trend >= 0
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="kpi-card"
-    >
-      <div className="flex items-center justify-between">
-        <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: accent + '14' }}
-        >
-          <Icon size={16} style={{ color: accent }} />
-        </div>
-        {trend !== undefined && (
-          <div className={`flex items-center gap-1 text-[11px] font-semibold ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
-            {positive ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
-            {Math.abs(trend)}%
-          </div>
-        )}
-      </div>
-      <div>
-        <p className="kpi-label">{label}</p>
-        <p className="kpi-value mt-1" style={{ color: accent === '#64748B' ? '#0f172a' : accent }}>{value}</p>
-        {sub && <p className="text-[11px] text-secondary mt-1">{sub}</p>}
-      </div>
-    </motion.div>
-  )
+  em_analise:           { label: 'Entrada',      color: '#F59E0B' },
+  levantamento:         { label: 'Levantamento', color: '#3B82F6' },
+  projeto:              { label: 'Projeto',       color: '#6366F1' },
+  protocolo_prefeitura: { label: 'Prefeitura',   color: '#8B5CF6' },
+  cartorio:             { label: 'Cartório',      color: '#F97316' },
+  finalizado:           { label: 'Conclusão',     color: '#10B981' },
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="card p-3 text-[11px] shadow-lg">
-      <p className="font-semibold text-slate-500 mb-2 uppercase tracking-wider" style={{fontSize:9}}>{label}</p>
+    <div className="bg-slate-900/90 backdrop-blur-md border border-white/10 p-3 rounded-xl shadow-2xl text-[11px] min-w-[120px]">
+      <p className="font-mono text-slate-400 mb-2 tracking-widest">{label}</p>
       {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2 mb-1">
-          <div className="w-2 h-2 rounded-full" style={{ background: p.color }} />
-          <span className="text-slate-600">{p.name}:</span>
-          <span className="font-bold text-slate-900">{fmt(p.value)}</span>
+        <div key={p.dataKey} className="flex items-center justify-between gap-4 mb-1">
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+            <span className="text-slate-300">{p.name}</span>
+          </div>
+          <span className="font-bold text-white font-mono">{fmt(p.value)}</span>
         </div>
       ))}
     </div>
@@ -125,262 +94,242 @@ export default function DashboardPage() {
     return months
   }, [receitas, despesas])
 
-  /* Funnel */
-  const funnel = Object.entries(STATUS).map(([key, val]) => ({
-    ...val, key,
-    count: processos.filter((p: any) => p.status === key).length
-  }))
-
   /* Recent */
   const recentProcessos = [...processos]
     .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 6)
+    .slice(0, 5)
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
-      <div className="w-8 h-8 border-2 border-[hsl(231,100%,60%)] border-t-transparent rounded-full animate-spin" />
-      <p className="text-[11px] font-semibold text-secondary uppercase tracking-widest">Carregando...</p>
+    <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        <div className="absolute inset-0 border-2 border-[hsl(231,100%,60%)]/20 rounded-full" />
+        <div className="absolute inset-0 border-2 border-[hsl(231,100%,60%)] border-t-transparent rounded-full animate-spin" />
+        <BrainCircuit size={16} className="text-[hsl(231,100%,60%)] animate-pulse" />
+      </div>
+      <p className="text-[10px] font-mono font-bold text-slate-400 tracking-[0.2em] uppercase">Inicializando Sistema...</p>
     </div>
   )
 
-  return (
-    <div className="space-y-6 pb-8">
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  }
 
-      {/* ── PAGE HEADER ─────────────────────────────────────── */}
-      <div className="flex items-center justify-between pt-2">
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  }
+
+  return (
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="space-y-6 pb-12"
+    >
+      {/* ── HEADER ─────────────────────────────────────── */}
+      <motion.div variants={itemVariants} className="flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2">
         <div>
-          <h1 className="text-[20px] font-bold text-slate-900 tracking-tight">Dashboard</h1>
-          <p className="text-[12px] text-secondary mt-0.5">Visão geral operacional e financeira</p>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-mono font-bold text-emerald-600 uppercase tracking-widest">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Sistemas Online
+            </span>
+            <span className="text-[9px] font-mono text-slate-400">V. 3.0.4</span>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Intelligence Center</h1>
         </div>
-        <div className="flex items-center gap-2">
-          <Link href="/processos/novo" className="btn btn-primary btn-sm">
-            <Plus size={13} strokeWidth={2.5} /> Novo Processo
+        <div className="flex items-center gap-3">
+          <Link href="/relatorios" className="btn btn-ghost bg-white/50 border border-slate-200/50 backdrop-blur-sm">
+            <BarChart3 size={14} /> Relatórios
+          </Link>
+          <Link href="/processos/novo" className="btn btn-primary shadow-[0_0_15px_rgba(51,88,255,0.3)]">
+            <Plus size={14} strokeWidth={2.5} /> Nova Operação
           </Link>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ── KPI ROW ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        <KpiCard label="Processos Ativos" value={ativos.length}            sub={`${processos.length} total`}        icon={Layers}       accent="#6366F1" />
-        <KpiCard label="Receita Bruta"    value={fmtK(totalContratos)}    sub="carteira total"                     icon={FileText}     accent="#0f172a" />
-        <KpiCard label="Total Recebido"   value={fmtK(totalRecebido)}     sub={`${totalContratos > 0 ? Math.round(totalRecebido/totalContratos*100) : 0}% coletado`} icon={CheckCircle2} accent="#10B981" />
-        <KpiCard label="Lucro Estimado"   value={fmtK(lucroEstimado)}     sub="receita – custos"                   icon={TrendingUp}   accent="#3358FF" />
-        <KpiCard label="A Pagar"          value={fmtK(pendentePagar)}     sub="repasses pendentes"                 icon={Receipt}      accent="#EF4444" />
-      </div>
+      {/* ── BENTO GRID ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-12 auto-rows-min gap-5">
 
-      {/* ── ROW 2: CHART + FUNNEL ───────────────────────────── */}
-      <div className="grid grid-cols-12 gap-4">
-
-        {/* Cash flow chart */}
-        <div className="col-span-12 lg:col-span-8 card p-5">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-[13px] font-semibold text-slate-900">Fluxo de Caixa</h3>
-              <p className="text-[11px] text-secondary mt-0.5">Receitas × Despesas — últimos 6 meses</p>
+        {/* 1. Main KPI - Lucro Estimado (Span 4) */}
+        <motion.div variants={itemVariants} className="col-span-12 md:col-span-4 rounded-3xl p-6 relative overflow-hidden bg-slate-950 flex flex-col justify-between">
+          <div className="absolute top-0 right-0 p-32 bg-[hsl(231,100%,60%)]/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/3" />
+          
+          <div className="relative z-10 flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2 text-white/60 text-[11px] font-mono font-semibold tracking-widest uppercase">
+              <BrainCircuit size={14} /> Lucro Projetado
             </div>
-            <div className="flex items-center gap-4 text-[10px] font-semibold text-secondary uppercase tracking-wider">
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />Receita</div>
-              <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-sm bg-red-400" />Despesa</div>
+            <div className="px-2 py-1 rounded bg-white/10 text-[10px] font-bold text-white font-mono border border-white/5 backdrop-blur-md">
+              YTD
             </div>
           </div>
-          <div style={{ height: 200 }}>
+          
+          <div className="relative z-10">
+            <h2 className="text-4xl font-bold text-white tracking-tighter mb-2">{fmt(lucroEstimado)}</h2>
+            <div className="flex items-center gap-4 text-[11px] font-medium text-white/60">
+              <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20">
+                <TrendingUp size={12} /> +12%
+              </span>
+              <span>vs último semestre</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 2. KPIs Secundários (Span 4) */}
+        <motion.div variants={itemVariants} className="col-span-12 md:col-span-4 grid grid-rows-2 gap-5">
+          {/* Receita Bruta */}
+          <div className="bg-white border border-slate-200/50 rounded-3xl p-5 shadow-sm relative overflow-hidden flex flex-col justify-center group hover:border-[hsl(231,100%,60%)]/30 transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-slate-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-[hsl(231,100%,60%)]/5 transition-colors" />
+            <div className="flex items-center justify-between relative z-10">
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-1">Volume de Contratos</p>
+                <p className="text-2xl font-bold text-slate-900 tracking-tight">{fmtK(totalContratos)}</p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-white group-hover:shadow-sm transition-all">
+                <FileText size={18} />
+              </div>
+            </div>
+          </div>
+
+          {/* Recebido vs Pagar */}
+          <div className="grid grid-cols-2 gap-5">
+            <div className="bg-white border border-slate-200/50 rounded-3xl p-5 shadow-sm flex flex-col justify-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-1">Recebido</p>
+              <p className="text-xl font-bold text-emerald-600 tracking-tight">{fmtK(totalRecebido)}</p>
+            </div>
+            <div className="bg-white border border-slate-200/50 rounded-3xl p-5 shadow-sm flex flex-col justify-center">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-1">A Pagar</p>
+              <p className="text-xl font-bold text-red-500 tracking-tight">{fmtK(pendentePagar)}</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* 3. Operações Ativas (Span 4) */}
+        <motion.div variants={itemVariants} className="col-span-12 md:col-span-4 bg-white border border-slate-200/50 rounded-3xl p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2 text-slate-800 text-[11px] font-bold uppercase tracking-widest font-mono">
+              <Activity size={14} className="text-[hsl(231,100%,60%)]" /> Pipeline
+            </div>
+            <span className="px-2.5 py-1 rounded-lg bg-[hsl(231,100%,60%)]/10 text-[hsl(231,100%,60%)] text-[10px] font-bold font-mono">
+              {ativos.length} ATIVOS
+            </span>
+          </div>
+
+          <div className="flex-1 flex flex-col justify-center gap-4">
+            {Object.entries(STATUS).slice(0, 4).map(([key, val]) => {
+              const count = processos.filter((p: any) => p.status === key).length
+              const pct = processos.length > 0 ? (count / processos.length) * 100 : 0
+              return (
+                <div key={key}>
+                  <div className="flex justify-between items-end mb-1.5">
+                    <span className="text-[11px] font-semibold text-slate-600">{val.label}</span>
+                    <span className="text-[10px] font-mono font-bold text-slate-400">{count}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: val.color }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          
+          <Link href="/processos" className="mt-4 flex items-center justify-center gap-1.5 w-full py-2 bg-slate-50 hover:bg-slate-100 text-[10px] font-bold text-slate-500 uppercase tracking-widest rounded-xl transition-colors">
+            Ver Fluxo Completo <ArrowUpRight size={12} />
+          </Link>
+        </motion.div>
+
+        {/* 4. Gráfico Fluxo de Caixa (Span 8) */}
+        <motion.div variants={itemVariants} className="col-span-12 lg:col-span-8 bg-white border border-slate-200/50 rounded-3xl p-6 shadow-sm min-h-[320px] flex flex-col">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h3 className="text-[13px] font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                Fluxo de Caixa Analítico
+              </h3>
+              <p className="text-[11px] text-slate-400 mt-0.5">Receitas × Despesas dos últimos 6 meses</p>
+            </div>
+            <div className="flex items-center gap-4 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+                <div className="w-2 h-2 rounded-full bg-[hsl(231,100%,60%)] shadow-[0_0_8px_hsl(231,100%,60%)]" /> Receita
+              </div>
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono">
+                <div className="w-2 h-2 rounded-full bg-slate-300" /> Despesa
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex-1 w-full min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -16, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#10B981" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    <stop offset="0%" stopColor="hsl(231, 100%, 60%)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="hsl(231, 100%, 60%)" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gd" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#EF4444" stopOpacity={0.1} />
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#94A3B8" stopOpacity={0.1} />
+                    <stop offset="100%" stopColor="#94A3B8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94A3B8' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 600, fill: '#94A3B8' }} tickFormatter={v => `${v / 1000}k`} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="r" name="Receita" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#gr)" />
-                <Area type="monotone" dataKey="d" name="Despesa" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#gd)" />
+                <XAxis 
+                  dataKey="label" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 9, fontWeight: 600, fill: '#94A3B8', fontFamily: 'monospace' }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 9, fontWeight: 600, fill: '#94A3B8', fontFamily: 'monospace' }} 
+                  tickFormatter={v => `${v / 1000}k`} 
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#E2E8F0', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                <Area type="monotone" dataKey="r" name="Receita" stroke="hsl(231, 100%, 60%)" strokeWidth={3} fillOpacity={1} fill="url(#gr)" activeDot={{ r: 6, fill: "hsl(231, 100%, 60%)", stroke: "#fff", strokeWidth: 2 }} />
+                <Area type="monotone" dataKey="d" name="Despesa" stroke="#CBD5E1" strokeWidth={3} fillOpacity={1} fill="url(#gd)" activeDot={{ r: 6, fill: "#94A3B8", stroke: "#fff", strokeWidth: 2 }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Pipeline funnel */}
-        <div className="col-span-12 lg:col-span-4 card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-[13px] font-semibold text-slate-900">Pipeline</h3>
-            <Link href="/processos" className="text-[11px] font-semibold text-[hsl(231,100%,60%)] hover:underline">
-              Ver todos <ArrowUpRight size={10} className="inline" />
-            </Link>
+        {/* 5. Processos Recentes (Span 4) */}
+        <motion.div variants={itemVariants} className="col-span-12 lg:col-span-4 bg-white border border-slate-200/50 rounded-3xl p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-widest font-mono">Ações Recentes</h3>
+            <button className="w-6 h-6 rounded-lg hover:bg-slate-50 flex items-center justify-center text-slate-400 transition-colors">
+              <Sparkles size={14} />
+            </button>
           </div>
-          <div className="space-y-2">
-            {funnel.map((s) => (
-              <div key={s.key} className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: s.color }} />
-                <span className="flex-1 text-[12px] text-slate-700 font-medium truncate">{s.label}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${processos.length > 0 ? (s.count / processos.length) * 100 : 0}%`, background: s.color }}
-                    />
+
+          <div className="flex-1 flex flex-col gap-3">
+            {recentProcessos.map((p: any) => {
+              const s = STATUS[p.status as keyof typeof STATUS]
+              return (
+                <Link key={p.id} href={`/processos/${p.id}`} className="group block p-3 rounded-2xl border border-transparent hover:border-slate-200 hover:bg-slate-50/50 transition-all">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-bold bg-slate-100 text-slate-500 group-hover:bg-white group-hover:shadow-sm transition-all">
+                      {p.codigo_projeto || 'REG.000'}
+                    </span>
+                    <span className="text-[10px] font-bold" style={{ color: s?.color }}>{s?.label}</span>
                   </div>
-                  <span className="text-[12px] font-bold w-4 text-right text-slate-800">{s.count}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {processos.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-slate-100">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-medium text-secondary">Taxa de conclusão</span>
-                <span className="font-bold text-slate-900">
-                  {Math.round((processos.filter((p:any) => p.status === 'finalizado').length / processos.length) * 100)}%
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── ROW 3: PROCESSES + CLIENTS ──────────────────────── */}
-      <div className="grid grid-cols-12 gap-4">
-
-        {/* Active processes */}
-        <div className="col-span-12 lg:col-span-7 card overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-[13px] font-semibold text-slate-900">Processos Recentes</h3>
-            <Link href="/processos" className="btn btn-ghost btn-xs gap-1 text-[hsl(231,100%,60%)]">
-              Ver pipeline <ArrowRight size={10} />
-            </Link>
-          </div>
-          <div>
-            {recentProcessos.length === 0 ? (
-              <div className="p-12 text-center">
-                <Layers size={32} className="text-slate-200 mx-auto mb-3" />
-                <p className="text-[12px] font-medium text-secondary">Nenhum processo ainda</p>
-                <Link href="/processos/novo" className="btn btn-primary btn-sm mt-3 mx-auto">
-                  <Plus size={12} /> Criar Processo
+                  <p className="text-[12px] font-semibold text-slate-900 leading-tight mb-1">{p.tipo_regularizacao}</p>
+                  <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
+                    <Target size={10} /> {p.cliente?.nome}
+                  </p>
                 </Link>
+              )
+            })}
+            
+            {recentProcessos.length === 0 && (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                <Layers size={24} className="text-slate-200 mb-2" />
+                <p className="text-[11px] font-medium text-slate-400">Nenhuma operação ativa</p>
               </div>
-            ) : (
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Código</th>
-                    <th>Processo</th>
-                    <th>Cliente</th>
-                    <th>Status</th>
-                    <th>Contrato</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentProcessos.map((p: any) => {
-                    const s = STATUS[p.status as keyof typeof STATUS]
-                    return (
-                      <tr key={p.id}>
-                        <td>
-                          <span className="mono text-[10px] font-semibold text-[hsl(231,100%,60%)]">
-                            {p.codigo_projeto || '—'}
-                          </span>
-                        </td>
-                        <td>
-                          <p className="font-semibold text-slate-900 leading-tight">{p.tipo_regularizacao}</p>
-                        </td>
-                        <td>
-                          <p className="text-secondary truncate max-w-[120px]">{p.cliente?.nome}</p>
-                        </td>
-                        <td>
-                          <div className="flex items-center gap-1.5">
-                            <div className="dot" style={{ background: s?.color }} />
-                            <span className="text-[11px] font-medium" style={{ color: s?.color }}>{s?.label}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <span className="font-semibold text-slate-800">
-                            {p.valor_total ? fmtK(p.valor_total) : '—'}
-                          </span>
-                        </td>
-                        <td>
-                          <Link href={`/processos/${p.id}`} className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ArrowUpRight size={11} />
-                          </Link>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        {/* Right column */}
-        <div className="col-span-12 lg:col-span-5 flex flex-col gap-4">
-
-          {/* Financial summary */}
-          <div className="card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[13px] font-semibold text-slate-900">Saúde Financeira</h3>
-              <Link href="/financeiro" className="btn btn-ghost btn-xs text-[hsl(231,100%,60%)]">
-                Detalhes <ArrowUpRight size={10} className="inline" />
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: 'Receita Bruta',   value: totalContratos, color: '#0f172a', pct: 100 },
-                { label: 'Total Recebido',  value: totalRecebido,  color: '#10B981', pct: totalContratos > 0 ? (totalRecebido / totalContratos) * 100 : 0 },
-                { label: 'Custos / Repasses', value: totalCustos,  color: '#EF4444', pct: totalContratos > 0 ? (totalCustos / totalContratos) * 100 : 0 },
-                { label: 'Lucro Estimado',  value: lucroEstimado,  color: '#3358FF', pct: totalContratos > 0 ? (lucroEstimado / totalContratos) * 100 : 0 },
-              ].map(row => (
-                <div key={row.label}>
-                  <div className="flex items-center justify-between text-[12px] mb-1.5">
-                    <span className="text-secondary font-medium">{row.label}</span>
-                    <span className="font-bold" style={{ color: row.color }}>{fmtK(row.value)}</span>
-                  </div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${Math.max(0, Math.min(100, row.pct))}%`, background: row.color }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent clients */}
-          <div className="card p-5 flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[13px] font-semibold text-slate-900">Clientes Recentes</h3>
-              <Link href="/clientes" className="btn btn-ghost btn-xs text-[hsl(231,100%,60%)]">
-                <ArrowUpRight size={10} />
-              </Link>
-            </div>
-            <div className="space-y-2">
-              {clientes.slice(0, 5).map((c: any, i: number) => (
-                <Link key={c.id} href={`/clientes/${c.id}`} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors group">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                    style={{ background: `hsl(${(i * 47 + 200) % 360}, 60%, 55%)` }}
-                  >
-                    {c.nome.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-slate-800 truncate">{c.nome}</p>
-                    <p className="text-[10px] text-secondary truncate">{c.cidade || '—'}</p>
-                  </div>
-                  <ChevronRight size={12} className="text-slate-200 group-hover:text-slate-400 transition-colors shrink-0" />
-                </Link>
-              ))}
-              {clientes.length === 0 && (
-                <p className="text-[12px] text-center text-secondary py-4">Nenhum cliente ainda</p>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
