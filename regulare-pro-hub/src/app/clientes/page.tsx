@@ -7,7 +7,7 @@ import {
   MapPin, ChevronRight, MoreHorizontal, Edit2, Filter, 
   X, LayoutGrid, List, User, Globe, Wallet, History,
   ArrowUpRight, Command, ChevronLeft, Trash2, SlidersHorizontal,
-  FileText, TrendingUp, ExternalLink
+  FileText, TrendingUp, ExternalLink, Sparkles
 } from 'lucide-react'
 import { EditClienteModal } from '@/components/EditClienteModal'
 import { motion, AnimatePresence } from 'framer-motion'
