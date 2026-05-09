@@ -293,10 +293,10 @@ export default function ProcessosPage() {
                       </div>
                       <div className="mt-3 flex justify-between text-[10px] font-bold">
                         <span className="text-emerald-400 uppercase">
-                          Recebido: {selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          Recebido: {(selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
                         <span className="text-slate-500 uppercase">
-                          Pendente: {Math.max(0, (selectedProcesso.valor_total || 0) - (selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0))).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          Pendente: {Math.max(0, (selectedProcesso.valor_total || 0) - (selectedProcesso.financeiro?.filter((f:any)=>f.tipo==='receita' && f.status==='pago').reduce((a:number,b:any)=>a+b.valor,0) || 0)).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                         </span>
                       </div>
                     </div>

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   const processos = await prisma.processo.findMany({
-    include: { cliente: true, imovel: true },
+    include: { cliente: true, imovel: true, financeiro: true },
     orderBy: { createdAt: 'desc' }
   })
   return NextResponse.json(processos)
