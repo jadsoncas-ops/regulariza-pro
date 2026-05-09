@@ -12,7 +12,7 @@ import {
   Search, Plus, Filter, LayoutGrid, List, TrendingUp,
   MoreVertical, Download, Trash2, RefreshCw, Sparkles, Command,
   Link as LinkIcon, FileCode, FileImage, FileIcon, Eye, Paperclip, 
-  FileCheck, ShieldCheck, Upload
+  FileCheck, ShieldCheck, Upload, Target, Activity
 } from 'lucide-react'
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
@@ -228,8 +228,8 @@ export default function ProcessoDetailPage() {
   return (
     <div className="flex flex-col gap-8">
       
-      {/* ── BREADCRUMBS & ACTIONS ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      {/* ── HEADER ── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/processos" className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm group">
             <ArrowLeft size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
@@ -239,78 +239,46 @@ export default function ProcessoDetailPage() {
               <span className="text-[10px] font-mono font-bold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 uppercase tracking-wider">
                 {processo.codigo_projeto || `#${processo.id.substring(0,8).toUpperCase()}`}
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">/ ESTEIRA DE TRAMITAÇÃO</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">/ OPERAÇÃO EM CURSO</span>
+              <div className="h-1 w-1 rounded-full bg-slate-300" />
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Aberto há {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{processo.tipo_regularizacao}</h1>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 uppercase">{processo.tipo_regularizacao}</h1>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end pr-4 border-r border-slate-200">
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">STATUS ATUAL</span>
-            <span className="text-xs font-bold text-primary uppercase">{processo.status?.replace(/_/g, ' ') || 'ATIVO'}</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">STATUS ATUAL</span>
+            <span className="text-[11px] font-black text-primary uppercase bg-primary/5 px-2 py-0.5 rounded-md border border-primary/10">{processo.status?.replace(/_/g, ' ') || 'ATIVO'}</span>
           </div>
           
-          <button onClick={() => setIsEditProcessoModalOpen(true)} className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-sm text-slate-500 hover:text-primary">
-            <Edit size={18} />
+          <button onClick={() => setIsEditProcessoModalOpen(true)} className="p-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all text-slate-500 hover:text-primary shadow-sm">
+            <Edit size={16} />
           </button>
-          <button onClick={() => setIsDeleteModalOpen(true)} className="p-2.5 bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-all shadow-sm text-red-500">
-            <Trash2 size={18} />
+          <button onClick={() => setIsDeleteModalOpen(true)} className="p-2 bg-red-50 border border-red-100 rounded-lg hover:bg-red-100 transition-all text-red-500 shadow-sm">
+            <Trash2 size={16} />
           </button>
         </div>
       </div>
 
-      {/* ── CLIENT & PROPERTY MINI CARD ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4 group hover:border-primary/20 transition-all">
-          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-primary">
-            <User size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">CLIENTE</p>
-            <p className="text-sm font-bold text-slate-800 truncate">{processo.cliente?.nome}</p>
-          </div>
-          <ArrowUpRight size={14} className="text-slate-300 group-hover:text-primary transition-colors" />
-        </div>
-
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4 group hover:border-primary/20 transition-all lg:col-span-2">
-          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-primary">
-            <MapPin size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">LOCALIZAÇÃO DO IMÓVEL</p>
-            <p className="text-sm font-bold text-slate-800 truncate">{processo.imovel?.endereco}, {processo.imovel?.numero}</p>
-          </div>
-          <ArrowUpRight size={14} className="text-slate-300 group-hover:text-primary transition-colors" />
-        </div>
-
-        <div className="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-emerald-500">
-            <Calendar size={18} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">CRIADO EM</p>
-            <p className="text-sm font-bold text-slate-800">{new Date(processo.createdAt).toLocaleDateString('pt-BR')}</p>
-          </div>
-        </div>
-      </div>
 
       {/* ── TABS ── */}
-      <div className="border-b border-slate-200 flex items-center gap-2 overflow-x-auto scrollbar-hide">
+      <div className="border-b border-slate-200 flex items-center gap-1 overflow-x-auto scrollbar-hide shrink-0">
         {TABS.map(t => (
           <button 
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-6 py-4 text-[11px] font-bold uppercase tracking-widest transition-all relative ${
+            className={`flex items-center gap-2 px-6 py-3 text-[10px] font-black uppercase tracking-[0.15em] transition-all relative ${
               tab === t.id ? 'text-primary' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            <t.icon size={14} />
+            <t.icon size={13} strokeWidth={tab === t.id ? 3 : 2} />
             {t.label}
             {tab === t.id && (
               <motion.div 
                 layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_8px_rgba(45,91,255,0.6)]"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary shadow-[0_0_12px_rgba(45,91,255,0.8)]"
               />
             )}
           </button>
@@ -327,250 +295,266 @@ export default function ProcessoDetailPage() {
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
           >
-            {/* ── VISÃO GERAL ── */}
+            {/* ── VISÃO GERAL: COMMAND CENTER ── */}
             {tab === 'visao' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                  {/* WORKFLOW PROGRESS */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-sm">
-                    <div className="flex items-center justify-between mb-8">
-                      <div className="flex items-center gap-2">
-                        <GitBranch size={18} className="text-primary" />
-                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono">Status da Esteira</h3>
-                      </div>
-                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full uppercase tracking-tighter">
-                        Etapa Atual: {processo.status?.replace(/_/g, ' ') || 'Entrada'}
-                      </span>
-                    </div>
-
-                    <div className="relative pt-4 pb-8">
-                      <div className="absolute top-1/2 left-0 right-0 h-1.5 bg-slate-100 rounded-full -translate-y-1/2" />
-                      <div 
-                        className="absolute top-1/2 left-0 h-1.5 bg-primary rounded-full -translate-y-1/2 transition-all duration-1000 shadow-[0_0_8px_rgba(45,91,255,0.4)]"
-                        style={{ 
-                          width: `${
-                            processo.status === 'finalizado' ? 100 :
-                            processo.status === 'cartorio' ? 80 :
-                            processo.status === 'protocolo_prefeitura' ? 60 :
-                            processo.status === 'projeto' ? 40 :
-                            processo.status === 'levantamento' ? 20 : 5
-                          }%` 
-                        }}
-                      />
-                      <div className="flex justify-between relative z-10">
-                        {['Entrada', 'Levantamento', 'Projeto', 'Prefeitura', 'Cartório', 'Conclusão'].map((s, i) => {
-                          const steps = ['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado']
-                          const currentIdx = steps.indexOf(processo.status || 'em_analise')
-                          const isPast = i < currentIdx
-                          const isCurrent = i === currentIdx
-                          return (
-                            <div key={s} className="flex flex-col items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full border-2 transition-all duration-500 ${
-                                isPast ? 'bg-primary border-primary' : 
-                                isCurrent ? 'bg-white border-primary ring-4 ring-primary/10' : 
-                                'bg-white border-slate-200'
-                              }`}>
-                                {isPast && <Check size={8} className="text-white mx-auto mt-0.5" />}
-                              </div>
-                              <span className={`text-[9px] font-bold uppercase tracking-tight ${isCurrent ? 'text-primary' : 'text-slate-400'}`}>{s}</span>
-                            </div>
-                          )
-                        })}
+              <div className="flex flex-col gap-6 h-full min-h-0">
+                
+                {/* ROW 1: PIPELINE E PROGRESSO */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm shrink-0">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Esteira Operacional</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl font-black text-slate-900 uppercase">
+                          {processo.status === 'finalizado' ? 'Concluído' : 
+                           processo.status === 'cartorio' ? 'Registro em Cartório' :
+                           processo.status === 'protocolo_prefeitura' ? 'Protocolo Prefeitura' :
+                           processo.status === 'projeto' ? 'Elaboração de Projeto' :
+                           processo.status === 'levantamento' ? 'Levantamento Técnico' : 'Análise Inicial'}
+                        </span>
+                        <div className="h-5 w-px bg-slate-200" />
+                        <span className="text-sm font-black text-blue-600">
+                          {Math.round((
+                             (processo.status === 'finalizado' ? 100 :
+                              processo.status === 'cartorio' ? 80 :
+                              processo.status === 'protocolo_prefeitura' ? 60 :
+                              processo.status === 'projeto' ? 40 :
+                              processo.status === 'levantamento' ? 20 : 5)
+                          ))}% COMPLETO
+                        </span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* DOSSIÊ DO PROJETO */}
-                    <div className="md:col-span-2 bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden group">
-                       <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-110 transition-transform">
-                          <Building2 size={120} />
+                    <div className="w-64 space-y-2">
+                       <div className="flex justify-between items-end text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                          <span>Progresso Geral</span>
+                          <span>{Math.round(((processo.status === 'finalizado' ? 100 : processo.status === 'cartorio' ? 80 : processo.status === 'protocolo_prefeitura' ? 60 : processo.status === 'projeto' ? 40 : processo.status === 'levantamento' ? 20 : 5)))}%</span>
                        </div>
-                       
-                       <div className="relative z-10">
-                          <div className="flex items-center gap-2 mb-8 border-b border-slate-100 pb-4">
-                             <div className="w-10 h-10 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
-                                <Info size={20} />
-                             </div>
-                             <div>
-                                <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest font-mono leading-none">Dossiê do Projeto</h3>
-                                <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">Informações consolidadas</p>
-                             </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
-                             <div className="space-y-6">
-                                <div>
-                                   <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                                      <User size={12} className="text-primary" /> Cliente
-                                   </p>
-                                   <p className="text-sm font-black text-slate-900 leading-tight">{processo.cliente?.nome || '—'}</p>
-                                   <p className="text-[10px] font-bold text-slate-500 font-mono mt-1">{processo.cliente?.cpf_cnpj || '—'}</p>
-                                   <p className="text-[10px] font-bold text-slate-400 mt-0.5">{processo.cliente?.telefone || '—'}</p>
-                                </div>
-                                <div>
-                                   <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                                      <Briefcase size={12} className="text-primary" /> Serviço
-                                   </p>
-                                   <span className="inline-flex px-3 py-1 bg-primary/5 text-primary text-[10px] font-black uppercase rounded-lg border border-primary/10">
-                                      {processo.tipo_regularizacao || 'Regularização'}
-                                   </span>
-                                </div>
-                             </div>
-
-                             <div className="space-y-6">
-                                <div>
-                                   <p className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                                      <MapPin size={12} className="text-primary" /> Imóvel
-                                   </p>
-                                   <p className="text-sm font-black text-slate-900 leading-tight truncate">{processo.imovel?.endereco || '—'}</p>
-                                   <p className="text-[10px] font-bold text-slate-500 font-mono mt-1">Nº {processo.imovel?.numero || 'S/N'}</p>
-                                   <div className="mt-4 flex flex-wrap gap-4 pt-4 border-t border-slate-50">
-                                      <div>
-                                         <p className="text-[8px] font-bold text-slate-400 uppercase">Matrícula</p>
-                                         <p className="text-[10px] font-bold text-slate-700 font-mono">{processo.imovel?.num_matricula || '—'}</p>
-                                      </div>
-                                      <div>
-                                         <p className="text-[8px] font-bold text-slate-400 uppercase">Inscrição</p>
-                                         <p className="text-[10px] font-bold text-slate-700 font-mono">{processo.imovel?.inscricao_imobiliaria || '—'}</p>
-                                      </div>
-                                   </div>
-                                </div>
-                             </div>
-                          </div>
-                       </div>
-                    </div>
-
-                    {/* PRÓXIMA AÇÃO / PENDÊNCIA */}
-                    <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm relative overflow-hidden group border-l-4 border-l-amber-400">
-                       <div className="flex items-center gap-2 mb-6">
-                          <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
-                             <Clock size={16} />
-                          </div>
-                          <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Próxima Ação</h3>
-                       </div>
-
-                       <div className="space-y-6">
-                          {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 1).map((t: any, i: number) => (
-                             <div key={i} className="space-y-4">
-                                <div>
-                                   <p className="text-sm font-black text-slate-900 leading-tight mb-2">{t.titulo}</p>
-                                   <p className="text-[10px] text-slate-400 font-medium line-clamp-2">{t.descricao || 'Nenhuma descrição detalhada.'}</p>
-                                </div>
-                                <div className="flex items-center justify-between pt-4 border-t border-slate-50">
-                                   <div className="flex flex-col">
-                                      <span className="text-[8px] font-bold text-slate-400 uppercase">Vencimento</span>
-                                      <span className="text-[10px] font-bold text-amber-600 font-mono">{new Date(t.data).toLocaleDateString('pt-BR')}</span>
-                                   </div>
-                                   <div className="flex flex-col items-end">
-                                      <span className="text-[8px] font-bold text-slate-400 uppercase">Prioridade</span>
-                                      <span className={`text-[9px] font-black uppercase ${t.prioridade === 'urgente' ? 'text-red-500' : 'text-primary'}`}>{t.prioridade}</span>
-                                   </div>
-                                </div>
-                             </div>
-                          ))}
-                          
-                          {(!processo.tarefas || processo.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
-                             <div className="py-6 text-center space-y-2">
-                                <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-                                   <CheckCircle2 size={24} className="text-emerald-500" />
-                                </div>
-                                <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Tudo em ordem!</p>
-                                <p className="text-[10px] text-slate-400">Nenhuma tarefa pendente no momento.</p>
-                             </div>
-                          )}
+                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(processo.status === 'finalizado' ? 100 : processo.status === 'cartorio' ? 80 : processo.status === 'protocolo_prefeitura' ? 60 : processo.status === 'projeto' ? 40 : processo.status === 'levantamento' ? 20 : 5)}%` }}
+                            className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)]"
+                          />
                        </div>
                     </div>
                   </div>
 
-                  {/* METRIC GRID */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center">
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Tarefas</p>
-                       <p className="text-xl font-bold text-slate-900">{processo.tarefas?.length || 0}</p>
-                       <p className="text-[9px] text-emerald-500 font-bold uppercase mt-1">{processo.tarefas?.filter((t:any)=>t.status==='concluido').length || 0} CONCLUÍDAS</p>
-                    </div>
-                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center">
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Documentos</p>
-                       <p className="text-xl font-bold text-slate-900">{processo.documentos?.length || 0}</p>
-                       <p className="text-[9px] text-primary font-bold uppercase mt-1">EM ARQUIVO</p>
-                    </div>
-                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm text-center">
-                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Protocolos</p>
-                       <p className="text-xl font-bold text-slate-900">{processo.protocolos?.length || 0}</p>
-                       <p className="text-[9px] text-amber-500 font-bold uppercase mt-1">ÓRGÃOS ATIVOS</p>
-                    </div>
+                  <div className="grid grid-cols-6 gap-2">
+                    {['Entrada', 'Levantamento', 'Projeto', 'Prefeitura', 'Cartório', 'Conclusão'].map((s, i) => {
+                      const steps = ['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado']
+                      const currentIdx = steps.indexOf(processo.status || 'em_analise')
+                      const isPast = i < currentIdx
+                      const isCurrent = i === currentIdx
+                      const timeAvg = i === 1 ? '5 dias' : i === 2 ? '10 dias' : i === 3 ? '45 dias' : i === 4 ? '30 dias' : '--'
+                      
+                      return (
+                        <div key={s} className={`relative flex flex-col p-4 rounded-xl border transition-all ${
+                          isCurrent ? 'bg-blue-50/50 border-blue-200 ring-2 ring-blue-500/5 shadow-sm' : 
+                          isPast ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50 border-transparent opacity-60'
+                        }`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`text-[9px] font-black uppercase tracking-widest ${isCurrent ? 'text-blue-600' : isPast ? 'text-emerald-600' : 'text-slate-400'}`}>{s}</span>
+                            {isPast && <CheckCircle2 size={12} className="text-emerald-500" />}
+                            {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
+                          </div>
+                          <p className={`text-[10px] font-black ${isCurrent ? 'text-slate-900' : 'text-slate-500'}`}>{isCurrent ? 'EM CURSO' : isPast ? 'CONCLUÍDO' : 'PENDENTE'}</p>
+                          {isCurrent && <p className="text-[8px] font-bold text-blue-500 uppercase mt-1">Média: {timeAvg}</p>}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                   <div className="bg-slate-900 border border-white/10 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                        <TrendingUp size={120} />
+                {/* ROW 2: PAINEL OPERACIONAL */}
+                <div className="grid grid-cols-3 gap-6 h-[25vh] min-h-0 shrink-0">
+                  {/* CARD 1: PRÓXIMA AÇÃO */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-amber-200 transition-all border-l-4 border-l-amber-400">
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500">
+                          <Target size={16} />
+                        </div>
+                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Próxima Ação</h3>
                       </div>
                       
-                      <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-6">
-                           <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-inner">
-                              <DollarSign size={16} />
-                           </div>
-                           <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] font-mono">Performance Financeira</h3>
+                      {processo.tarefas?.filter((t: any) => t.status === 'pendente').slice(0, 1).map((t: any) => (
+                        <div key={t.id} className="space-y-1">
+                          <p className="text-sm font-black text-slate-900 leading-tight uppercase line-clamp-2">{t.titulo}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Sugestão: {new Date(t.data).toLocaleDateString('pt-BR')}</p>
                         </div>
+                      )) || (
+                        <div className="space-y-1">
+                          <p className="text-sm font-black text-slate-900 leading-tight uppercase">
+                            {processo.status === 'em_analise' ? 'Iniciar levantamento cadastral' :
+                             processo.status === 'levantamento' ? 'Elaborar relatório fotográfico' :
+                             processo.status === 'projeto' ? 'Finalizar memorial descritivo' :
+                             processo.status === 'protocolo_prefeitura' ? 'Acompanhar deferimento' : 'Aguardar registro final'}
+                          </p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase">Ação sugerida pelo sistema</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="w-full mt-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
+                       Executar Ação
+                    </button>
+                  </div>
 
-                        <div className="space-y-8">
-                          <div>
-                            <p className="text-xs text-slate-400 mb-1">Valor Total Contratado</p>
-                            <p className="text-3xl font-bold tracking-tight text-white">{fmt(stats?.totalContratado || 0)}</p>
-                          </div>
-
-                          <div className="space-y-4">
-                             <div className="flex justify-between items-end">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Recolhimento</p>
-                                <p className="text-xs font-bold text-emerald-400">{stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</p>
-                             </div>
-                             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.4)] transition-all duration-1000"
-                                  style={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.min(100, (stats.totalRecebido / stats.totalContratado) * 100) : 0}%` }}
-                                />
-                             </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/5">
-                            <div>
-                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter mb-1">RECEBIDO</p>
-                              <p className="text-sm font-bold text-emerald-400">{fmt(stats?.totalRecebido || 0)}</p>
-                            </div>
-                            <div>
-                              <p className="text-[9px] text-slate-500 uppercase font-bold tracking-tighter mb-1">SALDO</p>
-                              <p className="text-sm font-bold text-slate-300">{fmt(stats?.totalAReceber || 0)}</p>
-                            </div>
-                          </div>
+                  {/* CARD 2: PERFORMANCE FINANCEIRA */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-emerald-200 transition-all">
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500">
+                          <TrendingUp size={16} />
+                        </div>
+                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Performance Financeira</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Contratado</p>
+                          <p className="text-[12px] font-black text-slate-900">{fmt(stats?.totalContratado || 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase mb-0.5">Recebido</p>
+                          <p className="text-[12px] font-black text-emerald-600">{fmt(stats?.totalRecebido || 0)}</p>
                         </div>
                       </div>
-                   </div>
-
-                   {/* QUICK INFO CARD */}
-                   <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-                      <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Informações Rápidas</h4>
-                      <div className="space-y-4">
-                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-500">Tempo Decorrido</span>
-                            <span className="font-bold text-slate-700">{Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias</span>
-                         </div>
-                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-500">Responsável</span>
-                            <span className="font-bold text-slate-700 truncate max-w-[120px]">{processo.responsavel || 'Não definido'}</span>
-                         </div>
-                         <div className="flex justify-between items-center text-xs">
-                            <span className="text-slate-500">Prioridade</span>
-                            <span className={`font-bold px-2 py-0.5 rounded uppercase text-[9px] ${processo.prioridade === 'urgente' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
-                               {processo.prioridade || 'Normal'}
-                            </span>
-                         </div>
+                    </div>
+                    
+                    <div className="space-y-2 mt-4">
+                      <div className="flex justify-between items-end text-[9px] font-black text-slate-400 uppercase">
+                        <span>Progresso</span>
+                        <span className="text-emerald-600">{stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</span>
                       </div>
-                   </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.min(100, (stats.totalRecebido / stats.totalContratado) * 100) : 0}%` }}
+                          className="h-full bg-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 3: SAÚDE DO PROCESSO */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col justify-between group hover:border-blue-200 transition-all">
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                          <Activity size={16} />
+                        </div>
+                        <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.2em] font-mono">Saúde do Projeto</h3>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">Tempo em andamento</span>
+                          <span className="text-[11px] font-black text-slate-900">{Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[9px] font-bold text-slate-400 uppercase">Prazo esperado</span>
+                          <span className="text-[11px] font-black text-slate-900">60 dias</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 mt-4 p-2 bg-slate-50 rounded-xl">
+                      <div className={`w-2 h-2 rounded-full ${
+                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'bg-red-500 animate-pulse' :
+                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 45 ? 'bg-amber-500' : 'bg-emerald-500'
+                      }`} />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${
+                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'text-red-600' :
+                        Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 45 ? 'text-amber-600' : 'text-emerald-600'
+                      }`}>
+                        {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'Operação Atrasada' :
+                         Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 45 ? 'Atenção ao Prazo' : 'Dentro do Prazo'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* ROW 3: DETALHES E HISTÓRICO */}
+                <div className="grid grid-cols-3 gap-6 h-[30vh] min-h-0 overflow-hidden shrink-0">
+                  {/* CARD 1: DOSSIÊ DO PROJETO */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
+                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-4 border-b border-slate-50 pb-2">Dossiê de Ativos</h3>
+                     <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Cliente / Proprietário</p>
+                          <p className="text-[11px] font-black text-slate-900 truncate uppercase">{processo.cliente?.nome}</p>
+                          <p className="text-[9px] font-bold text-slate-500 font-mono">{processo.cliente?.cpf_cnpj}</p>
+                        </div>
+                        <div>
+                          <p className="text-[8px] font-bold text-slate-400 uppercase">Localização</p>
+                          <p className="text-[11px] font-black text-slate-900 truncate uppercase">{processo.imovel?.endereco}, {processo.imovel?.numero}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Matrícula</p>
+                            <p className="text-[10px] font-black text-slate-700 font-mono">{processo.imovel?.num_matricula || 'N/A'}</p>
+                          </div>
+                          <div>
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Inscrição</p>
+                            <p className="text-[10px] font-black text-slate-700 font-mono">{processo.imovel?.inscricao_imobiliaria || 'N/A'}</p>
+                          </div>
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* CARD 2: DOCUMENTOS DO PROCESSO */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
+                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2">
+                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Repositório ({processo.documentos?.length || 0})</h3>
+                        <button onClick={() => setTab('documentos')} className="text-[9px] font-black text-blue-600 uppercase hover:underline">Ver Todos</button>
+                     </div>
+                     <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                        {processo.documentos?.slice(0, 3).map((d: any) => (
+                          <div key={d.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl group hover:bg-white border border-transparent hover:border-slate-100 transition-all">
+                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-slate-400 shadow-sm">
+                                <FileText size={14} />
+                             </div>
+                             <div className="flex-1 min-w-0">
+                                <p className="text-[10px] font-black text-slate-800 truncate uppercase">{d.nome}</p>
+                                <p className="text-[8px] font-bold text-slate-400 uppercase">{new Date(d.createdAt).toLocaleDateString('pt-BR')}</p>
+                             </div>
+                          </div>
+                        ))}
+                        {(!processo.documentos || processo.documentos.length === 0) && (
+                          <p className="text-[9px] text-slate-300 font-black uppercase text-center py-8">Nenhum documento</p>
+                        )}
+                     </div>
+                  </div>
+
+                  {/* CARD 3: ATIVIDADES RECENTES */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col min-h-0">
+                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-4 border-b border-slate-50 pb-2">Log de Operação</h3>
+                     <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
+                        {processo.logs?.slice(0, 5).map((log: any, i: number) => (
+                          <div key={i} className="flex gap-3 relative">
+                             {i !== 4 && <div className="absolute left-1.5 top-3 bottom-0 w-px bg-slate-100" />}
+                             <div className="w-3 h-3 rounded-full bg-slate-200 border-2 border-white relative z-10 shrink-0 mt-0.5" />
+                             <div>
+                                <p className="text-[10px] font-bold text-slate-800 leading-tight uppercase">{log.acao}</p>
+                                <p className="text-[8px] text-slate-400 uppercase font-bold">{new Date(log.createdAt).toLocaleDateString('pt-BR')} • {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                             </div>
+                          </div>
+                        ))}
+                        {(!processo.logs || processo.logs.length === 0) && (
+                           processo.tarefas?.slice(0, 5).map((t: any, i: number) => (
+                             <div key={i} className="flex gap-3 relative">
+                                {i !== 4 && <div className="absolute left-1.5 top-3 bottom-0 w-px bg-slate-100" />}
+                                <div className="w-3 h-3 rounded-full bg-blue-100 border-2 border-white relative z-10 shrink-0 mt-0.5" />
+                                <div>
+                                   <p className="text-[10px] font-bold text-slate-800 leading-tight uppercase">TAREFA: {t.titulo}</p>
+                                   <p className="text-[8px] text-slate-400 uppercase font-bold">{t.status}</p>
+                                </div>
+                             </div>
+                           ))
+                        )}
+                     </div>
+                  </div>
+                </div>
+
               </div>
             )}
 
