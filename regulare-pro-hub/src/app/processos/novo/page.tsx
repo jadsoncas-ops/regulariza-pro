@@ -238,13 +238,26 @@ function WizardContent() {
   const nextStep = () => setStep(s => s + 1)
   const prevStep = () => setStep(s => s - 1)
 
+  // GEOCODING AUTOMÁTICO
+  const fetchGeocode = async (endereco: string, numero: string, bairro: string, cidade: string, estado: string) => {
+    if (!endereco || !cidade || !estado) return
+    try {
+      const query = `${endereco}, ${numero ? numero + ', ' : ''}${bairro ? bairro + ', ' : ''}${cidade}, ${estado}, Brasil`
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+      const data = await res.json()
+      if (data && data.length > 0) {
+        setImovelData((p: any) => ({ ...p, latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) }))
+      }
+    } catch (e) { console.error("Geocode error", e) }
+  }
+
   // BUSCA DE CEP
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'cliente' | 'imovel') => {
     const rawValue = e.target.value
     const cleanCep = rawValue.replace(/\D/g, '')
     
     if (target === 'cliente') setClienteData(p => ({ ...p, cep: rawValue }))
-    else setImovelData(p => ({ ...p, cep: rawValue }))
+    else setImovelData((p: any) => ({ ...p, cep: rawValue }))
 
     if (cleanCep.length === 8) {
       setIsSearchingCep(true)
@@ -259,7 +272,10 @@ function WizardContent() {
             estado: data.uf.toUpperCase(),
           }
           if (target === 'cliente') setClienteData(p => ({ ...p, ...updates }))
-          else setImovelData(p => ({ ...p, ...updates }))
+          else {
+            setImovelData((p: any) => ({ ...p, ...updates }))
+            fetchGeocode(data.logradouro, imovelData.numero, data.bairro, data.localidade, data.uf)
+          }
         }
       } catch (e) { console.error(e) }
       finally { setIsSearchingCep(false) }
@@ -570,15 +586,18 @@ function WizardContent() {
                     <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-12 gap-4">
                       <div className="col-span-12 flex justify-center mb-2">
                         <button 
-                          onClick={() => setImovelData((prev: any) => ({
-                            ...prev,
-                            cep: clienteData.cep,
-                            endereco: clienteData.endereco,
-                            numero: clienteData.numero,
-                            bairro: clienteData.bairro,
-                            cidade: clienteData.cidade,
-                            estado: clienteData.estado
-                          }))}
+                          onClick={() => {
+                            setImovelData((prev: any) => ({
+                              ...prev,
+                              cep: clienteData.cep,
+                              endereco: clienteData.endereco,
+                              numero: clienteData.numero,
+                              bairro: clienteData.bairro,
+                              cidade: clienteData.cidade,
+                              estado: clienteData.estado
+                            }))
+                            fetchGeocode(clienteData.endereco, clienteData.numero, clienteData.bairro, clienteData.cidade, clienteData.estado)
+                          }}
                           className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
                         >
                           <MapPin size={12} /> APROVEITAR ENDEREÇO DO CLIENTE
@@ -591,8 +610,8 @@ function WizardContent() {
                           {isSearchingCep && <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />}
                         </div>
                       </div>
-                      <div className="col-span-6"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData((p: any) => ({...p, endereco: e.target.value}))} /></div>
-                      <div className="col-span-3"><Label>Número</Label><Input value={imovelData.numero} onChange={e => setImovelData((p: any) => ({...p, numero: e.target.value}))} /></div>
+                      <div className="col-span-6"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData((p: any) => ({...p, endereco: e.target.value}))} onBlur={() => fetchGeocode(imovelData.endereco, imovelData.numero, imovelData.bairro, imovelData.cidade, imovelData.estado)} /></div>
+                      <div className="col-span-3"><Label>Número</Label><Input value={imovelData.numero} onChange={e => setImovelData((p: any) => ({...p, numero: e.target.value}))} onBlur={() => fetchGeocode(imovelData.endereco, imovelData.numero, imovelData.bairro, imovelData.cidade, imovelData.estado)} /></div>
                       
                       <div className="col-span-5"><Label>Bairro</Label><Input value={imovelData.bairro} onChange={e => setImovelData((p: any) => ({...p, bairro: e.target.value}))} /></div>
                       <div className="col-span-5"><Label>Cidade</Label><Input value={imovelData.cidade} onChange={e => setImovelData((p: any) => ({...p, cidade: e.target.value}))} /></div>
