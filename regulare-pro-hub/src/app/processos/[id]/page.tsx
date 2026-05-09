@@ -280,753 +280,249 @@ export default function ProcessoDetailPage() {
         </div>
       </div>
 
-      {/* ── TABS ── */}
-      <div className="tab-bar shrink-0">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`tab-item ${tab === t.id ? 'active' : ''}`}
-          >
-            <t.icon size={13} strokeWidth={tab === t.id ? 2.5 : 2} />
-            {t.label}
-            {tab === t.id && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-[hsl(231,100%,60%)]"
-              />
-            )}
-          </button>
-        ))}
-      </div>
+      {/* ── COMMAND CENTER: HIGH DENSITY 3-COLUMN LAYOUT ── */}
+      <div className="flex-1 grid grid-cols-12 gap-4 p-4 h-full min-h-0 bg-[#FDFDFD]">
+        
+        {/* LEFT COLUMN: IDENTITY & ACTIVITY (Col 3) */}
+        <div className="col-span-12 md:col-span-3 flex flex-col gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
+          
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm shrink-0">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                <Target size={14} className="text-slate-500" /> Identidade
+              </div>
+              <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-100 text-slate-500">{processo.codigo_projeto || 'N/A'}</span>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <p className="text-[12px] font-bold text-slate-900 leading-tight uppercase">{processo.tipo_regularizacao}</p>
+                <div className="mt-2 p-3 bg-slate-50 rounded-xl">
+                   <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Cliente</p>
+                   <p className="text-[11px] font-bold text-slate-800">{processo.cliente?.nome}</p>
+                </div>
+                <div className="mt-2 p-3 bg-slate-50 rounded-xl">
+                   <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Localização</p>
+                   <p className="text-[11px] font-bold text-slate-800">{processo.imovel?.endereco}, {processo.imovel?.numero}</p>
+                   <p className="text-[9px] text-slate-500 mt-0.5">{processo.imovel?.cidade}/{processo.imovel?.estado}</p>
+                </div>
+              </div>
+              
+              <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tempo Ativo</span>
+                <span className={`text-[10px] font-black uppercase tracking-widest ${Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'text-red-500' : 'text-slate-800'}`}>
+                  {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias
+                </span>
+              </div>
+            </div>
+          </div>
 
-      {/* ── TAB CONTENT ── */}
-      <div className="flex-1 overflow-y-auto page-scroll" style={{ padding: '24px 24px' }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {/* ── VISÃO GERAL: PROCESS COMMAND CENTER ── */}
-            {tab === 'visao' && (
-              <div className="flex flex-col gap-4 h-full min-h-0">
-                
-                {/* ── ROW 1: SUMMARY (4) + FINANCIAL (8) ── */}
-                <div className="grid grid-cols-12 gap-4 shrink-0">
-                  
-                  {/* Process Summary */}
-                  <div className="col-span-12 md:col-span-4 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                        <Target size={14} className="text-slate-500" /> Detalhes do Projeto
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex-1 min-h-[250px] flex flex-col">
+             <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2 shrink-0">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                  <Activity size={14} /> Activity Timeline
+                </div>
+             </div>
+             <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar pl-2">
+                {processo.logs?.slice(0, 15).map((log: any, i: number) => (
+                  <div key={i} className="flex gap-4 relative">
+                     {i !== (processo.logs?.length > 15 ? 14 : processo.logs?.length - 1) && <div className="absolute left-[5px] top-4 bottom-[-16px] w-[2px] bg-slate-100" />}
+                     <div className="w-3 h-3 rounded-full bg-slate-200 border-2 border-white relative z-10 shrink-0 mt-0.5 shadow-sm" />
+                     <div>
+                        <p className="text-[10px] font-bold text-slate-800 leading-tight uppercase">{log.acao}</p>
+                        <p className="text-[8px] text-slate-400 uppercase font-medium mt-0.5 font-mono">{new Date(log.createdAt).toLocaleDateString('pt-BR')} • {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                     </div>
+                  </div>
+                ))}
+                {(!processo.logs || processo.logs.length === 0) && (
+                  <p className="text-[9px] text-slate-400 font-bold uppercase text-center py-6">Sem atividades</p>
+                )}
+             </div>
+          </div>
+
+        </div>
+
+        {/* CENTER COLUMN: WORKFLOW ENGINE (Col 5) */}
+        <div className="col-span-12 md:col-span-5 flex flex-col gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
+           
+           <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm shrink-0">
+             <div className="flex items-center justify-between mb-4 shrink-0">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 uppercase tracking-widest font-mono">
+                  <Layers size={14} className="text-blue-500" /> Pipeline Dinâmico
+                </div>
+             </div>
+             <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2">
+                {['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado'].map((s, i, arr) => {
+                  const currentIdx = arr.indexOf(processo.status || 'em_analise')
+                  const isPast = i < currentIdx
+                  const isCurrent = i === currentIdx
+                  const label = STATUS_LABELS[s] || s
+                  return (
+                    <div key={s} className={`flex-1 min-w-[100px] flex flex-col p-3 rounded-xl border transition-all ${
+                      isCurrent ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-500/20 shadow-sm' : 
+                      isPast ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50 border-transparent opacity-60'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${isCurrent ? 'text-blue-600' : isPast ? 'text-emerald-600' : 'text-slate-400'}`}>0{i+1}</span>
+                        {isPast && <CheckCircle2 size={10} className="text-emerald-500" />}
+                        {isCurrent && <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />}
                       </div>
-                      <span className="px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-slate-100 text-slate-500">{processo.codigo_projeto || 'N/A'}</span>
+                      <p className={`text-[9px] font-bold leading-tight ${isCurrent ? 'text-slate-900' : 'text-slate-600'}`}>{label}</p>
                     </div>
-                    
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-[12px] font-bold text-slate-900 leading-tight uppercase">{processo.tipo_regularizacao}</p>
-                        <p className="text-[10px] text-slate-500 truncate mt-1">Cliente: {processo.cliente?.nome}</p>
+                  )
+                })}
+             </div>
+           </div>
+
+           <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex-1 flex flex-col min-h-[400px]">
+             <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3 shrink-0">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-widest font-mono">
+                  <Zap size={14} className="text-amber-500" /> Autonomous Workflow
+                </div>
+                <div className="flex gap-1">
+                   <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="btn-secondary py-1 px-2 text-[8px] uppercase tracking-widest"><Plus size={10} className="mr-1"/> Tarefa</button>
+                   <button onClick={() => { setProtocoloToEdit(null); setIsProtocoloModalOpen(true) }} className="btn-secondary py-1 px-2 text-[8px] uppercase tracking-widest"><Plus size={10} className="mr-1"/> Órgão</button>
+                </div>
+             </div>
+             
+             <div className="flex-1 overflow-y-auto pr-2 relative">
+                <div className="absolute left-[15px] top-4 bottom-4 w-px bg-slate-100 z-0" />
+                <div className="space-y-4 relative z-10 pt-2">
+                  {[
+                    ...(processo.tarefas || []).map((t: any) => ({ ...t, type: 'task' })),
+                    ...(processo.protocolos || []).map((p: any) => ({ ...p, type: 'protocol' }))
+                  ]
+                  .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                  .map((item, idx) => (
+                    <div key={idx} className="relative pl-10 group">
+                      <div className={`absolute left-1 top-2 w-6 h-6 rounded-full shadow-sm flex items-center justify-center ${
+                        item.status === 'concluido' ? 'bg-emerald-500 text-white' : 'bg-white border border-slate-200 text-slate-400 group-hover:border-primary group-hover:text-primary transition-colors'
+                      }`}>
+                         {item.type === 'task' ? <ListTodo size={10} /> : <Building2 size={10} />}
                       </div>
                       
-                      <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Localização</p>
-                          <p className="text-[10px] font-medium text-slate-800 truncate">{processo.imovel?.endereco}, {processo.imovel?.numero}</p>
-                        </div>
-                        <div>
-                          <p className="text-[8px] font-bold text-slate-400 uppercase">Tempo Ativo</p>
-                          <p className="text-[10px] font-medium text-slate-800">
-                            <span className={Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'text-red-500 font-bold' : ''}>
-                              {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Financial Intelligence */}
-                  <div className="col-span-12 md:col-span-8 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col justify-between relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 opacity-50" />
-                    
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono mb-4 relative z-10">
-                      <TrendingUp size={14} className="text-emerald-500" /> Financial Intelligence
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-4 relative z-10">
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Contrato</p>
-                        <p className="text-lg font-bold text-slate-900 tracking-tight">{fmt(stats?.totalContratado || 0)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Recebido</p>
-                        <p className="text-lg font-bold text-emerald-600 tracking-tight">{fmt(stats?.totalRecebido || 0)}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Repasses/Custos</p>
-                        <p className="text-lg font-bold text-red-500 tracking-tight">{fmt(stats?.totalRepasses || 0)}</p>
-                      </div>
-                      <div className="pl-4 border-l border-slate-100">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Lucro Estimado</p>
-                        <p className="text-lg font-bold text-[hsl(231,100%,60%)] tracking-tight">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 flex items-center gap-3 relative z-10">
-                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: `${stats?.totalContratado && stats.totalContratado > 0 ? Math.max(0, Math.min(100, (stats.totalRecebido / stats.totalContratado) * 100)) : 0}%` }}
-                          className="h-full bg-emerald-500"
-                        />
-                      </div>
-                      <span className="text-[9px] font-bold text-emerald-600 font-mono tracking-tighter">
-                        {stats?.totalContratado && stats.totalContratado > 0 ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}% RECEBIDO
-                      </span>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* ── ROW 2: PIPELINE (8) + NEXT ACTIONS (4) ── */}
-                <div className="grid grid-cols-12 gap-4 h-[35vh] min-h-[250px] shrink-0">
-                  
-                  {/* Workflow Pipeline */}
-                  <div className="col-span-12 md:col-span-8 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-4 shrink-0">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                        <Layers size={14} className="text-blue-500" /> Workflow Pipeline
-                      </div>
-                      <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded uppercase">
-                        Etapa Atual: {STATUS_LABELS[processo.status] || processo.status}
-                      </span>
-                    </div>
-
-                    <div className="flex-1 overflow-x-auto flex items-center gap-3 custom-scrollbar pb-2">
-                      {['em_analise', 'levantamento', 'projeto', 'protocolo_prefeitura', 'cartorio', 'finalizado'].map((s, i, arr) => {
-                        const currentIdx = arr.indexOf(processo.status || 'em_analise')
-                        const isPast = i < currentIdx
-                        const isCurrent = i === currentIdx
-                        const label = STATUS_LABELS[s] || s
-                        
-                        return (
-                          <div key={s} className={`relative flex-1 min-w-[120px] flex flex-col p-4 rounded-xl border transition-all h-full justify-between ${
-                            isCurrent ? 'bg-blue-50/50 border-blue-200 ring-1 ring-blue-500/20 shadow-sm' : 
-                            isPast ? 'bg-emerald-50/20 border-emerald-100' : 'bg-slate-50 border-transparent opacity-60'
-                          }`}>
-                            <div className="flex items-center justify-between">
-                              <span className={`text-[9px] font-black uppercase tracking-widest ${isCurrent ? 'text-blue-600' : isPast ? 'text-emerald-600' : 'text-slate-400'}`}>0{i+1}</span>
-                              {isPast && <CheckCircle2 size={12} className="text-emerald-500" />}
-                              {isCurrent && <div className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />}
+                      <div className="bg-white border border-slate-200/60 rounded-xl p-4 shadow-sm group-hover:border-primary/20 group-hover:shadow-md transition-all flex items-start gap-3">
+                         <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                               <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                                 item.type === 'task' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600'
+                               }`}>
+                                 {item.type === 'task' ? 'TAREFA' : 'PROTOCOLO'}
+                               </span>
+                               <span className="text-[8px] font-bold text-slate-400 font-mono">{new Date(item.data).toLocaleDateString('pt-BR')}</span>
+                               <span className={`ml-auto text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${item.status === 'concluido' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>{item.status}</span>
                             </div>
-                            
-                            <div className="mt-4">
-                              <p className={`text-[11px] font-bold leading-tight ${isCurrent ? 'text-slate-900' : 'text-slate-600'}`}>{label}</p>
-                              <p className={`text-[9px] font-medium uppercase mt-1 ${isCurrent ? 'text-blue-500' : isPast ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                {isCurrent ? 'EM PROGRESSO' : isPast ? 'CONCLUÍDO' : 'PENDENTE'}
-                              </p>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Tasks / Next Actions */}
-                  <div className="col-span-12 md:col-span-4 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col h-full border-l-4 border-l-amber-400">
-                    <div className="flex items-center justify-between mb-4 shrink-0">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-800 uppercase tracking-[0.1em] font-mono">
-                        <Zap size={14} className="text-amber-500 fill-amber-500/20" /> Next Actions
+                            <h4 className={`text-[11px] font-bold ${item.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                               {item.type === 'task' ? item.titulo : `${item.orgao} - #${item.numero_protocolo}`}
+                            </h4>
+                         </div>
+                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => item.type==='task' ? (setTarefaToEdit(item), setIsTaskModalOpen(true)) : (setProtocoloToEdit(item), setIsProtocoloModalOpen(true))} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"><Edit size={12}/></button>
+                            <button onClick={() => item.type==='task' ? handleDeleteTarefa(item.id, item.titulo) : handleDeleteProtocolo(item.id, item.orgao)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 size={12}/></button>
+                         </div>
                       </div>
-                      <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="p-1 hover:bg-slate-50 rounded text-slate-400">
-                        <Plus size={14} />
-                      </button>
                     </div>
-                    
-                    <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-                      {processo.tarefas?.filter((t: any) => t.status === 'pendente').map((t: any) => (
-                        <div key={t.id} onClick={() => { setTarefaToEdit(t); setIsTaskModalOpen(true) }} className="p-3 rounded-xl border border-slate-100 hover:border-slate-300 bg-slate-50/50 cursor-pointer group transition-all">
-                          <p className="text-[11px] font-bold text-slate-800 leading-tight group-hover:text-primary transition-colors">{t.titulo}</p>
-                          <p className="text-[9px] font-medium text-slate-500 mt-1 flex items-center gap-1">
-                            <Clock size={10} /> {new Date(t.data).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
-                      ))}
-                      {(!processo.tarefas || processo.tarefas.filter((t: any) => t.status === 'pendente').length === 0) && (
-                        <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
-                          <CheckCircle2 size={24} className="text-emerald-500 mb-2" />
-                          <p className="text-[10px] font-medium text-slate-500 uppercase">Nenhuma ação pendente</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  ))}
+                </div>
+             </div>
+           </div>
 
+        </div>
+
+        {/* RIGHT COLUMN: FINANCIAL & DOCS (Col 4) */}
+        <div className="col-span-12 md:col-span-4 flex flex-col gap-4 h-full overflow-y-auto pr-2 custom-scrollbar">
+           
+           <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl relative overflow-hidden group shrink-0">
+             <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 transition-transform text-white">
+                <Sparkles size={80} />
+             </div>
+             <div className="flex items-center justify-between mb-4 relative z-10">
+                <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest font-mono flex items-center gap-2"><TrendingUp size={14}/> Financeiro</h3>
+                <button onClick={() => { setFinanceiroToEdit(null); setIsFinanceiroModalOpen(true) }} className="text-slate-400 hover:text-white transition-colors p-1"><Plus size={14}/></button>
+             </div>
+             <div className="relative z-10">
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Contrato Total</p>
+                <p className="text-xl font-black text-white leading-none mb-4">{fmt(stats?.totalContratado || 0)}</p>
+                
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
+                   <div>
+                      <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Recebido</p>
+                      <p className="text-[11px] font-bold text-emerald-400">{fmt(stats?.totalRecebido || 0)}</p>
+                   </div>
+                   <div>
+                      <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Custos/Repasses</p>
+                      <p className="text-[11px] font-bold text-red-400">{fmt(stats?.totalRepasses || 0)}</p>
+                   </div>
                 </div>
 
-                {/* ── ROW 3: DOCUMENTS (6) + ACTIVITY TIMELINE (6) ── */}
-                <div className="grid grid-cols-12 gap-4 flex-1 min-h-[200px]">
-                  
-                  {/* Documents Automation */}
-                  <div className="col-span-12 md:col-span-6 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col min-h-0">
-                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2 shrink-0">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                          <FileText size={14} /> Automation Hub (Docs)
-                        </div>
-                        <button onClick={() => setTab('documentos')} className="text-[9px] font-bold text-primary uppercase hover:underline">Ver Todos</button>
-                     </div>
-                     <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
-                        {processo.documentos?.slice(0, 4).map((d: any) => (
-                          <div key={d.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer border border-transparent hover:border-slate-200">
-                             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm">
-                                <FileText size={14} />
-                             </div>
-                             <div className="flex-1 min-w-0">
-                                <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{d.nome}</p>
-                                <p className="text-[8px] font-medium text-slate-400 uppercase">{d.categoria} • {new Date(d.createdAt).toLocaleDateString('pt-BR')}</p>
-                             </div>
-                          </div>
-                        ))}
-                        {(!processo.documentos || processo.documentos.length === 0) && (
-                          <div className="flex flex-col items-center justify-center py-6 opacity-50">
-                            <FileText size={20} className="text-slate-400 mb-2" />
-                            <p className="text-[9px] text-slate-500 font-bold uppercase">Nenhum documento</p>
-                          </div>
-                        )}
-                     </div>
-                  </div>
-
-                  {/* Activity Timeline */}
-                  <div className="col-span-12 md:col-span-6 bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex flex-col min-h-0">
-                     <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2 shrink-0">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                          <Activity size={14} /> Activity Timeline
-                        </div>
-                     </div>
-                     <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar pl-2">
-                        {processo.logs?.slice(0, 6).map((log: any, i: number) => (
-                          <div key={i} className="flex gap-4 relative">
-                             {i !== 5 && <div className="absolute left-[5px] top-4 bottom-[-16px] w-[2px] bg-slate-100" />}
-                             <div className="w-3 h-3 rounded-full bg-slate-200 border-2 border-white relative z-10 shrink-0 mt-0.5 shadow-sm" />
-                             <div>
-                                <p className="text-[10px] font-bold text-slate-800 leading-tight uppercase">{log.acao}</p>
-                                <p className="text-[8px] text-slate-400 uppercase font-medium mt-0.5 font-mono">{new Date(log.createdAt).toLocaleDateString('pt-BR')} • {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-                             </div>
-                          </div>
-                        ))}
-                        {(!processo.logs || processo.logs.length === 0) && (
-                          <p className="text-[9px] text-slate-400 font-bold uppercase text-center py-6">Sem atividades recentes</p>
-                        )}
-                     </div>
-                  </div>
-
+                <div className="mt-4 flex items-center gap-2">
+                   <div className="h-1 flex-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500" style={{ width: `${stats?.totalContratado ? (stats.totalRecebido / stats.totalContratado) * 100 : 0}%` }} />
+                   </div>
+                   <span className="text-[8px] font-bold text-emerald-400 font-mono">{stats?.totalContratado ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</span>
                 </div>
+             </div>
+           </div>
 
-              </div>
-            )}
-
-
-            {/* ── FINANCEIRO ── */}
-            {tab === 'financeiro' && (
-              <div className="space-y-6">
-                {/* SUMMARY CARDS */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 shrink-0">
-                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-blue-200 transition-all">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Contrato Total</p>
-                       <p className="text-2xl font-black text-slate-900 leading-none">{fmt(stats?.totalContratado || 0)}</p>
-                       <div className="mt-4 flex items-center gap-2">
-                          <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                             <div className="h-full bg-blue-500" style={{ width: '100%' }} />
-                          </div>
-                          <span className="text-[9px] font-bold text-slate-400">100%</span>
-                       </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-emerald-200 transition-all">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Recebido</p>
-                       <p className="text-2xl font-black text-emerald-600 leading-none">{fmt(stats?.totalRecebido || 0)}</p>
-                       <div className="mt-4 flex items-center gap-2">
-                          <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                             <div className="h-full bg-emerald-500" style={{ width: `${stats?.totalContratado ? (stats.totalRecebido / stats.totalContratado) * 100 : 0}%` }} />
-                          </div>
-                          <span className="text-[9px] font-bold text-emerald-600">{stats?.totalContratado ? Math.round((stats.totalRecebido / stats.totalContratado) * 100) : 0}%</span>
-                       </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm group hover:border-red-200 transition-all">
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 font-mono">Custos / Repasses</p>
-                       <p className="text-2xl font-black text-red-500 leading-none">{fmt(stats?.totalRepasses || 0)}</p>
-                       <div className="mt-4 flex items-center gap-2">
-                          <div className="h-1 flex-1 bg-slate-100 rounded-full overflow-hidden">
-                             <div className="h-full bg-red-500" style={{ width: `${stats?.totalContratado ? (stats.totalRepasses / stats.totalContratado) * 100 : 0}%` }} />
-                          </div>
-                          <span className="text-[9px] font-bold text-red-500">{stats?.totalContratado ? Math.round((stats.totalRepasses / stats.totalContratado) * 100) : 0}%</span>
-                       </div>
-                    </div>
-
-                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl relative overflow-hidden group">
-                       <div className="absolute -right-2 -top-2 opacity-10 group-hover:scale-110 transition-transform text-white">
-                          <Sparkles size={80} />
-                       </div>
-                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 font-mono">Lucro Estimado</p>
-                       <p className="text-2xl font-black text-white leading-none">{fmt(stats?.lucroEstimadoFinal || 0)}</p>
-                       <div className="mt-4 flex items-center justify-between">
-                          <span className="text-[9px] font-black text-white/40 uppercase">Saldo em Conta:</span>
-                          <span className="text-[10px] font-black text-emerald-400 font-mono tracking-tight">{fmt(stats?.saldoEmContaAtual || 0)}</span>
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                    <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/20">
-                       <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
-                             <Wallet size={20} />
-                          </div>
-                          <div>
-                             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono leading-none">Fluxo de Caixa</h3>
-                             <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">Detalhamento de transações</p>
-                          </div>
-                       </div>
-
-                       <div className="flex items-center gap-2">
-                          <AnimatePresence>
-                            {selectedFinanceiro.length > 0 && (
-                              <motion.button 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                onClick={handleBulkDeleteFinanceiro}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded-lg border border-red-100 mr-2"
-                              >
-                                <Trash2 size={12}/> EXCLUIR ({selectedFinanceiro.length})
-                              </motion.button>
-                            )}
-                          </AnimatePresence>
-                          <button onClick={() => { setFinanceiroToEdit(null); setIsFinanceiroModalOpen(true) }} className="btn-premium py-2 px-4 text-[10px]">
-                            <Plus size={14} strokeWidth={2.5}/> NOVO LANÇAMENTO
-                          </button>
-                       </div>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                       <table className="w-full text-left">
-                          <thead>
-                             <tr className="text-slate-400 text-[9px] font-bold uppercase tracking-widest bg-slate-50/20 border-b border-slate-100">
-                                <th className="px-6 py-3 w-10">
-                                  <input 
-                                    type="checkbox" 
-                                    className="accent-primary"
-                                    checked={processo.financeiro?.length > 0 && selectedFinanceiro.length === processo.financeiro.length}
-                                    onChange={(e) => {
-                                      if (e.target.checked) setSelectedFinanceiro(processo.financeiro.map((f: any) => f.id))
-                                      else setSelectedFinanceiro([])
-                                    }}
-                                  />
-                                </th>
-                                <th className="px-6 py-3 font-mono">VENCIMENTO</th>
-                                <th className="px-6 py-3 font-mono">DESCRIÇÃO / CATEGORIA</th>
-                                <th className="px-6 py-3 font-mono text-center">STATUS</th>
-                                <th className="px-6 py-3 font-mono text-right">VALOR</th>
-                                <th className="px-6 py-3 w-20"></th>
-                             </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50">
-                             {(!processo.financeiro || processo.financeiro.length === 0) ? (
-                                <tr><td colSpan={6} className="p-12 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Nenhuma transação registrada</td></tr>
-                             ) : processo.financeiro.map((f: any) => (
-                               <tr key={f.id} className={`hover:bg-slate-50/50 transition-colors group ${selectedFinanceiro.includes(f.id) ? 'bg-primary/5' : ''}`}>
-                                  <td className="px-6 py-4">
-                                    <input 
-                                      type="checkbox" 
-                                      className="accent-primary"
-                                      checked={selectedFinanceiro.includes(f.id)}
-                                      onChange={() => {
-                                        if (selectedFinanceiro.includes(f.id)) setSelectedFinanceiro(selectedFinanceiro.filter(id => id !== f.id))
-                                        else setSelectedFinanceiro([...selectedFinanceiro, f.id])
-                                      }}
-                                    />
-                                  </td>
-                                  <td className="px-6 py-4 text-xs font-medium text-slate-500 font-mono">
-                                    {new Date(f.data_vencimento || f.createdAt).toLocaleDateString('pt-BR')}
-                                  </td>
-                                  <td className="px-6 py-4">
-                                     <p className="text-xs font-bold text-slate-800 tracking-tight">{f.descricao}</p>
-                                     <p className="text-[9px] text-slate-400 font-bold uppercase mt-0.5 tracking-widest">{f.categoria || f.tipo}</p>
-                                  </td>
-                                  <td className="px-6 py-4 text-center">
-                                     <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight ${f.status === 'pago' || f.status === 'recebido' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                                        {f.status}
-                                     </span>
-                                  </td>
-                                  <td className={`px-6 py-4 text-right text-xs font-bold ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-500'}`}>
-                                     {f.tipo === 'receita' ? '+' : '-'}{fmt(f.valor)}
-                                  </td>
-                                  <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button onClick={() => { setFinanceiroToEdit(f); setIsFinanceiroModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors"><Edit size={14}/></button>
-                                      <button onClick={() => handleDeleteFinanceiro(f.id, f.descricao)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"><Trash2 size={14}/></button>
-                                    </div>
-                                  </td>
-                               </tr>
-                             ))}
-                          </tbody>
-                       </table>
-                    </div>
-                 </div>
-              </div>
-
-            )}
-
-            {/* ── DOCUMENTOS ── */}
-            {tab === 'documentos' && (
-              <div className="space-y-6">
-                <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-                  <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/20">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
-                        <FileText size={20} />
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono leading-none">Repositório de Arquivos</h3>
-                        <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">Documentação técnica e links externos</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <AnimatePresence>
-                        {selectedDocumentos.length > 0 && (
-                          <motion.button 
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            onClick={handleBulkDeleteDocumentos}
-                            className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded-lg border border-red-100 mr-2"
-                          >
-                            <Trash2 size={12}/> EXCLUIR ({selectedDocumentos.length})
-                          </motion.button>
-                        )}
-                      </AnimatePresence>
-                      <button onClick={() => { setDocumentoToEdit(null); setIsDocumentoModalOpen(true) }} className="btn-premium py-2 px-4 text-[10px]">
-                        <Plus size={14} strokeWidth={2.5}/> ADICIONAR DOCUMENTO
-                      </button>
-                    </div>
+           <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm shrink-0">
+             <div className="flex items-center justify-between mb-2">
+                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Últimos Lançamentos</h3>
+                <button onClick={() => setTab('financeiro')} className="text-[8px] uppercase font-bold text-primary hover:underline opacity-0">Ver Tudo</button>
+             </div>
+             <div className="space-y-2">
+                {processo.financeiro?.slice(0,3).map((f:any) => (
+                  <div key={f.id} className="flex justify-between items-center p-2 hover:bg-slate-50 rounded-lg group">
+                     <div>
+                        <p className="text-[10px] font-bold text-slate-800">{f.descricao}</p>
+                        <p className="text-[8px] text-slate-400 font-mono">{new Date(f.data_vencimento || f.createdAt).toLocaleDateString('pt-BR')} • {f.status}</p>
+                     </div>
+                     <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-bold ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-500'}`}>
+                           {f.tipo === 'receita' ? '+' : '-'}{fmt(f.valor)}
+                        </span>
+                        <button onClick={() => handleDeleteFinanceiro(f.id, f.descricao)} className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 transition-opacity"><Trash2 size={10}/></button>
+                     </div>
                   </div>
+                ))}
+             </div>
+           </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left">
-                      <thead>
-                        <tr className="text-slate-400 text-[9px] font-bold uppercase tracking-widest bg-slate-50/20 border-b border-slate-100">
-                          <th className="px-6 py-3 w-10">
-                            <input 
-                              type="checkbox" 
-                              className="accent-primary"
-                              checked={processo.documentos?.length > 0 && selectedDocumentos.length === processo.documentos.length}
-                              onChange={(e) => {
-                                if (e.target.checked) setSelectedDocumentos(processo.documentos.map((d: any) => d.id))
-                                else setSelectedDocumentos([])
-                              }}
-                            />
-                          </th>
-                          <th className="px-6 py-3 font-mono">ARQUIVO / NOME</th>
-                          <th className="px-6 py-3 font-mono">CATEGORIA</th>
-                          <th className="px-6 py-3 font-mono text-center">STATUS</th>
-                          <th className="px-6 py-3 font-mono text-right">DATA</th>
-                          <th className="px-6 py-3 w-20"></th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {(!processo.documentos || processo.documentos.length === 0) ? (
-                          <tr><td colSpan={6} className="p-12 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Nenhum documento anexado</td></tr>
-                        ) : processo.documentos.map((d: any) => (
-                          <tr key={d.id} className={`hover:bg-slate-50/50 transition-colors group ${selectedDocumentos.includes(d.id) ? 'bg-primary/5' : ''}`}>
-                            <td className="px-6 py-4">
-                              <input 
-                                type="checkbox" 
-                                className="accent-primary"
-                                checked={selectedDocumentos.includes(d.id)}
-                                onChange={() => {
-                                  if (selectedDocumentos.includes(d.id)) setSelectedDocumentos(selectedDocumentos.filter(id => id !== d.id))
-                                  else setSelectedDocumentos([...selectedDocumentos, d.id])
-                                }}
-                              />
-                            </td>
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-3">
-                                {d.url.startsWith('http') ? (
-                                  <div className="p-2 bg-amber-50 text-amber-600 rounded-lg shadow-sm border border-amber-100/50">
-                                    <LinkIcon size={16} />
-                                  </div>
-                                ) : (
-                                  <div className="p-2 bg-primary/5 text-primary rounded-lg shadow-sm border border-primary/10">
-                                    <FileText size={16} />
-                                  </div>
-                                )}
-                                <div>
-                                  <p className="text-xs font-bold text-slate-800 tracking-tight leading-none mb-1">{d.nome}</p>
-                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
-                                    {d.url.startsWith('http') ? <span className="text-amber-600">LINK DRIVE</span> : <span>ARQUIVO LOCAL</span>} 
-                                    • {d.tipo.toUpperCase()}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">
-                                {d.categoria || 'Geral'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-center">
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight ${d.status === 'verificado' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
-                                {d.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-right text-xs font-medium text-slate-500 font-mono">
-                              {new Date(d.createdAt).toLocaleDateString('pt-BR')}
-                            </td>
-                            <td className="px-6 py-4 text-right">
-                              <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <a href={d.url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors" title="Ver Arquivo">
-                                  {d.url.startsWith('http') ? <ExternalLink size={14}/> : <Eye size={14}/>}
-                                </a>
-                                <button onClick={() => handleDeleteDocumento(d.id, d.nome)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors" title="Excluir">
-                                  <Trash2 size={14}/>
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+           <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex-1 flex flex-col min-h-[250px]">
+             <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3 shrink-0">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest font-mono">
+                  <FileText size={14} className="text-slate-500" /> Repositório (Docs)
                 </div>
-              </div>
-            )}
-
-            {/* ── TAREFAS ── */}
-            {tab === 'tarefas' && (
-              <div className="max-w-3xl mx-auto space-y-6">
-                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
-                    <div className="flex items-center justify-between mb-8">
-                       <div className="flex items-center gap-3">
-                          <ListTodo size={18} className="text-primary" />
-                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Backlog de Atividades</h3>
-                       </div>
-                       
-                       <div className="flex items-center gap-2">
-                          <AnimatePresence>
-                            {selectedTasks.length > 0 && (
-                              <motion.button 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                onClick={handleBulkDeleteTasks} 
-                                className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded-lg border border-red-100 mr-2"
-                              >
-                                <Trash2 size={12}/> EXCLUIR ({selectedTasks.length})
-                              </motion.button>
-                            )}
-                          </AnimatePresence>
-                          <button onClick={() => setIsTaskModalOpen(true)} className="btn-premium py-2 px-4 text-[10px]">
-                            <Plus size={14} strokeWidth={2.5}/> NOVA TAREFA
-                          </button>
-                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 overflow-y-auto pr-1 max-h-[60vh] custom-scrollbar">
-                       {(!processo.tarefas || processo.tarefas.length === 0) ? (
-                          <div className="py-20 text-center flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl">
-                             <ListTodo size={40} className="text-slate-100 mb-4" />
-                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Aguardando definição operacional</p>
-                          </div>
-                       ) : processo.tarefas.map((t: any) => (
-                          <div key={t.id} className={`flex items-center gap-4 p-4 rounded-2xl border transition-all group ${selectedTasks.includes(t.id) ? 'border-primary bg-primary/5 shadow-md' : t.status === 'concluido' ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-primary/20 hover:shadow-sm'}`}>
-                             <div className="flex items-center gap-3">
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedTasks.includes(t.id)}
-                                  onChange={() => {
-                                     if (selectedTasks.includes(t.id)) setSelectedTasks(selectedTasks.filter(id => id !== t.id))
-                                     else setSelectedTasks([...selectedTasks, t.id])
-                                  }}
-                                  className="accent-primary w-4 h-4 cursor-pointer"
-                                />
-                                <button onClick={() => handleToggleTarefa(t.id, t.status)} className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 transition-all ${t.status === 'concluido' ? 'bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-500/20' : 'border-slate-200 bg-white group-hover:border-primary'}`}>
-                                   {t.status === 'concluido' && <Check size={14} className="text-white" strokeWidth={3} />}
-                                </button>
-                             </div>
-                             
-                             <div className="flex-1 min-w-0">
-                                <p className={`text-[13px] font-black tracking-tight uppercase leading-none ${t.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-900'}`}>{t.titulo}</p>
-                                <div className="flex items-center gap-4 mt-2">
-                                   <div className="flex items-center gap-1">
-                                      <div className={`w-1.5 h-1.5 rounded-full ${t.prioridade === 'urgente' ? 'bg-red-500' : 'bg-blue-500'}`} />
-                                      <span className={`text-[9px] font-black uppercase tracking-widest ${t.prioridade === 'urgente' ? 'text-red-500' : 'text-slate-400'}`}>{t.prioridade}</span>
-                                   </div>
-                                   <div className="h-3 w-px bg-slate-200" />
-                                   <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                      <Calendar size={10} strokeWidth={2.5}/> {new Date(t.data).toLocaleDateString('pt-BR')}
-                                   </span>
-                                </div>
-                             </div>
-
-                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => { setTarefaToEdit(t); setIsTaskModalOpen(true) }} className="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-xl transition-all"><Edit size={14} /></button>
-                                <button onClick={() => handleDeleteTarefa(t.id, t.titulo)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={14} /></button>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-                 </div>
-              </div>
-            )}
-
-            {/* ── ESTEIRA (TIMELINE) ── */}
-            {tab === 'timeline' && (
-              <div className="max-w-4xl mx-auto py-8">
-                 <div className="relative border-l-2 border-slate-100 ml-4 space-y-12">
-                    {/* Combine tasks and protocols chronologically */}
-                    {[
-                      ...(processo.tarefas || []).map((t: any) => ({ ...t, type: 'task' })),
-                      ...(processo.protocolos || []).map((p: any) => ({ ...p, type: 'protocol' }))
-                    ]
-                    .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
-                    .map((item, idx) => (
-                      <div key={idx} className="relative pl-10">
-                        <div className={`absolute left-[-11px] top-0 w-5 h-5 rounded-full border-4 border-white shadow-sm flex items-center justify-center ${
-                          item.status === 'concluido' ? 'bg-emerald-500' : 'bg-primary'
-                        }`}>
-                           {item.type === 'task' ? <ListTodo size={8} className="text-white"/> : <Building2 size={8} className="text-white"/>}
+                <button onClick={() => { setDocumentoToEdit(null); setIsDocumentoModalOpen(true) }} className="p-1 hover:bg-slate-100 rounded text-slate-400 transition-colors"><Plus size={14}/></button>
+             </div>
+             <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+                {processo.documentos?.map((d: any) => (
+                  <div key={d.id} className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group">
+                     <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm shrink-0">
+                           {d.url.startsWith('http') ? <LinkIcon size={12}/> : <FileText size={12}/>}
                         </div>
-                        
-                        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:border-primary/20 transition-all group">
-                           <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                                 {new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${
-                                item.status === 'concluido' ? 'bg-emerald-50 text-emerald-600' : 'bg-primary/5 text-primary'
-                              }`}>
-                                 {item.status}
-                              </span>
-                           </div>
-                           <h4 className="text-sm font-bold text-slate-800 mb-1">
-                              {item.type === 'task' ? item.titulo : `Protocolo: ${item.orgao}`}
-                           </h4>
-                           <p className="text-xs text-slate-500 leading-relaxed">
-                              {item.type === 'task' ? (item.descricao || 'Sem descrição detalhada') : `Número: ${item.numero_protocolo}`}
-                           </p>
-                           
-                           {item.type === 'protocol' && item.prazo && (
-                             <div className="mt-4 pt-3 border-t border-slate-50 flex items-center gap-2 text-[10px] font-bold text-amber-600 uppercase">
-                                <Clock size={12}/> Previsão: {new Date(item.prazo).toLocaleDateString('pt-BR')}
-                             </div>
-                           )}
+                        <div className="min-w-0">
+                           <p className="text-[10px] font-bold text-slate-800 truncate uppercase">{d.nome}</p>
+                           <p className="text-[8px] font-medium text-slate-400 uppercase">{d.categoria} • {d.status}</p>
                         </div>
-                      </div>
-                    ))}
-                    
-                    {( (!processo.tarefas || processo.tarefas.length === 0) && (!processo.protocolos || processo.protocolos.length === 0) ) && (
-                      <div className="text-center py-20 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
-                         <GitBranch className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">A esteira ganha vida quando você adiciona tarefas e protocolos.</p>
-                      </div>
-                    )}
-                 </div>
-              </div>
-            )}
-            {tab === 'prefeitura' && (
-              <div className="space-y-6">
-                 <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-8">
-                    <div className="flex items-center justify-between mb-8">
-                       <div className="flex items-center gap-3">
-                          <Building2 size={18} className="text-primary" />
-                          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest font-mono">Trâmites em Órgãos Públicos</h3>
-                       </div>
-                       <div className="flex items-center gap-2">
-                          <AnimatePresence>
-                            {selectedProtocolos.length > 0 && (
-                              <motion.button 
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                onClick={handleBulkDeleteProtocolos} 
-                                className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded-lg border border-red-100 mr-2"
-                              >
-                                <Trash2 size={12}/> EXCLUIR ({selectedProtocolos.length})
-                              </motion.button>
-                            )}
-                          </AnimatePresence>
-                          <button onClick={() => setIsProtocoloModalOpen(true)} className="btn-premium py-2 px-4 text-[10px]">
-                            <Plus size={14} strokeWidth={2.5}/> NOVO PROTOCOLO
-                          </button>
-                       </div>
-                    </div>
+                     </div>
+                     <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <a href={d.url} target="_blank" rel="noopener noreferrer" className="p-1.5 hover:bg-white rounded shadow-sm text-slate-400 hover:text-primary"><ExternalLink size={10}/></a>
+                        <button onClick={() => handleDeleteDocumento(d.id, d.nome)} className="p-1.5 hover:bg-white rounded shadow-sm text-slate-400 hover:text-red-500"><Trash2 size={10}/></button>
+                     </div>
+                  </div>
+                ))}
+                {(!processo.documentos || processo.documentos.length === 0) && (
+                  <div className="text-center py-6 opacity-50">
+                    <FileText size={20} className="text-slate-300 mx-auto mb-2" />
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Nenhum anexo</p>
+                  </div>
+                )}
+             </div>
+           </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                       {(!processo.protocolos || processo.protocolos.length === 0) ? (
-                          <div className="lg:col-span-3 py-20 text-center flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-3xl">
-                             <Building2 size={40} className="text-slate-100 mb-4" />
-                             <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhum protocolo ativo em órgãos</p>
-                          </div>
-                       ) : processo.protocolos.map((prot: any) => (
-                          <div key={prot.id} className={`p-6 rounded-3xl border transition-all group ${selectedProtocolos.includes(prot.id) ? 'bg-primary/5 border-primary shadow-lg' : 'bg-white border-slate-100 hover:border-blue-200 hover:shadow-xl hover:shadow-slate-200/40'}`}>
-                             <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-4">
-                                   <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center font-black text-white text-xs uppercase shadow-lg shadow-slate-900/20">
-                                      {prot.orgao.substring(0, 2)}
-                                   </div>
-                                   <div>
-                                      <p className="text-[13px] font-black text-slate-900 uppercase tracking-tight leading-none mb-1">{prot.orgao}</p>
-                                      <p className="text-[9px] text-blue-600 font-black uppercase tracking-widest font-mono">#{prot.numero_protocolo}</p>
-                                   </div>
-                                </div>
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedProtocolos.includes(prot.id)}
-                                  onChange={() => {
-                                     if (selectedProtocolos.includes(prot.id)) setSelectedProtocolos(selectedProtocolos.filter(id => id !== prot.id))
-                                     else setSelectedProtocolos([...selectedProtocolos, prot.id])
-                                  }}
-                                  className="accent-primary w-5 h-5 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
-                                />
-                             </div>
+        </div>
 
-                             <div className="space-y-4">
-                                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-2xl">
-                                   <span className="text-[9px] font-black text-slate-400 uppercase">Status do Protocolo</span>
-                                   <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${prot.status === 'concluido' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'}`}>{prot.status}</span>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-3">
-                                   <div className="p-3 border border-slate-50 rounded-2xl">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Abertura</p>
-                                      <p className="text-[11px] font-black text-slate-900 font-mono">{new Date(prot.data).toLocaleDateString('pt-BR')}</p>
-                                   </div>
-                                   <div className="p-3 border border-slate-50 rounded-2xl">
-                                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Prazo</p>
-                                      <p className={`text-[11px] font-black font-mono ${prot.prazo && new Date(prot.prazo) < new Date() ? 'text-red-500' : 'text-slate-900'}`}>
-                                         {prot.prazo ? new Date(prot.prazo).toLocaleDateString('pt-BR') : 'ANÁLISE'}
-                                      </p>
-                                   </div>
-                                </div>
-                             </div>
-
-                             <div className="flex items-center gap-2 mt-6 pt-6 border-t border-slate-50">
-                                <button onClick={() => { setProtocoloToEdit(prot); setIsProtocoloModalOpen(true) }} className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all">Editar</button>
-                                <button onClick={() => handleDeleteProtocolo(prot.id, prot.orgao)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16}/></button>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-                 </div>
-              </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
       </div>
 
       {/* ── MODAIS ── */}
