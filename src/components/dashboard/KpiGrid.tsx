@@ -68,17 +68,20 @@ export function KpiGrid() {
 export function SectionHeader({
   title,
   eyebrow,
+  code,
   action,
 }: {
   title: string;
   eyebrow?: string;
+  code?: string;
   action?: React.ReactNode;
 }) {
+  const label = eyebrow ?? code;
   return (
     <div className="flex items-end justify-between mb-5">
       <div className="flex flex-col gap-1">
-        {eyebrow && (
-          <span className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{eyebrow}</span>
+        {label && (
+          <span className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{label}</span>
         )}
         <h2 className="font-serif text-[28px] leading-none tracking-tight text-foreground">{title}</h2>
       </div>
