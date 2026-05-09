@@ -54,6 +54,17 @@ export default function ClientesPage() {
     clientes.find(c => c.id === selectedId) || null
   , [clientes, selectedId])
 
+  const financialStats = useMemo(() => {
+    if (!selectedCliente || !selectedCliente.financeiro) return { pendente: 0, recebido: 0 }
+    const pendente = selectedCliente.financeiro
+      .filter((f: any) => f.tipo === 'receita' && f.status === 'pendente')
+      .reduce((acc: number, f: any) => acc + (f.valor - (f.valor_pago || 0)), 0)
+    const recebido = selectedCliente.financeiro
+      .filter((f: any) => f.tipo === 'receita' && (f.status === 'pago' || f.status === 'recebido'))
+      .reduce((acc: number, f: any) => acc + (f.valor_pago || 0), 0)
+    return { pendente, recebido }
+  }, [selectedCliente])
+
   const fmt = (v: number) => (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
   return (
@@ -206,12 +217,23 @@ export default function ClientesPage() {
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">ENDEREÇO PRINCIPAL</p>
-                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
-                          <p className="text-xs font-bold text-slate-800">{selectedCliente.endereco}, {selectedCliente.numero}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{selectedCliente.bairro}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{selectedCliente.cidade} — {selectedCliente.estado}</p>
-                          <p className="text-[10px] font-bold text-primary font-mono mt-2">{selectedCliente.cep}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">ENDEREÇO COMPLETO</p>
+                        <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-2 relative overflow-hidden group">
+                          <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <MapPin size={40} className="text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{selectedCliente.endereco || 'Endereço não informado'}{selectedCliente.numero ? `, ${selectedCliente.numero}` : ''}</p>
+                            {selectedCliente.complemento && <p className="text-[11px] font-medium text-slate-500 italic mt-0.5">{selectedCliente.complemento}</p>}
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><span className="text-slate-300 mr-1">BAIRRO:</span> {selectedCliente.bairro || '—'}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><span className="text-slate-300 mr-1">CIDADE:</span> {selectedCliente.cidade || '—'} / {selectedCliente.estado || '—'}</p>
+                          </div>
+                          <div className="pt-2 flex items-center gap-2">
+                             <div className="h-px flex-1 bg-slate-200/50" />
+                             <p className="text-[10px] font-black text-primary font-mono tracking-[0.2em]">{selectedCliente.cep || '00000-000'}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -239,7 +261,7 @@ export default function ClientesPage() {
                                </div>
                                <ArrowUpRight size={14} className="text-slate-300 group-hover:text-primary transition-colors" />
                             </div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">MATRÍCULA: {im.matricula}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">MATRÍCULA: {im.num_matricula || 'NÃO INFORMADA'}</p>
                             <p className="text-sm font-bold text-slate-800 mt-1">{im.endereco}, {im.numero}</p>
                             <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">{im.cidade} / {im.estado}</p>
                          </div>
@@ -281,35 +303,44 @@ export default function ClientesPage() {
                 {tab === 'financeiro' && (
                   <div className="space-y-10">
                     <div className="grid grid-cols-2 gap-4">
-                       <div className="p-6 bg-slate-900 rounded-[32px] text-white">
+                       <div className="p-6 bg-slate-900 rounded-[32px] text-white shadow-xl shadow-slate-200">
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono mb-2">SALDO EM ABERTO</p>
-                          <p className="text-2xl font-bold tracking-tight">R$ 12.450,00</p>
+                          <p className="text-2xl font-bold tracking-tight">{fmt(financialStats.pendente)}</p>
                        </div>
-                       <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[32px] text-emerald-600">
-                          <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest font-mono mb-2">TOTAL RECEBIDO</p>
-                          <p className="text-2xl font-bold tracking-tight">R$ 45.900,00</p>
+                       <div className="p-6 bg-emerald-500 border border-emerald-400 rounded-[32px] text-white shadow-xl shadow-emerald-100">
+                          <p className="text-[10px] font-bold text-emerald-100/60 uppercase tracking-widest font-mono mb-2">TOTAL RECEBIDO</p>
+                          <p className="text-2xl font-bold tracking-tight">{fmt(financialStats.recebido)}</p>
                        </div>
                     </div>
                     <div className="space-y-4">
                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">HISTÓRICO DE LANÇAMENTOS</p>
-                       <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden">
-                          <table className="w-full text-left">
-                             <tbody className="divide-y divide-slate-50">
-                                {[...Array(3)].map((_, i) => (
-                                  <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                                     <td className="px-6 py-4 text-[10px] font-bold text-slate-400 font-mono uppercase">20/05/2024</td>
-                                     <td className="px-6 py-4">
-                                        <p className="text-xs font-bold text-slate-800">Honorários - Alvará de Construção</p>
-                                        <p className="text-[9px] text-slate-400 font-bold uppercase">Projeto Residencial SR</p>
-                                     </td>
-                                     <td className="px-6 py-4 text-right">
-                                        <p className="text-xs font-bold text-emerald-600">+ R$ 2.500,00</p>
-                                     </td>
-                                  </tr>
-                                ))}
-                             </tbody>
-                          </table>
-                       </div>
+                        <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-sm">
+                           <table className="w-full text-left">
+                              <tbody className="divide-y divide-slate-50">
+                                 {(!selectedCliente.financeiro || selectedCliente.financeiro.length === 0) ? (
+                                   <tr><td className="p-12 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Nenhum lançamento financeiro</td></tr>
+                                 ) : selectedCliente.financeiro.map((f: any) => (
+                                   <tr key={f.id} className="hover:bg-slate-50/50 transition-colors">
+                                      <td className="px-6 py-4 text-[10px] font-bold text-slate-400 font-mono uppercase">
+                                        {new Date(f.data_vencimento || f.createdAt).toLocaleDateString('pt-BR')}
+                                      </td>
+                                      <td className="px-6 py-4">
+                                         <p className="text-xs font-bold text-slate-800">{f.descricao}</p>
+                                         <p className="text-[9px] text-slate-400 font-bold uppercase">{f.categoria || 'Geral'}</p>
+                                      </td>
+                                      <td className="px-6 py-4 text-right">
+                                         <p className={`text-xs font-bold ${f.tipo === 'receita' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                           {f.tipo === 'receita' ? '+' : '-'} {fmt(f.valor)}
+                                         </p>
+                                         <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full ${f.status === 'pago' || f.status === 'recebido' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                            {f.status}
+                                         </span>
+                                      </td>
+                                   </tr>
+                                 ))}
+                              </tbody>
+                           </table>
+                        </div>
                     </div>
                   </div>
                 )}
