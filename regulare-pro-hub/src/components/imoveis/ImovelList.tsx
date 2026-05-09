@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import GoogleMapEmbed from './GoogleMapEmbed'
 
 interface Imovel {
   id: string
@@ -115,19 +116,24 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
             className="bg-white border border-slate-200 rounded-[32px] p-2 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group flex flex-col cursor-pointer overflow-hidden"
             onClick={() => openDrawer(i)}
           >
-            {/* Visual Header / Photo Mock */}
-            <div className="relative h-48 rounded-[24px] overflow-hidden bg-slate-100 mb-6">
-               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-               <div className="absolute top-4 left-4">
+            {/* Visual Header / Google Map */}
+            <div className="relative h-48 rounded-[24px] overflow-hidden bg-slate-100 mb-6 group-hover:shadow-lg transition-all">
+               <GoogleMapEmbed 
+                  address={`${i.endereco}, ${i.bairro}, ${i.cidade} - ${i.estado}`}
+                  zoom={14}
+                  className="w-full h-full"
+               />
+               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+               <div className="absolute top-4 left-4 pointer-events-none">
                   <span className="text-[10px] font-bold text-white bg-primary px-3 py-1 rounded-full uppercase tracking-widest shadow-lg">
                     {i.zoneamento || 'RESIDENCIAL'}
                   </span>
                </div>
-               <div className="absolute bottom-4 left-4 text-white">
+               <div className="absolute bottom-4 left-4 text-white pointer-events-none">
                   <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">MATRÍCULA</p>
                   <p className="text-sm font-bold font-mono">{i.num_matricula || 'N/A'}</p>
                </div>
-               <div className="absolute bottom-4 right-4 text-white flex items-center gap-2">
+               <div className="absolute bottom-4 right-4 text-white flex items-center gap-2 pointer-events-none">
                   <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                     <Maximize2 size={14} />
                   </div>
@@ -198,22 +204,36 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
               </div>
 
               <div className="flex-1 overflow-y-auto p-10 space-y-12">
-                 {/* Map Mock */}
-                 <div className="relative h-64 bg-slate-100 rounded-[40px] overflow-hidden border-8 border-white shadow-inner group">
-                    <div className="absolute inset-0 bg-slate-200 flex items-center justify-center">
-                       <Layers size={48} className="text-slate-300 animate-pulse" />
-                    </div>
+                 {/* Interactive Google Map */}
+                 <div className="relative h-64 bg-slate-100 rounded-[40px] overflow-hidden border-8 border-white shadow-xl group">
+                    <GoogleMapEmbed 
+                       address={`${selectedImovel.endereco}, ${selectedImovel.bairro}, ${selectedImovel.cidade} - ${selectedImovel.estado}`}
+                       zoom={18}
+                       className="w-full h-full"
+                    />
                     <div className="absolute top-4 right-4">
-                       <button className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg text-primary hover:bg-white transition-all">
+                       <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg text-primary hover:bg-white transition-all flex items-center justify-center"
+                       >
                           <Maximize2 size={18} />
-                       </button>
+                       </a>
                     </div>
                     <div className="absolute bottom-4 left-4 right-4 p-4 bg-white/80 backdrop-blur-xl rounded-[24px] border border-white/50 flex items-center justify-between">
                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">COORDENADAS</p>
-                          <p className="text-xs font-mono font-bold text-slate-800">-23.5505, -46.6333</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">LOCALIZAÇÃO</p>
+                          <p className="text-xs font-mono font-bold text-slate-800 truncate max-w-[200px]">{selectedImovel.endereco}</p>
                        </div>
-                       <button className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-xl">Waze / Maps</button>
+                       <a 
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-xl"
+                       >
+                          Google Maps
+                       </a>
                     </div>
                  </div>
 
