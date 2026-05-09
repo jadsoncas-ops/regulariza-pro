@@ -403,9 +403,11 @@ function WizardContent() {
               ) : (
                   <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="col-span-2"><Label>Nome Completo *</Label><Input value={clienteData.nome} onChange={e => setClienteData(p => ({...p, nome: e.target.value}))} /></div>
-                    <div><Label>CPF / CNPJ *</Label><Input value={clienteData.cpf_cnpj} onChange={e => setClienteData(p => ({...p, cpf_cnpj: e.target.value}))} /></div>
-                    <div><Label>Telefone *</Label><Input value={clienteData.telefone} onChange={e => setClienteData(p => ({...p, telefone: e.target.value}))} /></div>
-                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 rounded-2xl">
+                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div><Label>CPF / CNPJ *</Label><Input value={clienteData.cpf_cnpj} onChange={e => setClienteData(p => ({...p, cpf_cnpj: e.target.value}))} /></div>
+                      <div><Label>Telefone *</Label><Input value={clienteData.telefone} onChange={e => setClienteData(p => ({...p, telefone: e.target.value}))} /></div>
+                    </div>
+                    <div className="col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-2xl">
                       <div>
                         <Label>CEP</Label>
                         <div className="relative">
@@ -414,8 +416,9 @@ function WizardContent() {
                         </div>
                       </div>
                       <div className="md:col-span-2"><Label>Endereço</Label><Input value={clienteData.endereco} onChange={e => setClienteData(p => ({...p, endereco: e.target.value}))} /></div>
+                      <div><Label>Número</Label><Input value={clienteData.numero} onChange={e => setClienteData(p => ({...p, numero: e.target.value}))} /></div>
                       <div><Label>Bairro</Label><Input value={clienteData.bairro} onChange={e => setClienteData(p => ({...p, bairro: e.target.value}))} /></div>
-                      <div><Label>Cidade</Label><Input value={clienteData.cidade} onChange={e => setClienteData(p => ({...p, cidade: e.target.value}))} /></div>
+                      <div className="md:col-span-2"><Label>Cidade</Label><Input value={clienteData.cidade} onChange={e => setClienteData(p => ({...p, cidade: e.target.value}))} /></div>
                       <div><Label>UF</Label><Input value={clienteData.estado} onChange={e => setClienteData(p => ({...p, estado: e.target.value}))} /></div>
                     </div>
                   <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-slate-50">
@@ -439,17 +442,19 @@ function WizardContent() {
               </div>
 
               <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-12 gap-4">
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <Label>CEP</Label>
                   <div className="relative">
                     <Input value={imovelData.cep} onChange={e => handleCepChange(e, 'imovel')} placeholder="00000-000" />
                     {isSearchingCep && <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />}
                   </div>
                 </div>
-                <div className="col-span-8"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData(p => ({...p, endereco: e.target.value}))} /></div>
+                <div className="col-span-6"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData(p => ({...p, endereco: e.target.value}))} /></div>
                 <div className="col-span-3"><Label>Número</Label><Input value={imovelData.numero} onChange={e => setImovelData(p => ({...p, numero: e.target.value}))} /></div>
+                
                 <div className="col-span-5"><Label>Bairro</Label><Input value={imovelData.bairro} onChange={e => setImovelData(p => ({...p, bairro: e.target.value}))} /></div>
-                <div className="col-span-4"><Label>Cidade</Label><Input value={imovelData.cidade} onChange={e => setImovelData(p => ({...p, cidade: e.target.value}))} /></div>
+                <div className="col-span-5"><Label>Cidade</Label><Input value={imovelData.cidade} onChange={e => setImovelData(p => ({...p, cidade: e.target.value}))} /></div>
+                <div className="col-span-2"><Label>UF</Label><Input value={imovelData.estado} onChange={e => setImovelData(p => ({...p, estado: e.target.value}))} /></div>
                 <div className="col-span-12 flex justify-end gap-2 pt-4 border-t border-slate-50">
                   <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
                   <button onClick={nextStep} className="btn-premium">Continuar <ChevronRight size={14} /></button>
