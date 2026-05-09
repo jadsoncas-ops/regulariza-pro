@@ -10,7 +10,9 @@ import {
   Loader2, ChevronRight, CheckCircle2, Circle, Clock,
   ExternalLink, ArrowUpRight, Wallet, Briefcase, 
   Search, Plus, Filter, LayoutGrid, List, TrendingUp,
-  MoreVertical, Download, Trash2, RefreshCw, Sparkles, Command
+  MoreVertical, Download, Trash2, RefreshCw, Sparkles, Command,
+  Link as LinkIcon, FileCode, FileImage, FileIcon, Eye, Paperclip, 
+  FileCheck, ShieldCheck, Upload
 } from 'lucide-react'
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
@@ -48,6 +50,9 @@ export default function ProcessoDetailPage() {
 
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
   const [selectedProtocolos, setSelectedProtocolos] = useState<string[]>([])
+  const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([])
+  const [isDocumentoModalOpen, setIsDocumentoModalOpen] = useState(false)
+  const [documentoToEdit, setDocumentoToEdit] = useState<any>(null)
   const [selectedFinanceiro, setSelectedFinanceiro] = useState<string[]>([])
   
   const stats = useMemo(() => {
@@ -178,6 +183,23 @@ export default function ProcessoDetailPage() {
         method: 'DELETE',
         body: JSON.stringify({ ids: selectedFinanceiro, processoId: params.id })
       })
+      await fetchProcesso()
+    } catch (e) { console.error(e) }
+  }
+
+  const handleDeleteDocumento = async (id: string, nome: string) => {
+    if (!confirm(`Deseja excluir o documento "${nome}"?`)) return
+    try {
+      await fetch(`/api/documentos/${id}`, { method: 'DELETE' })
+      await fetchProcesso()
+    } catch (e) { console.error(e) }
+  }
+
+  const handleBulkDeleteDocumentos = async () => {
+    if (!confirm(`Deseja excluir os ${selectedDocumentos.length} documentos selecionados?`)) return
+    try {
+      await Promise.all(selectedDocumentos.map(id => fetch(`/api/documentos/${id}`, { method: 'DELETE' })))
+      setSelectedDocumentos([])
       await fetchProcesso()
     } catch (e) { console.error(e) }
   }
@@ -705,6 +727,132 @@ export default function ProcessoDetailPage() {
                     </div>
                  </div>
               </div>
+
+            )}
+
+            {/* ── DOCUMENTOS ── */}
+            {tab === 'documentos' && (
+              <div className="space-y-6">
+                <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+                  <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/20">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
+                        <FileText size={20} />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest font-mono leading-none">Repositório de Arquivos</h3>
+                        <p className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">Documentação técnica e links externos</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <AnimatePresence>
+                        {selectedDocumentos.length > 0 && (
+                          <motion.button 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={handleBulkDeleteDocumentos}
+                            className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 text-[10px] font-bold uppercase rounded-lg border border-red-100 mr-2"
+                          >
+                            <Trash2 size={12}/> EXCLUIR ({selectedDocumentos.length})
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
+                      <button onClick={() => { setDocumentoToEdit(null); setIsDocumentoModalOpen(true) }} className="btn-premium py-2 px-4 text-[10px]">
+                        <Plus size={14} strokeWidth={2.5}/> ADICIONAR DOCUMENTO
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="text-slate-400 text-[9px] font-bold uppercase tracking-widest bg-slate-50/20 border-b border-slate-100">
+                          <th className="px-6 py-3 w-10">
+                            <input 
+                              type="checkbox" 
+                              className="accent-primary"
+                              checked={processo.documentos?.length > 0 && selectedDocumentos.length === processo.documentos.length}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedDocumentos(processo.documentos.map((d: any) => d.id))
+                                else setSelectedDocumentos([])
+                              }}
+                            />
+                          </th>
+                          <th className="px-6 py-3 font-mono">ARQUIVO / NOME</th>
+                          <th className="px-6 py-3 font-mono">CATEGORIA</th>
+                          <th className="px-6 py-3 font-mono text-center">STATUS</th>
+                          <th className="px-6 py-3 font-mono text-right">DATA</th>
+                          <th className="px-6 py-3 w-20"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {(!processo.documentos || processo.documentos.length === 0) ? (
+                          <tr><td colSpan={6} className="p-12 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Nenhum documento anexado</td></tr>
+                        ) : processo.documentos.map((d: any) => (
+                          <tr key={d.id} className={`hover:bg-slate-50/50 transition-colors group ${selectedDocumentos.includes(d.id) ? 'bg-primary/5' : ''}`}>
+                            <td className="px-6 py-4">
+                              <input 
+                                type="checkbox" 
+                                className="accent-primary"
+                                checked={selectedDocumentos.includes(d.id)}
+                                onChange={() => {
+                                  if (selectedDocumentos.includes(d.id)) setSelectedDocumentos(selectedDocumentos.filter(id => id !== d.id))
+                                  else setSelectedDocumentos([...selectedDocumentos, d.id])
+                                }}
+                              />
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex items-center gap-3">
+                                {d.url.startsWith('http') ? (
+                                  <div className="p-2 bg-amber-50 text-amber-600 rounded-lg shadow-sm border border-amber-100/50">
+                                    <LinkIcon size={16} />
+                                  </div>
+                                ) : (
+                                  <div className="p-2 bg-primary/5 text-primary rounded-lg shadow-sm border border-primary/10">
+                                    <FileText size={16} />
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="text-xs font-bold text-slate-800 tracking-tight leading-none mb-1">{d.nome}</p>
+                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest flex items-center gap-1">
+                                    {d.url.startsWith('http') ? <span className="text-amber-600">LINK DRIVE</span> : <span>ARQUIVO LOCAL</span>} 
+                                    • {d.tipo.toUpperCase()}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-0.5 rounded">
+                                {d.categoria || 'Geral'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-tight ${d.status === 'verificado' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                                {d.status}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right text-xs font-medium text-slate-500 font-mono">
+                              {new Date(d.createdAt).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <a href={d.url} target="_blank" rel="noopener noreferrer" className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors" title="Ver Arquivo">
+                                  {d.url.startsWith('http') ? <ExternalLink size={14}/> : <Eye size={14}/>}
+                                </a>
+                                <button onClick={() => handleDeleteDocumento(d.id, d.nome)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors" title="Excluir">
+                                  <Trash2 size={14}/>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* ── TAREFAS ── */}
@@ -741,7 +889,7 @@ export default function ProcessoDetailPage() {
                        {(!processo.tarefas || processo.tarefas.length === 0) ? (
                           <div className="py-20 text-center text-[10px] font-bold text-slate-300 uppercase tracking-widest">Nenhuma tarefa cadastrada</div>
                        ) : processo.tarefas.map((t: any) => (
-                          <div key={t.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${selectedTasks.includes(t.id) ? 'border-primary bg-primary/5 shadow-md' : t.status === 'concluido' ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-primary/20 hover:shadow-sm'}`}>
+                          <div key={t.id} className={`flex items-center gap-4 p-4 rounded-xl border transition-all group ${selectedTasks.includes(t.id) ? 'border-primary bg-primary/5 shadow-md' : t.status === 'concluido' ? 'bg-slate-50 border-slate-100 opacity-60' : 'bg-white border-slate-200 hover:border-primary/20 hover:shadow-sm'}`}>
                              <input 
                                type="checkbox" 
                                checked={selectedTasks.includes(t.id)}
@@ -761,7 +909,7 @@ export default function ProcessoDetailPage() {
                                    <span className="text-slate-400 flex items-center gap-1"><Calendar size={10}/> {new Date(t.data).toLocaleDateString('pt-BR')}</span>
                                 </div>
                              </div>
-                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <div className="flex gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => { setTarefaToEdit(t); setIsTaskModalOpen(true) }} className="p-1.5 text-slate-400 hover:text-primary rounded-lg transition-colors"><Edit size={14} /></button>
                                 <button onClick={() => handleDeleteTarefa(t.id, t.titulo)} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg transition-colors"><Trash2 size={14} /></button>
                              </div>
@@ -941,6 +1089,144 @@ export default function ProcessoDetailPage() {
         onSuccess={fetchProcesso}
       />
 
+      {/* ── DOCUMENTO MODAL (GOOGLE DRIVE / UPLOAD) ── */}
+      <DocumentoModal 
+        isOpen={isDocumentoModalOpen}
+        onClose={() => { setIsDocumentoModalOpen(false); setDocumentoToEdit(null) }}
+        processoId={params.id as string}
+        onSuccess={fetchProcesso}
+      />
+
+    </div>
+  )
+}
+
+function DocumentoModal({ isOpen, onClose, processoId, onSuccess }: any) {
+  const [loading, setLoading] = useState(false)
+  const [mode, setMode] = useState<'link' | 'upload'>('link')
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault()
+    setLoading(true)
+    const formData = new FormData(e.target)
+    const data = Object.fromEntries(formData.entries())
+
+    try {
+      const res = await fetch(`/api/processos/${processoId}/documentos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: data.nome,
+          tipo: data.tipo,
+          categoria: data.categoria,
+          url: mode === 'link' ? data.url : `/mock/upload/${data.nome}`, // Placeholder for real upload
+          status: 'verificado'
+        })
+      })
+
+      if (res.ok) {
+        onSuccess()
+        onClose()
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-200"
+      >
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest font-mono">Adicionar Documento</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1">Anexe arquivos ou links externos (Drive)</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white rounded-xl transition-all shadow-sm"><X size={18} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="flex bg-slate-100 p-1 rounded-xl">
+            <button 
+              type="button" 
+              onClick={() => setMode('link')}
+              className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mode === 'link' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}
+            >
+              Link Externo (Drive)
+            </button>
+            <button 
+              type="button" 
+              onClick={() => setMode('upload')}
+              className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${mode === 'upload' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}
+            >
+              Upload Local
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Nome do Documento</label>
+              <input name="nome" required className="w-full bg-slate-50 border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Ex: Projeto Arquitetônico Final" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Tipo / Extensão</label>
+                <select name="tipo" className="w-full bg-slate-50 border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none appearance-none">
+                  <option value="pdf">PDF</option>
+                  <option value="dwg">DWG (AutoCAD)</option>
+                  <option value="docx">Word / DOCX</option>
+                  <option value="xlsx">Excel / XLSX</option>
+                  <option value="png">Imagem / PNG</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Categoria</label>
+                <select name="categoria" className="w-full bg-slate-50 border-slate-200 rounded-xl px-4 py-3 text-xs font-bold outline-none appearance-none">
+                  <option value="Projeto">Projeto</option>
+                  <option value="Certidão">Certidão</option>
+                  <option value="Alvará">Alvará</option>
+                  <option value="ART/RRT">ART / RRT</option>
+                  <option value="Contrato">Contrato</option>
+                </select>
+              </div>
+            </div>
+
+            {mode === 'link' ? (
+              <div>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">URL do Google Drive / Dropbox</label>
+                <div className="relative">
+                  <LinkIcon size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input name="url" required className="w-full bg-slate-50 border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs font-bold outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="https://drive.google.com/..." />
+                </div>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 flex flex-col items-center justify-center text-center bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer">
+                <Upload size={24} className="text-slate-300 mb-2" />
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Clique ou arraste o arquivo</p>
+                <p className="text-[9px] text-slate-300 mt-1 uppercase">Máximo 10MB para upload direto</p>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-4">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full btn-premium py-4 font-mono uppercase tracking-widest text-xs"
+            >
+              {loading ? 'Processando...' : 'Salvar Documento'}
+            </button>
+          </div>
+        </form>
+      </motion.div>
     </div>
   )
 }
