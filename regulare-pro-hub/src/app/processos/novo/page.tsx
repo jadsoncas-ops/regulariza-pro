@@ -13,6 +13,7 @@ import {
   FileText
 } from 'lucide-react'
 import { motion, AnimatePresence, Reorder } from 'framer-motion'
+import LocationPicker from '@/components/imoveis/LocationPicker'
 
 // --- COMPONENTES UI AUXILIARES ---
 function Label({ children, help }: { children: React.ReactNode; help?: string }) {
@@ -124,9 +125,10 @@ function WizardContent() {
     cep: '', endereco: '', numero: '', bairro: '', cidade: '', estado: ''
   })
 
-  const [imovelData, setImovelData] = useState({
+  const [imovelData, setImovelData] = useState<any>({
     cep: '', endereco: '', numero: '', bairro: '', cidade: '', estado: '',
-    num_matricula: '', area_terreno: '', area_construida: ''
+    num_matricula: '', area_terreno: '', area_construida: '',
+    latitude: null, longitude: null
   })
 
   // PERSISTÊNCIA E SEGURANÇA
@@ -149,12 +151,12 @@ function WizardContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (step > 1) {
+      if (step > 1 && !loading) {
         localStorage.setItem('process_builder_draft', JSON.stringify({ processo, clienteData, imovelData, step }))
       }
     }, 1000)
     return () => clearTimeout(timer)
-  }, [processo, clienteData, imovelData, step])
+  }, [processo, clienteData, imovelData, step, loading])
 
   useEffect(() => {
     if (notification) {
@@ -178,10 +180,43 @@ function WizardContent() {
   const [clientSearch, setClientSearch] = useState('')
   const [catalogSearch, setCatalogSearch] = useState('')
   const [clientMode, setClientMode] = useState<'existente' | 'novo'>('existente')
+  const [imovelSelectionMode, setImovelSelectionMode] = useState<'selecionar' | 'novo'>('selecionar')
 
   useEffect(() => {
     fetch('/api/clientes').then(r => r.json()).then(d => setExistingClientes(Array.isArray(d) ? d : []))
-  }, [])
+    
+    if (imovelId) {
+      fetch(`/api/imoveis/${imovelId}`)
+        .then(r => r.json())
+        .then(d => {
+          if (!d.error) {
+            setImovelData({
+              cep: d.cep || '',
+              endereco: d.endereco || '',
+              numero: d.numero || '',
+              bairro: d.bairro || '',
+              cidade: d.cidade || '',
+              estado: d.estado || '',
+              num_matricula: d.num_matricula || '',
+              area_terreno: d.area_terreno || '',
+              area_construida: d.area_construida || '',
+              latitude: d.latitude,
+              longitude: d.longitude
+            })
+            setProcesso(prev => ({ ...prev, imovelId: d.id, clienteId: d.clienteId }))
+            // Se carregou imóvel, já define o cliente também
+            fetch(`/api/clientes/${d.clienteId}`)
+              .then(r => r.json())
+              .then(c => {
+                if (!c.error) {
+                  setClienteData(c)
+                  setClientMode('existente')
+                }
+              })
+          }
+        })
+    }
+  }, [imovelId])
 
   // GERAÇÃO DE CÓDIGO
   useEffect(() => {
@@ -259,6 +294,7 @@ function WizardContent() {
         body: JSON.stringify(payload)
       })
       if (res.ok) {
+        localStorage.removeItem('process_builder_draft')
         const data = await res.json()
         router.push(`/processos/${data.id}`)
       }
@@ -480,46 +516,122 @@ function WizardContent() {
           {step === 5 && (
             <motion.div 
               key="step5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-              className="max-w-3xl w-full space-y-6"
+              className="max-w-5xl w-full space-y-6"
             >
                <div className="text-center space-y-2 mb-4">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">Onde é o imóvel?</h2>
-                <p className="text-sm text-slate-500 font-medium">Informe a localização técnica da regularização</p>
+                <div className="flex justify-center gap-2">
+                  <button onClick={() => setImovelSelectionMode('selecionar')} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${imovelSelectionMode === 'selecionar' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-200 text-slate-500'}`}>Selecionar Existente</button>
+                  <button onClick={() => setImovelSelectionMode('novo')} className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase transition-all ${imovelSelectionMode === 'novo' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-200 text-slate-500'}`}>Novo Imóvel</button>
+                </div>
               </div>
 
-              <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-12 gap-4">
-                <div className="col-span-12 flex justify-center mb-2">
-                  <button 
-                    onClick={() => setImovelData(prev => ({
-                      ...prev,
-                      cep: clienteData.cep,
-                      endereco: clienteData.endereco,
-                      numero: clienteData.numero,
-                      bairro: clienteData.bairro,
-                      cidade: clienteData.cidade,
-                      estado: clienteData.estado
-                    }))}
-                    className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
-                  >
-                    <MapPin size={12} /> APROVEITAR ENDEREÇO DO CLIENTE
-                  </button>
+              <div className="grid grid-cols-12 gap-6">
+                <div className="col-span-12 lg:col-span-7 space-y-4">
+                  {imovelSelectionMode === 'selecionar' ? (
+                    <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Imóveis vinculados ao cliente</p>
+                      <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                        {existingClientes.find(c => c.id === processo.clienteId)?.imoveis?.map((im: any) => (
+                          <button 
+                            key={im.id}
+                            onClick={() => {
+                              setProcesso(prev => ({ ...prev, imovelId: im.id }));
+                              setImovelData({
+                                ...im,
+                                latitude: im.latitude,
+                                longitude: im.longitude
+                              });
+                            }}
+                            className={`w-full p-4 rounded-2xl border-2 text-left transition-all flex justify-between items-center ${processo.imovelId === im.id ? 'border-blue-600 bg-blue-50/50' : 'border-slate-50 bg-slate-50/50 hover:border-slate-200'}`}
+                          >
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight truncate">{im.endereco}</p>
+                              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{im.bairro} · {im.cidade}/{im.estado}</p>
+                            </div>
+                            {processo.imovelId === im.id && <Check size={16} className="text-blue-600 shrink-0" />}
+                          </button>
+                        ))}
+                        {(!existingClientes.find(c => c.id === processo.clienteId)?.imoveis || existingClientes.find(c => c.id === processo.clienteId)?.imoveis.length === 0) && (
+                          <div className="py-10 text-center opacity-40">
+                            <MapPin size={32} className="mx-auto mb-2" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">Nenhum imóvel encontrado</p>
+                          </div>
+                        )}
+                      </div>
+                      <button 
+                        onClick={() => setImovelSelectionMode('novo')}
+                        className="w-full py-3 bg-slate-50 border border-dashed border-slate-300 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-100 hover:text-slate-600 transition-all"
+                      >
+                        + Cadastrar Novo Imóvel para este Cliente
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-12 gap-4">
+                      <div className="col-span-12 flex justify-center mb-2">
+                        <button 
+                          onClick={() => setImovelData((prev: any) => ({
+                            ...prev,
+                            cep: clienteData.cep,
+                            endereco: clienteData.endereco,
+                            numero: clienteData.numero,
+                            bairro: clienteData.bairro,
+                            cidade: clienteData.cidade,
+                            estado: clienteData.estado
+                          }))}
+                          className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+                        >
+                          <MapPin size={12} /> APROVEITAR ENDEREÇO DO CLIENTE
+                        </button>
+                      </div>
+                      <div className="col-span-3">
+                        <Label>CEP</Label>
+                        <div className="relative">
+                          <Input value={imovelData.cep} onChange={e => handleCepChange(e, 'imovel')} placeholder="00000-000" />
+                          {isSearchingCep && <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />}
+                        </div>
+                      </div>
+                      <div className="col-span-6"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData((p: any) => ({...p, endereco: e.target.value}))} /></div>
+                      <div className="col-span-3"><Label>Número</Label><Input value={imovelData.numero} onChange={e => setImovelData((p: any) => ({...p, numero: e.target.value}))} /></div>
+                      
+                      <div className="col-span-5"><Label>Bairro</Label><Input value={imovelData.bairro} onChange={e => setImovelData((p: any) => ({...p, bairro: e.target.value}))} /></div>
+                      <div className="col-span-5"><Label>Cidade</Label><Input value={imovelData.cidade} onChange={e => setImovelData((p: any) => ({...p, cidade: e.target.value}))} /></div>
+                      <div className="col-span-2"><Label>UF</Label><Input value={imovelData.estado} onChange={e => setImovelData((p: any) => ({...p, estado: e.target.value}))} /></div>
+                      
+                      <div className="col-span-6"><Label>Nº Matrícula</Label><Input value={imovelData.num_matricula} onChange={e => setImovelData((p: any) => ({...p, num_matricula: e.target.value}))} /></div>
+                      <div className="col-span-3"><Label>Área Terreno</Label><Input type="number" value={imovelData.area_terreno} onChange={e => setImovelData((p: any) => ({...p, area_terreno: e.target.value}))} /></div>
+                      <div className="col-span-3"><Label>Área Constr.</Label><Input type="number" value={imovelData.area_construida} onChange={e => setImovelData((p: any) => ({...p, area_construida: e.target.value}))} /></div>
+                    </div>
+                  )}
                 </div>
-                <div className="col-span-3">
-                  <Label>CEP</Label>
-                  <div className="relative">
-                    <Input value={imovelData.cep} onChange={e => handleCepChange(e, 'imovel')} placeholder="00000-000" />
-                    {isSearchingCep && <Loader2 size={12} className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin text-blue-500" />}
+
+                <div className="col-span-12 lg:col-span-5 flex flex-col gap-4">
+                  <div className="flex-1 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden min-h-[300px]">
+                    <LocationPicker 
+                      initialLat={imovelData.latitude}
+                      initialLng={imovelData.longitude}
+                      onChange={(lat, lng) => setImovelData((p: any) => ({ ...p, latitude: lat, longitude: lng }))}
+                    />
                   </div>
-                </div>
-                <div className="col-span-6"><Label>Endereço</Label><Input value={imovelData.endereco} onChange={e => setImovelData(p => ({...p, endereco: e.target.value}))} /></div>
-                <div className="col-span-3"><Label>Número</Label><Input value={imovelData.numero} onChange={e => setImovelData(p => ({...p, numero: e.target.value}))} /></div>
-                
-                <div className="col-span-5"><Label>Bairro</Label><Input value={imovelData.bairro} onChange={e => setImovelData(p => ({...p, bairro: e.target.value}))} /></div>
-                <div className="col-span-5"><Label>Cidade</Label><Input value={imovelData.cidade} onChange={e => setImovelData(p => ({...p, cidade: e.target.value}))} /></div>
-                <div className="col-span-2"><Label>UF</Label><Input value={imovelData.estado} onChange={e => setImovelData(p => ({...p, estado: e.target.value}))} /></div>
-                <div className="col-span-12 flex justify-end gap-2 pt-4 border-t border-slate-50">
-                  <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
-                  <button onClick={nextStep} className="btn-premium">Continuar <ChevronRight size={14} /></button>
+                  <div className="flex justify-end gap-2 shrink-0">
+                    <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
+                    <button 
+                      onClick={() => {
+                        if (imovelSelectionMode === 'novo' && !imovelData.endereco) {
+                          alert('Por favor, informe ao menos o endereço do imóvel.')
+                          return
+                        }
+                        if (imovelSelectionMode === 'selecionar' && !processo.imovelId) {
+                          alert('Por favor, selecione um imóvel.')
+                          return
+                        }
+                        nextStep()
+                      }} 
+                      className="btn-premium px-8"
+                    >
+                      Continuar <ChevronRight size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

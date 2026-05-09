@@ -1,17 +1,17 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
+import { useState, useEffect, useRef } from 'react'
 import { 
-  Search, Trash2, X, PlusCircle, 
-  MapPin, FileText, Map as MapIcon,
-  ChevronRight, ArrowUpRight, Maximize2
+  Search, PlusCircle, MapPin, Maximize2, X, ChevronRight, 
+  MapIcon, FileText, ArrowUpRight, Trash2, LayoutGrid, AlertCircle
 } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import GoogleMapEmbed from './GoogleMapEmbed'
 import LocationPicker from './LocationPicker'
+import GoogleMapEmbed from './GoogleMapEmbed'
 import ImoveisGlobalMap from './ImoveisGlobalMap'
+import { DeleteConfirmModal } from '../DeleteConfirmModal'
 
 interface Imovel {
   id: string
@@ -48,6 +48,8 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   
   // States for reactive form fields
   const [formAddress, setFormAddress] = useState({
@@ -73,24 +75,43 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   }
 
   const handleCEPBlur = async (cep: string) => {
-    const cleanCEP = cep.replace(/\D/g, '')
-    if (cleanCEP.length === 8) {
-      try {
-        const res = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`)
-        const data = await res.json()
-        if (!data.erro) {
-          setFormAddress(prev => ({
-            ...prev,
-            endereco: data.logradouro,
-            bairro: data.bairro,
-            cidade: data.localidade,
-            estado: data.uf,
-            cep: cleanCEP
-          }))
-        }
-      } catch (error) {
-        console.error('Erro ao buscar CEP:', error)
+    const cleaned = cep.replace(/\D/g, '')
+    if (cleaned.length !== 8) return
+    
+    setIsSearchingCep(true)
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleaned}/json/`)
+      const data = await res.json()
+      if (!data.erro) {
+        setFormAddress({
+          cep: data.cep,
+          endereco: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.localidade,
+          estado: data.uf
+        })
       }
+    } catch (e) {
+      console.error('Erro ao buscar CEP:', e)
+    } finally {
+      setIsSearchingCep(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!selectedImovel) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/imoveis/${selectedImovel.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setDrawerOpen(false)
+        setShowDeleteModal(false)
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Erro ao excluir imóvel:', error)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -375,119 +396,138 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
 
               <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
                  <button 
-                   onClick={() => { setDrawerOpen(false); initModal(selectedImovel) }}
-                   className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
-                 >
-                    EDITAR IMÓVEL
-                 </button>
-                 <Link href={`/imoveis/${selectedImovel.id}`} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
-                    VER FICHA COMPLETA <ArrowUpRight size={16} />
-                 </Link>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ── MODAL (CREATE / EDIT) ── */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden border border-slate-200"
-            >
-              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                <div>
-                  <h2 className="text-lg font-bold text-slate-900 uppercase tracking-widest font-mono">{modalMode === 'create' ? 'Novo Imóvel' : 'Editar Imóvel'}</h2>
-                  <p className="text-xs text-slate-500 font-medium tracking-tight">Preencha as informações técnicas da propriedade.</p>
-                </div>
-                <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-all">
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <form onSubmit={handleSubmit} className="p-8 space-y-8 max-h-[70vh] overflow-y-auto scrollbar-hide">
-                <div className="space-y-4">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">PROPRIETÁRIO</p>
-                  <select 
-                    name="clienteId" defaultValue={selectedImovel?.clienteId || ''} required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all"
++                  onClick={() => setShowDeleteModal(true)}
++                  className="p-4 bg-white border border-red-200 text-red-500 rounded-2xl hover:bg-red-50 transition-all flex items-center justify-center shadow-sm"
++                  title="Excluir Imóvel"
++                >
++                   <Trash2 size={20} />
++                </button>
++                 <button 
+                    onClick={() => { setDrawerOpen(false); initModal(selectedImovel) }}
+-                   className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
++                   className="flex-[2] py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
                   >
-                    <option value="">Selecione um proprietário...</option>
-                    {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
-                </div>
-
-                <div className="space-y-4">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">LOCALIZAÇÃO</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input 
-                       name="cep" 
-                       value={formAddress.cep}
-                       onChange={(e) => setFormAddress({...formAddress, cep: e.target.value})}
-                       onBlur={(e) => handleCEPBlur(e.target.value)}
-                       placeholder="CEP" 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                    />
-                    <input 
-                       name="estado" 
-                       value={formAddress.estado}
-                       onChange={(e) => setFormAddress({...formAddress, estado: e.target.value})}
-                       placeholder="UF" 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all uppercase" maxLength={2} 
-                    />
-                    <input 
-                       name="endereco" 
-                       value={formAddress.endereco}
-                       onChange={(e) => setFormAddress({...formAddress, endereco: e.target.value})}
-                       placeholder="Endereço" required 
-                       className="col-span-2 w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                    />
-                    <input 
-                       name="bairro" 
-                       value={formAddress.bairro}
-                       onChange={(e) => setFormAddress({...formAddress, bairro: e.target.value})}
-                       placeholder="Bairro" 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                    />
-                    <input 
-                       name="cidade" 
-                       value={formAddress.cidade}
-                       onChange={(e) => setFormAddress({...formAddress, cidade: e.target.value})}
-                       placeholder="Cidade" 
-                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
-                    />
-                  </div>
-                </div>
-
-                <LocationPicker 
-                  initialLat={coords.lat}
-                  initialLng={coords.lng}
-                  onChange={(lat, lng) => setCoords({ lat, lng })}
-                />
-
-                <div className="space-y-4">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">DADOS TÉCNICOS</p>
-                  <div className="grid grid-cols-2 gap-4">
-                    <input name="num_matricula" defaultValue={selectedImovel?.num_matricula || ''} placeholder="Nº Matrícula" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="area_terreno" type="number" step="0.01" defaultValue={selectedImovel?.area_terreno || ''} placeholder="Área Terreno (m²)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="area_construida" type="number" step="0.01" defaultValue={selectedImovel?.area_construida || ''} placeholder="Área Constr. (m²)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="zoneamento" defaultValue={selectedImovel?.zoneamento || ''} placeholder="ZONA" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                  </div>
-                </div>
-
-                <div className="flex gap-4 pt-4">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">Cancelar</button>
-                  <button type="submit" disabled={isLoading} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-all hover:bg-slate-800">
-                    {isLoading ? 'SALVANDO...' : 'SALVAR IMÓVEL'}
+                     EDITAR IMÓVEL
                   </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+                  <Link href={`/imoveis/${selectedImovel.id}`} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
+                     VER FICHA COMPLETA <ArrowUpRight size={16} />
+                  </Link>
+               </div>
+             </motion.div>
+           </>
+         )}
+       </AnimatePresence>
+
+       {/* ── MODAL (CREATE / EDIT) ── */}
+       <AnimatePresence>
+         {isModalOpen && (
+           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
+             <motion.div 
+               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+               className="bg-white w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden border border-slate-200"
+             >
+               <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                 <div>
+                   <h2 className="text-lg font-bold text-slate-900 uppercase tracking-widest font-mono">{modalMode === 'create' ? 'Novo Imóvel' : 'Editar Imóvel'}</h2>
+                   <p className="text-xs text-slate-500 font-medium tracking-tight">Preencha as informações técnicas da propriedade.</p>
+                 </div>
+                 <button onClick={() => setIsModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-200/50 transition-all">
+                   <X size={20} />
+                 </button>
+               </div>
+               
+               <form onSubmit={handleSubmit} className="p-8 space-y-8 max-h-[70vh] overflow-y-auto scrollbar-hide">
+                 <div className="space-y-4">
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">PROPRIETÁRIO</p>
+                   <select 
+                     name="clienteId" defaultValue={selectedImovel?.clienteId || ''} required
+                     className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all"
+                   >
+                     <option value="">Selecione um proprietário...</option>
+                     {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                   </select>
+                 </div>
+
+                 <div className="space-y-4">
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">LOCALIZAÇÃO</p>
+                   <div className="grid grid-cols-2 gap-4">
+                     <input 
+                        name="cep" 
+                        value={formAddress.cep}
+                        onChange={(e) => setFormAddress({...formAddress, cep: e.target.value})}
+                        onBlur={(e) => handleCEPBlur(e.target.value)}
+                        placeholder="CEP" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                     />
+                     <input 
+                        name="estado" 
+                        value={formAddress.estado}
+                        onChange={(e) => setFormAddress({...formAddress, estado: e.target.value})}
+                        placeholder="UF" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all uppercase" maxLength={2} 
+                     />
+                     <input 
+                        name="endereco" 
+                        value={formAddress.endereco}
+                        onChange={(e) => setFormAddress({...formAddress, endereco: e.target.value})}
+                        placeholder="Endereço" required 
+                        className="col-span-2 w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                     />
+                     <input 
+                        name="bairro" 
+                        value={formAddress.bairro}
+                        onChange={(e) => setFormAddress({...formAddress, bairro: e.target.value})}
+                        placeholder="Bairro" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                     />
+                     <input 
+                        name="cidade" 
+                        value={formAddress.cidade}
+                        onChange={(e) => setFormAddress({...formAddress, cidade: e.target.value})}
+                        placeholder="Cidade" 
+                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                     />
+                   </div>
+                 </div>
+
+                 <LocationPicker 
+                   initialLat={coords.lat}
+                   initialLng={coords.lng}
+                   onChange={(lat, lng) => setCoords({ lat, lng })}
+                 />
+
+                 <div className="space-y-4">
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">DADOS TÉCNICOS</p>
+                   <div className="grid grid-cols-2 gap-4">
+                     <input name="num_matricula" defaultValue={selectedImovel?.num_matricula || ''} placeholder="Nº Matrícula" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                     <input name="area_terreno" type="number" step="0.01" defaultValue={selectedImovel?.area_terreno || ''} placeholder="Área Terreno (m²)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                     <input name="area_construida" type="number" step="0.01" defaultValue={selectedImovel?.area_construida || ''} placeholder="Área Constr. (m²)" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                     <input name="zoneamento" defaultValue={selectedImovel?.zoneamento || ''} placeholder="ZONA" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-bold text-slate-800 outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                   </div>
+                 </div>
+
+                 <div className="flex gap-4 pt-4">
+                   <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">Cancelar</button>
+                   <button type="submit" disabled={isLoading} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-all hover:bg-slate-800">
+                     {isLoading ? 'SALVANDO...' : 'SALVAR IMÓVEL'}
+                   </button>
+                 </div>
+               </form>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+
+       <DeleteConfirmModal 
+         isOpen={showDeleteModal}
+         onClose={() => setShowDeleteModal(false)}
+         onConfirm={handleDelete}
+         title="Imóvel"
+         loading={isDeleting}
+         description={
+           <p>Tem certeza que deseja excluir o imóvel em <strong>{selectedImovel?.endereco}</strong>? Esta ação não pode ser desfeita.</p>
+         }
+       />
 
     </div>
   )

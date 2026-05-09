@@ -67,6 +67,8 @@ export async function POST(request: Request) {
             cartorio: data.imovel.cartorio?.toUpperCase() || null,
             inscricao_imobiliaria: data.imovel.inscricao_imobiliaria?.toUpperCase() || null,
             zoneamento: data.imovel.zoneamento?.toUpperCase() || null,
+            latitude: data.imovel.latitude ? parseFloat(data.imovel.latitude) : null,
+            longitude: data.imovel.longitude ? parseFloat(data.imovel.longitude) : null,
             observacoes: data.imovel.observacoes?.toUpperCase() || null,
             proprietario_nome: data.imovel.isProprietario ? null : data.imovel.proprietario_nome?.toUpperCase(),
             proprietario_doc: data.imovel.isProprietario ? null : data.imovel.proprietario_doc,

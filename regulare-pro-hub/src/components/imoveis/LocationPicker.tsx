@@ -70,6 +70,25 @@ export default function LocationPicker({ initialLat, initialLng, onChange }: Loc
     }
   }, [])
 
+  useEffect(() => {
+    if (mapRef.current && initialLat && initialLng) {
+      const newPos: [number, number] = [initialLat, initialLng]
+      mapRef.current.setView(newPos, 15)
+      
+      import('leaflet').then((L) => {
+        if (markerRef.current) {
+          markerRef.current.setLatLng(newPos)
+        } else {
+          markerRef.current = L.marker(newPos, { draggable: true }).addTo(mapRef.current)
+          markerRef.current.on('dragend', (event: any) => {
+            const position = event.target.getLatLng();
+            onChange(position.lat, position.lng);
+          });
+        }
+      })
+    }
+  }, [initialLat, initialLng])
+
   return (
     <div className="space-y-2">
       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Pin no Mapa (Clique para marcar)</p>
@@ -77,8 +96,8 @@ export default function LocationPicker({ initialLat, initialLng, onChange }: Loc
         ref={containerRef} 
         className="w-full h-48 rounded-2xl border border-slate-200 overflow-hidden z-0" 
       />
-      {(initialLat || markerRef.current) && (
-        <p className="text-[9px] text-slate-500 font-mono italic">Localização capturada: {initialLat?.toFixed(6)}, {initialLng?.toFixed(6)}</p>
+      {initialLat && (
+        <p className="text-[9px] text-slate-500 font-mono italic">Localização capturada: {initialLat.toFixed(6)}, {initialLng?.toFixed(6)}</p>
       )}
     </div>
   )

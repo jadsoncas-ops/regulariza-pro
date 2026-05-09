@@ -41,7 +41,7 @@ export function DeleteConfirmModal({
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
             >
-              {loading ? 'Excluindo...' : 'Excluir processo'}
+              {loading ? 'Excluindo...' : title.includes('Excluir') ? title : `Excluir ${title}`}
             </button>
           </div>
         </div>

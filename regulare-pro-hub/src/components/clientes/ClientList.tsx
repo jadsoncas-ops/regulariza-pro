@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from 'react'
-import { Search, PlusCircle, ArrowUpRight } from 'lucide-react'
+import { Search, PlusCircle, ArrowUpRight, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { DeleteConfirmModal } from '../DeleteConfirmModal'
 
 interface Cliente {
   id: string
@@ -21,11 +23,32 @@ interface ClientListProps {
 
 export default function ClientList({ initialClientes }: ClientListProps) {
   const [search, setSearch] = useState('')
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null)
+  const router = useRouter()
 
   const filtered = initialClientes.filter(c =>
     c.nome.toLowerCase().includes(search.toLowerCase()) ||
     c.cpf_cnpj.includes(search)
   )
+
+  const handleDelete = async () => {
+    if (!selectedCliente) return
+    setIsDeleting(true)
+    try {
+      const res = await fetch(`/api/clientes/${selectedCliente.id}`, { method: 'DELETE' })
+      if (res.ok) {
+        setShowDeleteModal(false)
+        setSelectedCliente(null)
+        router.refresh()
+      }
+    } catch (error) {
+      console.error('Erro ao excluir cliente:', error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
@@ -123,12 +146,21 @@ export default function ClientList({ initialClientes }: ClientListProps) {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Link
-                      href={`/clientes/${c.id}`}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      Ver detalhes <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
+                    <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => { setSelectedCliente(c); setShowDeleteModal(true) }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all"
+                        title="Excluir Cliente"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <Link
+                        href={`/clientes/${c.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                      >
+                        Ver detalhes <ArrowUpRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -136,6 +168,17 @@ export default function ClientList({ initialClientes }: ClientListProps) {
           </table>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => { setShowDeleteModal(false); setSelectedCliente(null) }}
+        onConfirm={handleDelete}
+        title="Cliente"
+        loading={isDeleting}
+        description={
+          <p>Tem certeza que deseja excluir o cliente <strong>{selectedCliente?.nome}</strong>? Todos os dados vinculados serão afetados.</p>
+        }
+      />
     </div>
   )
 }
