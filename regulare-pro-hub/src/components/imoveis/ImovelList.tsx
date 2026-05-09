@@ -396,16 +396,15 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
 
               <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
                  <button 
-+                  onClick={() => setShowDeleteModal(true)}
-+                  className="p-4 bg-white border border-red-200 text-red-500 rounded-2xl hover:bg-red-50 transition-all flex items-center justify-center shadow-sm"
-+                  title="Excluir Imóvel"
-+                >
-+                   <Trash2 size={20} />
-+                </button>
-+                 <button 
+                  onClick={() => setShowDeleteModal(true)}
+                  className="p-4 bg-white border border-red-200 text-red-500 rounded-2xl hover:bg-red-50 transition-all flex items-center justify-center shadow-sm"
+                  title="Excluir Imóvel"
+                >
+                   <Trash2 size={20} />
+                </button>
+                 <button 
                     onClick={() => { setDrawerOpen(false); initModal(selectedImovel) }}
--                   className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
-+                   className="flex-[2] py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
+                    className="flex-[2] py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
                   >
                      EDITAR IMÓVEL
                   </button>
