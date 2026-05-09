@@ -15,11 +15,7 @@ import {
 import { motion } from 'framer-motion'
 
 export default function FinanceiroPage() {
-  const [registros, setRegistros] = useState<any[]>([])
-  const [processos, setProcessos] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [tipo, setTipo] = useState('')
+  const [viewMode, setViewMode] = useState<'list' | 'process'>('list')
 
   useEffect(() => {
     fetch('/api/financeiro')
@@ -31,6 +27,31 @@ export default function FinanceiroPage() {
       })
       .catch(() => setLoading(false))
   }, [])
+
+  const processTotals = useMemo(() => {
+    return processos.map(p => {
+      const receitas = p.financeiro?.filter((f: any) => f.tipo === 'receita') || []
+      const despesas = p.financeiro?.filter((f: any) => f.tipo === 'despesa') || []
+      
+      const recebido = receitas.filter((r: any) => r.status === 'pago').reduce((s: number, r: any) => s + r.valor, 0)
+      const aReceber = Math.max(0, (p.valor_total || 0) - recebido)
+      const aPagar = despesas.filter((d: any) => d.status !== 'pago').reduce((s: number, d: any) => s + (d.valor - (d.valor_pago || 0)), 0)
+      const pago = despesas.filter((d: any) => d.status === 'pago').reduce((s: number, d: any) => s + d.valor, 0)
+
+      return {
+        id: p.id,
+        codigo: p.codigo_projeto,
+        cliente: p.cliente?.nome,
+        tipo: p.tipo_regularizacao,
+        valorTotal: p.valor_total || 0,
+        recebido,
+        aReceber,
+        aPagar,
+        pago,
+        percent: p.valor_total ? (recebido / p.valor_total) * 100 : 0
+      }
+    }).filter(p => p.aReceber > 0 || p.aPagar > 0 || p.recebido > 0)
+  }, [processos])
 
   const filtered = useMemo(() => registros.filter(r => {
     const matchSearch = r.descricao?.toLowerCase().includes(search.toLowerCase()) || 
@@ -88,10 +109,16 @@ export default function FinanceiroPage() {
             />
           </div>
           <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
-             <button onClick={() => setTipo('')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!tipo ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Todos</button>
-             <button onClick={() => setTipo('receita')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${tipo === 'receita' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Receitas</button>
-             <button onClick={() => setTipo('despesa')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${tipo === 'despesa' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Despesas</button>
+             <button onClick={() => setViewMode('list')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Radar de Lançamentos</button>
+             <button onClick={() => setViewMode('process')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${viewMode === 'process' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Saldo por Processo</button>
           </div>
+          {viewMode === 'list' && (
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+               <button onClick={() => setTipo('')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!tipo ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Todos</button>
+               <button onClick={() => setTipo('receita')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${tipo === 'receita' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Receitas</button>
+               <button onClick={() => setTipo('despesa')} className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${tipo === 'despesa' ? 'bg-rose-500 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Despesas</button>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-3">
            <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
@@ -104,88 +131,148 @@ export default function FinanceiroPage() {
       <div className="flex-1 overflow-hidden flex flex-col p-4">
         <div className="flex-1 bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm flex flex-col">
           <div className="flex-1 overflow-y-auto scroll-container">
-            <table className="w-full text-left border-collapse">
-              <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Descrição / Vínculo</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Tipo</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Data</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-right">Valor</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-center">Status</th>
-                  <th className="px-6 py-4"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {loading ? (
-                  [...Array(10)].map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                       <td colSpan={6} className="px-6 py-5"><div className="h-4 bg-slate-50 rounded w-1/3" /></td>
-                    </tr>
-                  ))
-                ) : filtered.length === 0 ? (
+            {viewMode === 'list' ? (
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-100">
                   <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhum lançamento no radar</td>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Descrição / Vínculo</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Tipo</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Data</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-right">Valor</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-center">Status</th>
+                    <th className="px-6 py-4"></th>
                   </tr>
-                ) : filtered.map(r => (
-                  <tr key={r.id} className="group hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${r.tipo === 'receita' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                            {r.tipo === 'receita' ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
-                         </div>
-                         <div className="min-w-0">
-                            <p className="text-[11px] font-black text-slate-900 uppercase truncate">{r.descricao}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                               <Briefcase size={10} className="text-slate-300" />
-                               <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight font-mono">{r.processo?.codigo_projeto || 'AVULSO'}</p>
-                            </div>
-                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${r.tipo === 'receita' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {r.tipo}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase">
-                         <Calendar size={12} className="text-slate-300" />
-                         {r.data_vencimento ? new Date(r.data_vencimento).toLocaleDateString('pt-BR') : '—'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`text-[12px] font-black ${r.tipo === 'receita' ? 'text-slate-900' : 'text-rose-600'}`}>
-                        {r.tipo === 'receita' ? '' : '- '} {fmt(r.valor)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex justify-center">
-                         <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
-                           r.status === 'pago' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/10' : 
-                           new Date(r.data_vencimento) < new Date() ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/10' : 'bg-amber-100 text-amber-700'
-                         }`}>
-                           {r.status === 'pago' ? 'Liquidado' : new Date(r.data_vencimento) < new Date() ? 'Vencido' : 'Pendente'}
-                         </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Baixar">
-                            <CheckCircle2 size={16} strokeWidth={2.5} />
-                         </button>
-                         <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all">
-                            <MoreHorizontal size={16} />
-                         </button>
-                      </div>
-                    </td>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {loading ? (
+                    [...Array(10)].map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                         <td colSpan={6} className="px-6 py-5"><div className="h-4 bg-slate-50 rounded w-1/3" /></td>
+                      </tr>
+                    ))
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-20 text-center text-[10px] font-black text-slate-300 uppercase tracking-widest">Nenhum lançamento no radar</td>
+                    </tr>
+                  ) : filtered.map(r => (
+                    <tr key={r.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${r.tipo === 'receita' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                              {r.tipo === 'receita' ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
+                           </div>
+                           <div className="min-w-0">
+                              <p className="text-[11px] font-black text-slate-900 uppercase truncate">{r.descricao}</p>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                 <Briefcase size={10} className="text-slate-300" />
+                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight font-mono">{r.processo?.codigo_projeto || 'AVULSO'}</p>
+                              </div>
+                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${r.tipo === 'receita' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                          {r.tipo}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase">
+                           <Calendar size={12} className="text-slate-300" />
+                           {r.data_vencimento ? new Date(r.data_vencimento).toLocaleDateString('pt-BR') : '—'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className={`text-[12px] font-black ${r.tipo === 'receita' ? 'text-slate-900' : 'text-rose-600'}`}>
+                          {r.tipo === 'receita' ? '' : '- '} {fmt(r.valor)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-center">
+                           <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${
+                             r.status === 'pago' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/10' : 
+                             new Date(r.data_vencimento) < new Date() ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/10' : 'bg-amber-100 text-amber-700'
+                           }`}>
+                             {r.status === 'pago' ? 'Liquidado' : new Date(r.data_vencimento) < new Date() ? 'Vencido' : 'Pendente'}
+                           </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all" title="Baixar">
+                              <CheckCircle2 size={16} strokeWidth={2.5} />
+                           </button>
+                           <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all">
+                              <MoreHorizontal size={16} />
+                           </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-100">
+                  <tr>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono">Processo / Cliente</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-right">Contrato</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-right">A Receber</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-right">A Pagar</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono text-center">Progresso</th>
+                    <th className="px-6 py-4"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {processTotals.map(p => (
+                    <tr key={p.id} className="group hover:bg-slate-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                           <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-[10px]">
+                              {p.codigo?.substring(0, 2)}
+                           </div>
+                           <div className="min-w-0">
+                              <p className="text-[11px] font-black text-slate-900 uppercase truncate">{p.codigo}</p>
+                              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight">{p.cliente}</p>
+                           </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-[11px] font-black text-slate-900">{fmt(p.valorTotal)}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className={`text-[12px] font-black ${p.aReceber > 0 ? 'text-blue-600' : 'text-slate-300'}`}>
+                          {fmt(p.aReceber)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className={`text-[12px] font-black ${p.aPagar > 0 ? 'text-rose-600' : 'text-slate-300'}`}>
+                          {fmt(p.aPagar)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1 items-center">
+                           <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${p.percent}%` }} />
+                           </div>
+                           <span className="text-[9px] font-black text-slate-400 uppercase">{Math.round(p.percent)}% Recebido</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                         <button className="p-2 text-slate-300 hover:text-blue-600 transition-all">
+                            <ChevronRight size={16} />
+                         </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
           
           <div className="px-8 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between shrink-0">
-             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Radar operacional: {filtered.length} lançamentos detectados</p>
+             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+               {viewMode === 'list' ? `Radar operacional: ${filtered.length} lançamentos detectados` : `Consolidado: ${processTotals.length} processos ativos`}
+             </p>
              <div className="flex items-center gap-2">
                 <button className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 disabled:opacity-50" disabled><ChevronRight size={14} className="rotate-180" /></button>
                 <button className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-400 hover:text-slate-600 disabled:opacity-50" disabled><ChevronRight size={14} /></button>

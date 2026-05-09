@@ -6,9 +6,10 @@ interface GoogleMapEmbedProps {
   longitude?: number | null
   zoom?: number
   className?: string
+  mapType?: 'm' | 'k' | 'h' | 'p' // m=roadmap, k=satellite, h=hybrid, p=terrain
 }
 
-export default function GoogleMapEmbed({ address, latitude, longitude, zoom = 15, className = "" }: GoogleMapEmbedProps) {
+export default function GoogleMapEmbed({ address, latitude, longitude, zoom = 15, className = "", mapType = 'm' }: GoogleMapEmbedProps) {
   // Se tivermos coordenadas, usamos elas. Se não, usamos o endereço.
   const query = latitude && longitude 
     ? `${latitude},${longitude}` 
@@ -22,8 +23,8 @@ export default function GoogleMapEmbed({ address, latitude, longitude, zoom = 15
     )
   }
 
-  // Google Maps Legacy Embed URL (doesn't require a key for basic usage)
-  const embedUrl = `https://maps.google.com/maps?q=${query}&t=&z=${zoom}&ie=UTF8&iwloc=&output=embed`
+  // Google Maps Legacy Embed URL
+  const embedUrl = `https://maps.google.com/maps?q=${query}&t=${mapType}&z=${zoom}&ie=UTF8&iwloc=&output=embed`
 
   return (
     <div className={`relative overflow-hidden ${className}`}>

@@ -274,8 +274,17 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                        latitude={selectedImovel.latitude}
                        longitude={selectedImovel.longitude}
                        zoom={18}
+                       mapType="h"
                        className="w-full h-full"
                     />
+                    <div className="absolute top-4 left-4">
+                       <button 
+                          onClick={() => { setDrawerOpen(false); initModal(selectedImovel) }}
+                          className="bg-primary text-white p-3 rounded-2xl shadow-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest"
+                       >
+                          <MapPin size={16} /> MARCAR LOCALIZAÇÃO
+                       </button>
+                    </div>
                     <div className="absolute top-4 right-4">
                        <a 
                           href={selectedImovel.latitude ? `https://www.google.com/maps/search/?api=1&query=${selectedImovel.latitude},${selectedImovel.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}

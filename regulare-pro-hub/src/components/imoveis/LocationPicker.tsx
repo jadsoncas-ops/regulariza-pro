@@ -32,8 +32,8 @@ export default function LocationPicker({ initialLat, initialLng, onChange }: Loc
 
       const map = L.map(containerRef.current).setView(defaultCenter, 15)
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+      L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google'
       }).addTo(map)
 
       // Se já tiver coordenadas iniciais, adiciona o marker
