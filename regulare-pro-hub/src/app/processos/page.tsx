@@ -12,6 +12,7 @@ import {
 import { EditProcessoModal } from '@/components/EditProcessoModal'
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getProcessHealth } from '@/lib/health'
 
 export const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; badge: string }> = {
   em_analise:           { label: 'Entrada',      color: '#F59E0B', bg: '#FFFBEB', badge: 'badge-amber' },
@@ -209,6 +210,12 @@ export default function ProcessosPage() {
                                     style={{ width: `${Math.min(100, (recebido / p.valor_total) * 100)}%`, background: col.color }}
                                   />
                                 </div>
+                                <div className="mt-2 flex items-center justify-between">
+                                  <span className="text-[8px] font-black uppercase text-slate-400">Saúde</span>
+                                  <div className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tighter ${getProcessHealth(p).color}`}>
+                                    {getProcessHealth(p).label}
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </motion.div>
@@ -237,6 +244,7 @@ export default function ProcessosPage() {
                     <th>Processo</th>
                     <th>Cliente</th>
                     <th>Status</th>
+                    <th>Saúde</th>
                     <th>Contrato</th>
                     <th>Recebido</th>
                     <th></th>
@@ -259,6 +267,11 @@ export default function ProcessosPage() {
                           <div className="flex items-center gap-1.5">
                             <div className="dot" style={{ background: s?.color }} />
                             <span className="text-[11px] font-medium" style={{ color: s?.color }}>{s?.label}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={`px-2 py-0.5 rounded-full inline-block text-[9px] font-black uppercase tracking-widest ${getProcessHealth(p).color}`}>
+                            {getProcessHealth(p).label}
                           </div>
                         </td>
                         <td><span className="font-semibold text-slate-800">{p.valor_total ? fmtK(p.valor_total) : '—'}</span></td>

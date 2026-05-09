@@ -20,6 +20,7 @@ import { FinanceiroModal } from '@/components/FinanceiroModal'
 import { TaskModal } from '@/components/TaskModal'
 import { ProtocoloModal } from '@/components/ProtocoloModal'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getProcessHealth } from '@/lib/health'
 
 const TABS = [
   { id: 'visao',      label: 'Visão Geral',    icon: LayoutGrid },
@@ -249,6 +250,10 @@ export default function ProcessoDetailPage() {
           <Link href="/processos" className="hover:text-slate-700 transition-colors">Processos</Link>
           <ChevronRight size={11} />
           <span className="mono font-semibold text-[hsl(231,100%,60%)]">{processo.codigo_projeto || 'REG.000'}</span>
+          
+          <div className={`ml-3 px-2 py-0.5 rounded border text-[9px] font-black uppercase tracking-widest ${getProcessHealth(processo).color}`}>
+            {getProcessHealth(processo).label}
+          </div>
         </div>
 
         <div className="flex-1">
@@ -309,9 +314,9 @@ export default function ProcessoDetailPage() {
               </div>
               
               <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Tempo Ativo</span>
-                <span className={`text-[10px] font-black uppercase tracking-widest ${Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000) > 60 ? 'text-red-500' : 'text-slate-800'}`}>
-                  {Math.floor((Date.now() - new Date(processo.createdAt).getTime()) / 86400000)} dias
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Saúde do Processo</span>
+                <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${getProcessHealth(processo).color}`}>
+                  {getProcessHealth(processo).label} ({getProcessHealth(processo).daysInactive} dias inativo)
                 </span>
               </div>
             </div>

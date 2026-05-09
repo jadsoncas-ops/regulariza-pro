@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { logAction } from '@/lib/logger'
+import { processWorkflowTriggers } from '@/lib/workflowEngine'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -64,6 +65,18 @@ export async function PATCH(req: Request) {
       where: { id },
       data: updateData
     })
+
+    if (status === 'concluido') {
+      try {
+        await processWorkflowTriggers(processoId, id, 'protocolo')
+      } catch (err: any) {
+        if (err.message === 'DOCUMENTOS_PENDENTES') {
+          // Revert status update
+          await prisma.protocolo.update({ where: { id }, data: { status: 'analise' } })
+          return NextResponse.json({ error: 'Existem documentos pendentes obrigatórios no processo. Faça o upload antes de concluir a etapa.' }, { status: 400 })
+        }
+      }
+    }
 
     await logAction({
       processoId,
