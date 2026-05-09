@@ -27,6 +27,8 @@ export async function POST(req: Request) {
         inscricao_imobiliaria: data.inscricao_imobiliaria,
         zoneamento: data.zoneamento,
         observacoes: data.observacoes,
+        latitude: data.latitude ? parseFloat(data.latitude) : null,
+        longitude: data.longitude ? parseFloat(data.longitude) : null,
       }
     })
     return NextResponse.json(imovel)

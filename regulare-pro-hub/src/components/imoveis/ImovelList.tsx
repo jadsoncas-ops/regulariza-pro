@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { 
-  Search, Edit, Trash2, Eye, X, PlusCircle, Home,
-  MapPin, FileText, Building2, Check, Map as MapIcon,
-  ChevronRight, ArrowUpRight, Maximize2, Layers
+  Search, Trash2, X, PlusCircle, 
+  MapPin, FileText, Map as MapIcon,
+  ChevronRight, ArrowUpRight, Maximize2
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import GoogleMapEmbed from './GoogleMapEmbed'
+import LocationPicker from './LocationPicker'
 
 interface Imovel {
   id: string
@@ -27,6 +28,8 @@ interface Imovel {
   inscricao_imobiliaria: string | null
   zoneamento: string | null
   observacoes: string | null
+  latitude: number | null
+  longitude: number | null
   processos: any[]
 }
 
@@ -43,6 +46,17 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   const [selectedImovel, setSelectedImovel] = useState<Imovel | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  
+  // States for reactive form fields
+  const [formAddress, setFormAddress] = useState({
+    endereco: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    cep: ''
+  })
+  const [coords, setCoords] = useState<{lat: number | null, lng: number | null}>({ lat: null, lng: null })
+
   const router = useRouter()
 
   const filteredImoveis = imoveis.filter(i => 
@@ -56,11 +70,39 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
     setDrawerOpen(true)
   }
 
+  const handleCEPBlur = async (cep: string) => {
+    const cleanCEP = cep.replace(/\D/g, '')
+    if (cleanCEP.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          setFormAddress(prev => ({
+            ...prev,
+            endereco: data.logradouro,
+            bairro: data.bairro,
+            cidade: data.localidade,
+            estado: data.uf,
+            cep: cleanCEP
+          }))
+        }
+      } catch (error) {
+        console.error('Erro ao buscar CEP:', error)
+      }
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     const formData = new FormData(e.currentTarget)
     const data = Object.fromEntries(formData.entries())
+    
+    const payload = {
+      ...data,
+      latitude: coords.lat,
+      longitude: coords.lng
+    }
 
     try {
       const url = modalMode === 'create' ? '/api/imoveis' : `/api/imoveis/${selectedImovel?.id}`
@@ -68,7 +110,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
       })
       if (res.ok) {
         setIsModalOpen(false)
@@ -80,6 +122,27 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const initModal = (imovel: Imovel | null) => {
+    if (imovel) {
+      setModalMode('edit')
+      setSelectedImovel(imovel)
+      setFormAddress({
+        endereco: imovel.endereco || '',
+        bairro: imovel.bairro || '',
+        cidade: imovel.cidade || '',
+        estado: imovel.estado || '',
+        cep: imovel.cep || ''
+      })
+      setCoords({ lat: imovel.latitude, lng: imovel.longitude })
+    } else {
+      setModalMode('create')
+      setSelectedImovel(null)
+      setFormAddress({ endereco: '', bairro: '', cidade: '', estado: '', cep: '' })
+      setCoords({ lat: null, lng: null })
+    }
+    setIsModalOpen(true)
   }
 
   return (
@@ -98,7 +161,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
           />
         </div>
         <button 
-          onClick={() => { setModalMode('create'); setSelectedImovel(null); setIsModalOpen(true) }}
+          onClick={() => initModal(null)}
           className="btn-premium px-8"
         >
           <PlusCircle size={18} /> NOVO IMÓVEL
@@ -116,10 +179,11 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
             className="bg-white border border-slate-200 rounded-[32px] p-2 shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group flex flex-col cursor-pointer overflow-hidden"
             onClick={() => openDrawer(i)}
           >
-            {/* Visual Header / Google Map */}
             <div className="relative h-48 rounded-[24px] overflow-hidden bg-slate-100 mb-6 group-hover:shadow-lg transition-all">
                <GoogleMapEmbed 
                   address={`${i.endereco}, ${i.bairro}, ${i.cidade} - ${i.estado}`}
+                  latitude={i.latitude}
+                  longitude={i.longitude}
                   zoom={14}
                   className="w-full h-full"
                />
@@ -204,16 +268,17 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
               </div>
 
               <div className="flex-1 overflow-y-auto p-10 space-y-12">
-                 {/* Interactive Google Map */}
                  <div className="relative h-64 bg-slate-100 rounded-[40px] overflow-hidden border-8 border-white shadow-xl group">
                     <GoogleMapEmbed 
                        address={`${selectedImovel.endereco}, ${selectedImovel.bairro}, ${selectedImovel.cidade} - ${selectedImovel.estado}`}
+                       latitude={selectedImovel.latitude}
+                       longitude={selectedImovel.longitude}
                        zoom={18}
                        className="w-full h-full"
                     />
                     <div className="absolute top-4 right-4">
                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}
+                          href={selectedImovel.latitude ? `https://www.google.com/maps/search/?api=1&query=${selectedImovel.latitude},${selectedImovel.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-lg text-primary hover:bg-white transition-all flex items-center justify-center"
@@ -227,7 +292,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                           <p className="text-xs font-mono font-bold text-slate-800 truncate max-w-[200px]">{selectedImovel.endereco}</p>
                        </div>
                        <a 
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}
+                          href={selectedImovel.latitude ? `https://www.google.com/maps/search/?api=1&query=${selectedImovel.latitude},${selectedImovel.longitude}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedImovel.endereco + ', ' + selectedImovel.cidade)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[10px] font-bold text-primary uppercase tracking-widest bg-primary/10 px-4 py-2 rounded-xl"
@@ -289,7 +354,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
 
               <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
                  <button 
-                   onClick={() => { setModalMode('edit'); setDrawerOpen(false); setIsModalOpen(true) }}
+                   onClick={() => { setDrawerOpen(false); initModal(selectedImovel) }}
                    className="flex-1 py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
                  >
                     EDITAR IMÓVEL
@@ -336,13 +401,50 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">LOCALIZAÇÃO</p>
                   <div className="grid grid-cols-2 gap-4">
-                    <input name="endereco" defaultValue={selectedImovel?.endereco || ''} placeholder="Endereço" required className="col-span-2 w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="bairro" defaultValue={selectedImovel?.bairro || ''} placeholder="Bairro" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="cidade" defaultValue={selectedImovel?.cidade || ''} placeholder="Cidade" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
-                    <input name="estado" defaultValue={selectedImovel?.estado || ''} placeholder="UF" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all uppercase" maxLength={2} />
-                    <input name="cep" defaultValue={selectedImovel?.cep || ''} placeholder="CEP" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" />
+                    <input 
+                       name="cep" 
+                       value={formAddress.cep}
+                       onChange={(e) => setFormAddress({...formAddress, cep: e.target.value})}
+                       onBlur={(e) => handleCEPBlur(e.target.value)}
+                       placeholder="CEP" 
+                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                    />
+                    <input 
+                       name="estado" 
+                       value={formAddress.estado}
+                       onChange={(e) => setFormAddress({...formAddress, estado: e.target.value})}
+                       placeholder="UF" 
+                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all uppercase" maxLength={2} 
+                    />
+                    <input 
+                       name="endereco" 
+                       value={formAddress.endereco}
+                       onChange={(e) => setFormAddress({...formAddress, endereco: e.target.value})}
+                       placeholder="Endereço" required 
+                       className="col-span-2 w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                    />
+                    <input 
+                       name="bairro" 
+                       value={formAddress.bairro}
+                       onChange={(e) => setFormAddress({...formAddress, bairro: e.target.value})}
+                       placeholder="Bairro" 
+                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                    />
+                    <input 
+                       name="cidade" 
+                       value={formAddress.cidade}
+                       onChange={(e) => setFormAddress({...formAddress, cidade: e.target.value})}
+                       placeholder="Cidade" 
+                       className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:ring-4 focus:ring-primary/5 transition-all" 
+                    />
                   </div>
                 </div>
+
+                <LocationPicker 
+                  initialLat={coords.lat}
+                  initialLng={coords.lng}
+                  onChange={(lat, lng) => setCoords({ lat, lng })}
+                />
 
                 <div className="space-y-4">
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">DADOS TÉCNICOS</p>
