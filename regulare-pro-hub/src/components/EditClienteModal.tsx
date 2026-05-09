@@ -87,12 +87,12 @@ export function EditClienteModal({
                 <Input name="nome" defaultValue={cliente.nome} required placeholder="Nome do cliente" />
               </div>
               <div>
-                <Label>CPF / CNPJ</Label>
-                <Input name="cpf_cnpj" defaultValue={cliente.cpf_cnpj} placeholder="000.000.000-00" />
-              </div>
-              <div>
                 <Label>RG / Inscrição Estadual</Label>
                 <Input name="rg_ie" defaultValue={cliente.rg_ie} placeholder="RG ou IE" />
+              </div>
+              <div>
+                <Label>CPF / CNPJ</Label>
+                <Input name="cpf_cnpj" defaultValue={cliente.cpf_cnpj} placeholder="000.000.000-00" />
               </div>
               <div>
                 <Label>Telefone / WhatsApp</Label>

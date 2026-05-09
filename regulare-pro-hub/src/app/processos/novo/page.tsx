@@ -606,8 +606,8 @@ function WizardContent() {
                         <Input placeholder="Ex: João da Silva / Construtora X" value={formData.cliente.nome} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, nome: e.target.value}}))} />
                       </div>
                       <div>
-                        <Label>CPF ou CNPJ *</Label>
-                        <Input placeholder="000.000.000-00" value={formData.cliente.cpf_cnpj} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))} />
+                        <Label>RG / Inscrição Estadual</Label>
+                        <Input placeholder="RG ou IE" value={formData.cliente.rg_ie} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, rg_ie: e.target.value}}))} />
                       </div>
                       <div>
                         <Label>Telefone / WhatsApp *</Label>
@@ -618,8 +618,8 @@ function WizardContent() {
                         <Input type="email" placeholder="cliente@email.com" value={formData.cliente.email} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, email: e.target.value}}))} />
                       </div>
                       <div className="md:col-span-2">
-                        <Label>RG / Inscrição Estadual</Label>
-                        <Input placeholder="RG ou IE" value={formData.cliente.rg_ie} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, rg_ie: e.target.value}}))} />
+                        <Label>CPF ou CNPJ *</Label>
+                        <Input placeholder="000.000.000-00" value={formData.cliente.cpf_cnpj} onChange={e => setFormData(prev => ({...prev, cliente: {...prev.cliente, cpf_cnpj: maskCpfCnpj(e.target.value)}}))} />
                       </div>
                     </div>
                   </div>
