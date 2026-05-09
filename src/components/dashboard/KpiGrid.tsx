@@ -1,98 +1,86 @@
-import { 
-  FolderOpen, 
-  CheckCircle2, 
-  AlertCircle, 
-  Clock, 
-  Send,
-  DollarSign,
-  TrendingUp,
-  Wallet,
-  Target,
-  BarChart
-} from "lucide-react";
+import { FolderOpen, CheckCircle2, AlertCircle, Clock, Send, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05
-    }
-  }
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 26 } },
 };
 
-const item = {
-  hidden: { opacity: 0, y: 15 },
-  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
+const stats = [
+  { label: "Ativos", value: "124", delta: "+6", icon: FolderOpen, tone: "ink" },
+  { label: "Concluídos", value: "89", delta: "+12", icon: CheckCircle2, tone: "success" },
+  { label: "Atrasados", value: "12", delta: "−3", icon: AlertCircle, tone: "danger" },
+  { label: "Em análise", value: "45", delta: "+4", icon: Clock, tone: "warning" },
+  { label: "Protocolados", value: "28", delta: "+2", icon: Send, tone: "ink" },
+];
+
+const toneMap: Record<string, { dot: string; chip: string }> = {
+  ink:      { dot: "bg-foreground",            chip: "text-muted-foreground" },
+  success:  { dot: "bg-[hsl(var(--success))]", chip: "text-[hsl(var(--success))]" },
+  warning:  { dot: "bg-[hsl(var(--warning))]", chip: "text-[hsl(var(--warning))]" },
+  danger:   { dot: "bg-[hsl(var(--destructive))]", chip: "text-[hsl(var(--destructive))]" },
 };
 
 export function KpiGrid() {
-  const visaoGeral = [
-    { label: "Ativos", value: "124", icon: FolderOpen, color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
-    { label: "Concluídos", value: "89", icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20" },
-    { label: "Atrasados", value: "12", icon: AlertCircle, color: "text-red-500", bg: "bg-red-500/10 border-red-500/20" },
-    { label: "Em Análise", value: "45", icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10 border-orange-500/20" },
-    { label: "Protocolados", value: "28", icon: Send, color: "text-purple-500", bg: "bg-purple-500/10 border-purple-500/20" },
-  ];
-
-  const financeiro = [
-    { label: "Receita Mensal", value: "R$ 45.2k", icon: DollarSign, color: "text-emerald-500", bg: "bg-emerald-500/10 border-emerald-500/20" },
-    { label: "Receita Prevista", value: "R$ 180k", icon: Target, color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
-    { label: "Pendentes", value: "R$ 22.5k", icon: Wallet, color: "text-orange-500", bg: "bg-orange-500/10 border-orange-500/20" },
-    { label: "Ticket Médio", value: "R$ 8.4k", icon: TrendingUp, color: "text-purple-500", bg: "bg-purple-500/10 border-purple-500/20" },
-    { label: "Faturamento Anual", value: "R$ 540k", icon: BarChart, color: "text-blue-500", bg: "bg-blue-500/10 border-blue-500/20" },
-  ];
-
   return (
-    <div className="flex flex-col gap-8">
-      <section>
-        <SectionHeader title="Visão Geral" />
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {visaoGeral.map((k) => (
-            <KpiCard key={k.label} data={k} />
-          ))}
-        </motion.div>
-      </section>
-
-      <section>
-        <SectionHeader title="Financeiro" />
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {financeiro.map((k) => (
-            <KpiCard key={k.label} data={k} />
-          ))}
-        </motion.div>
-      </section>
-    </div>
-  );
-}
-
-function KpiCard({ data }: { data: any }) {
-  const Icon = data.icon;
-  return (
-    <motion.div
-      variants={item}
-      className="relative overflow-hidden p-5 rounded-2xl border border-border/70 bg-card shadow-card hover-lift cursor-pointer group"
-    >
-      <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 smooth-transition" />
-      <div className="flex justify-between items-start">
-        <span className="text-[12px] font-medium text-muted-foreground uppercase tracking-wider">{data.label}</span>
-        <div className={`h-9 w-9 grid place-items-center rounded-xl border ${data.bg} group-hover:scale-110 smooth-transition`}>
-          <Icon className={`w-4 h-4 ${data.color}`} />
-        </div>
+    <section>
+      <SectionHeader
+        title="Pulse Operacional"
+        eyebrow="01 · Indicadores"
+        action={
+          <button className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground smooth-transition">
+            Personalizar <ArrowUpRight className="h-3.5 w-3.5" />
+          </button>
+        }
+      />
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {stats.map((k) => {
+          const Icon = k.icon;
+          const tone = toneMap[k.tone];
+          return (
+            <motion.div
+              key={k.label}
+              variants={item}
+              initial="hidden"
+              animate="show"
+              className="group relative rounded-2xl border border-border bg-card p-5 shadow-card hover-lift overflow-hidden"
+            >
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <span className={`h-1.5 w-1.5 rounded-full ${tone.dot}`} />
+                  <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{k.label}</span>
+                </div>
+                <Icon className="h-4 w-4 text-muted-foreground/60" />
+              </div>
+              <div className="flex items-baseline justify-between">
+                <div className="font-serif text-[40px] leading-none text-foreground tracking-tight number">{k.value}</div>
+                <span className={`text-[11px] font-mono font-semibold ${tone.chip}`}>{k.delta}</span>
+              </div>
+              <div className="absolute inset-x-5 bottom-3 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+            </motion.div>
+          );
+        })}
       </div>
-      <div className="mt-4 text-[28px] font-bold tracking-tight text-foreground tabular-nums">{data.value}</div>
-      <div className="mt-1 text-[11px] text-muted-foreground">Atualizado agora</div>
-    </motion.div>
+    </section>
   );
 }
 
-export function SectionHeader({ title, action, code }: { title: string; action?: React.ReactNode; code?: string }) {
+export function SectionHeader({
+  title,
+  eyebrow,
+  action,
+}: {
+  title: string;
+  eyebrow?: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <div className="flex justify-between items-center mb-5">
-      <div className="flex items-baseline gap-3">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
-        {code && <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">{code}</span>}
+    <div className="flex items-end justify-between mb-5">
+      <div className="flex flex-col gap-1">
+        {eyebrow && (
+          <span className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{eyebrow}</span>
+        )}
+        <h2 className="font-serif text-[28px] leading-none tracking-tight text-foreground">{title}</h2>
       </div>
       {action}
     </div>
