@@ -542,14 +542,21 @@ function WizardContent() {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="bg-slate-100 rounded-lg p-2 flex items-center gap-3">
-                      <Label>Valor Total</Label>
-                      <div className="relative">
-                        <DollarSign size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input 
-                          type="number" className="pl-6 pr-3 py-1 bg-white border border-slate-200 rounded-md text-xs font-bold w-28 outline-none focus:ring-2 focus:ring-blue-500/10"
-                          value={processo.valorTotal} onChange={e => setProcesso(prev => ({...prev, valorTotal: e.target.value}))}
-                        />
+                    <div className="bg-slate-900 rounded-[20px] p-1.5 pl-5 flex items-center gap-4 shadow-xl shadow-slate-900/10 border border-white/5">
+                      <div className="flex flex-col">
+                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none mb-1">Valor Total</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-black text-white/40">R$</span>
+                          <input 
+                            type="number" 
+                            className="bg-transparent text-lg font-black text-white w-28 outline-none focus:text-blue-400 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            value={processo.valorTotal} 
+                            onChange={e => setProcesso(prev => ({...prev, valorTotal: e.target.value}))}
+                          />
+                        </div>
+                      </div>
+                      <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                        <DollarSign size={20} />
                       </div>
                     </div>
                   </div>
