@@ -1,66 +1,93 @@
-import { ArrowUpRight, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowUpRight, Sparkles, TrendingUp, ArrowRight } from "lucide-react";
 
 export function HeroSection() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-card shadow-card noise">
+    <section className="relative overflow-hidden rounded-[28px] border border-border bg-card shadow-card ink-grain">
       <div className="absolute inset-0 gradient-hero pointer-events-none" />
-      <div className="absolute -top-24 -right-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-[hsl(252_95%_65%/0.18)] blur-3xl pointer-events-none" />
+      <div className="absolute -top-32 -right-20 h-96 w-96 rounded-full bg-[hsl(var(--accent)/0.10)] blur-3xl pointer-events-none" />
 
-      <div className="relative px-8 py-10 md:px-12 md:py-12 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
-        <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-card/60 border border-border/70 backdrop-blur text-[11px] font-medium text-muted-foreground mb-5">
-            <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-            Tudo operando normalmente · sincronizado há instantes
+      <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-10 p-8 md:p-12">
+        {/* Editorial copy */}
+        <div className="lg:col-span-7 flex flex-col">
+          <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground mb-6">
+            <span className="font-mono">{today}</span>
+            <span className="h-px w-8 bg-border" />
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-[hsl(var(--success))] animate-pulse" />
+              Sistema sincronizado
+            </span>
           </div>
-          <h1 className="text-[34px] md:text-[42px] leading-[1.05] font-bold tracking-tight text-foreground">
+
+          <h1 className="font-serif text-[44px] md:text-[56px] leading-[0.98] tracking-tight text-foreground">
             {greeting}, João.
             <br />
-            Você possui <span className="text-gradient">12 processos ativos</span> e
-            <span className="text-gradient"> R$ 48.000</span> previstos.
+            <span className="italic text-muted-foreground">Sua mesa hoje tem </span>
+            <span className="text-gradient italic">12 frentes</span>
+            <span className="italic text-muted-foreground"> abertas.</span>
           </h1>
-          <p className="mt-4 text-[15px] text-muted-foreground max-w-xl leading-relaxed">
-            Visão consolidada de tramitações, prefeitura, cartório e financeiro. Tudo conectado, em tempo real.
+
+          <p className="mt-6 text-[15px] text-muted-foreground max-w-xl leading-relaxed">
+            Três processos exigem ação sua antes de sexta. A receita prevista do mês ultrapassou
+            <span className="text-foreground font-semibold"> R$ 48.000</span>, com taxa de conversão em alta.
           </p>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <button className="inline-flex items-center gap-2 h-10 px-5 rounded-xl gradient-primary text-white text-[13.5px] font-semibold shadow-glow hover:opacity-95 active:scale-[0.98] smooth-transition">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <button className="inline-flex items-center gap-2 h-11 pl-4 pr-5 rounded-xl gradient-accent text-white text-[13.5px] font-semibold shadow-pop hover:opacity-95 active:scale-[0.98] smooth-transition">
               <Sparkles className="h-4 w-4" />
               Diagnóstico com IA
+              <ArrowRight className="h-4 w-4" />
             </button>
-            <button className="inline-flex items-center gap-2 h-10 px-5 rounded-xl bg-card border border-border/70 text-foreground text-[13.5px] font-semibold hover:bg-muted/60 smooth-transition shadow-card">
+            <button className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-foreground text-background text-[13.5px] font-semibold hover:opacity-90 smooth-transition">
               Ver pipeline
               <ArrowUpRight className="h-4 w-4" />
+            </button>
+            <button className="inline-flex items-center gap-2 h-11 px-5 rounded-xl border border-border bg-card text-foreground text-[13.5px] font-semibold hover:bg-muted/60 smooth-transition">
+              Agenda do dia
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:min-w-[340px]">
-          <MiniStat label="Esta semana" value="+8" hint="novos processos" trend="+24%" />
-          <MiniStat label="Protocolados" value="28" hint="aguardando análise" trend="+12%" />
-          <MiniStat label="Receita MTD" value="R$45.2k" hint="vs R$38.1k mês anterior" trend="+18%" />
-          <MiniStat label="Conversão" value="62%" hint="propostas → contratos" trend="+5pp" />
+        {/* Stat column */}
+        <div className="lg:col-span-5 flex flex-col gap-3">
+          <BigStat title="Receita prevista" value="R$ 48.0k" trend="+18%" hint="vs R$ 38.1k mês anterior" />
+          <div className="grid grid-cols-2 gap-3">
+            <SmallStat label="Esta semana" value="+8" hint="novos processos" />
+            <SmallStat label="Conversão" value="62%" hint="propostas" />
+            <SmallStat label="Protocolados" value="28" hint="aguardando" />
+            <SmallStat label="NPS" value="9.4" hint="últimos 30d" />
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function MiniStat({ label, value, hint, trend }: { label: string; value: string; hint: string; trend: string }) {
+function BigStat({ title, value, trend, hint }: { title: string; value: string; trend: string; hint: string }) {
   return (
-    <div className="rounded-2xl bg-card/70 backdrop-blur border border-border/70 p-4 shadow-card hover-lift">
-      <div className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1.5 flex items-baseline justify-between gap-2">
-        <div className="text-[22px] font-bold tracking-tight text-foreground">{value}</div>
-        <span className="inline-flex items-center gap-0.5 text-[11px] font-semibold text-success">
-          <TrendingUp className="h-3 w-3" />
-          {trend}
-        </span>
+    <div className="rounded-2xl bg-card border border-border p-5 shadow-card flex items-end justify-between gap-4">
+      <div>
+        <div className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{title}</div>
+        <div className="font-serif text-[44px] leading-none tracking-tight text-foreground mt-2 number">{value}</div>
+        <div className="text-[11.5px] text-muted-foreground mt-2">{hint}</div>
       </div>
-      <div className="mt-1 text-[11px] text-muted-foreground truncate">{hint}</div>
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[hsl(var(--success)/0.12)] text-[hsl(var(--success))] text-[11px] font-semibold">
+        <TrendingUp className="h-3 w-3" />
+        {trend}
+      </span>
+    </div>
+  );
+}
+
+function SmallStat({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="rounded-2xl bg-card border border-border p-4 shadow-card hover-lift">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{label}</div>
+      <div className="font-serif text-[26px] leading-none text-foreground mt-2 number">{value}</div>
+      <div className="text-[11px] text-muted-foreground mt-1.5 truncate">{hint}</div>
     </div>
   );
 }

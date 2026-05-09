@@ -9,6 +9,8 @@ interface Card {
   badge?: string;
   alert?: string;
   highlight?: boolean;
+  responsavel: string;
+  progress: number;
 }
 
 interface Column {
@@ -22,64 +24,34 @@ const columns: Column[] = [
     title: "Análise Documental",
     count: 12,
     cards: [
-      {
-        ref: "REQ-8842",
-        title: "Desmembramento Gleba B",
-        address: "Av. das Américas, 3301",
-        badge: "Desmembramento",
-      },
-      {
-        ref: "REQ-8849",
-        title: "Unificação de Lotes",
-        address: "Rua Aurora, 102",
-        badge: "Unificação",
-      },
+      { ref: "REQ-8842", title: "Desmembramento Gleba B", address: "Av. das Américas, 3301", badge: "Desmembramento", responsavel: "HT", progress: 25 },
+      { ref: "REQ-8849", title: "Unificação de Lotes", address: "Rua Aurora, 102", badge: "Unificação", responsavel: "MB", progress: 40 },
     ],
   },
   {
-    title: "Prefeitura / SMU",
+    title: "Prefeitura · SMU",
     count: 17,
     cards: [
-      {
-        ref: "PRC-9105",
-        title: "Habite-se Residencial",
-        address: "Cond. Vale Verde, Q3",
-        alert: "Laudo Bombeiros Pendente",
-        highlight: true,
-      },
-      {
-        ref: "PRC-9201",
-        title: "Alvará de Execução",
-        address: "Galpão Logístico Centro",
-        badge: "Alvará",
-      },
+      { ref: "PRC-9105", title: "Habite-se Residencial", address: "Cond. Vale Verde, Q3", alert: "Laudo Bombeiros pendente", highlight: true, responsavel: "HT", progress: 70 },
+      { ref: "PRC-9201", title: "Alvará de Execução", address: "Galpão Logístico Centro", badge: "Alvará", responsavel: "MB", progress: 55 },
     ],
   },
   {
-    title: "Cartório / RGI",
+    title: "Cartório · RGI",
     count: 4,
     cards: [
-      {
-        ref: "REG-7721",
-        title: "Averbação de Construção",
-        address: "Estrada do Mendanha, Lt 5",
-        badge: "Averbação",
-      },
+      { ref: "REG-7721", title: "Averbação de Construção", address: "Estrada do Mendanha, Lt 5", badge: "Averbação", responsavel: "HT", progress: 90 },
     ],
   },
 ];
 
-const container = {
+const stagger = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.1 }
-  }
+  show: { opacity: 1, transition: { staggerChildren: 0.06 } },
 };
-
 const item = {
-  hidden: { opacity: 0, scale: 0.95 },
-  show: { opacity: 1, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } }
+  hidden: { opacity: 0, y: 8 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
 };
 
 export function PipelinePreview() {
@@ -87,25 +59,29 @@ export function PipelinePreview() {
     <section>
       <SectionHeader
         title="Esteira de Tramitação"
+        eyebrow="04 · Pipeline"
         action={
-          <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-3 py-1.5 border border-border rounded-lg text-xs font-medium text-muted-foreground hover:bg-muted smooth-transition">
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-1.5 px-3 h-8 border border-border rounded-lg text-[12px] font-medium text-muted-foreground hover:bg-muted smooth-transition">
               <Filter className="w-3.5 h-3.5" />
               Filtrar
             </button>
-            <button className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 smooth-transition">
-              Ver Quadro Completo
+            <button className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] font-semibold text-foreground hover:bg-muted smooth-transition">
+              Quadro completo
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
         }
       />
-      <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {columns.map((col) => (
-          <div key={col.title} className="flex flex-col gap-4 bg-muted/30 p-5 rounded-2xl border border-border">
-            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex justify-between items-center mb-1">
-              <span>{col.title}</span>
-              <span className="bg-background border border-border px-2 py-0.5 rounded-full text-[10px] font-bold text-foreground shadow-sm">
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {columns.map((col, ci) => (
+          <div key={col.title} className="flex flex-col gap-3 bg-card/60 backdrop-blur p-4 rounded-[24px] border border-border">
+            <div className="flex justify-between items-center px-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono text-muted-foreground/70">0{ci + 1}</span>
+                <span className="text-[12px] font-semibold uppercase tracking-[0.14em] text-foreground">{col.title}</span>
+              </div>
+              <span className="bg-foreground text-background px-2 py-0.5 rounded-md text-[10px] font-bold font-mono">
                 {col.count}
               </span>
             </div>
@@ -113,30 +89,50 @@ export function PipelinePreview() {
               <motion.article
                 variants={item}
                 key={c.ref}
-                className={`bg-card border p-4 rounded-xl hover:-translate-y-1 hover:shadow-md smooth-transition cursor-grab active:cursor-grabbing flex flex-col gap-3 ${
-                  c.highlight ? "border-red-500/30 shadow-[0_0_0_1px_rgba(239,68,68,0.1)]" : "border-border shadow-sm"
+                className={`bg-card border p-4 rounded-2xl smooth-transition cursor-grab active:cursor-grabbing flex flex-col gap-3 hover-lift ${
+                  c.highlight ? "border-[hsl(var(--destructive)/0.4)] shadow-[0_0_0_4px_hsl(var(--destructive)/0.06)]" : "border-border shadow-card"
                 }`}
               >
                 <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-md">
-                    {c.ref}
-                  </span>
+                  <span className="text-[10px] font-mono font-semibold text-muted-foreground">{c.ref}</span>
                   {c.badge && (
-                    <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-medium bg-secondary text-secondary-foreground px-2 py-0.5 rounded-md">
                       {c.badge}
                     </span>
                   )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-sm leading-tight text-foreground">{c.title}</h3>
-                  <p className="text-xs text-muted-foreground mt-1.5 truncate">{c.address}</p>
+                  <h3 className="font-serif text-[18px] leading-tight text-foreground">{c.title}</h3>
+                  <p className="text-[12px] text-muted-foreground mt-1 truncate">{c.address}</p>
                 </div>
-                {c.alert && (
-                  <div className="mt-1 flex items-center gap-1.5 text-xs text-red-500 bg-red-500/10 px-2.5 py-1.5 rounded-lg border border-red-500/20">
-                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                    <span className="font-medium truncate">{c.alert}</span>
+
+                {/* Progress */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${c.highlight ? "bg-[hsl(var(--destructive))]" : "bg-foreground"}`}
+                      style={{ width: `${c.progress}%` }}
+                    />
                   </div>
-                )}
+                  <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{c.progress}%</span>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="h-6 w-6 rounded-full bg-muted grid place-items-center text-[10px] font-bold text-foreground">
+                      {c.responsavel}
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">Responsável</span>
+                  </div>
+                  {c.alert ? (
+                    <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[hsl(var(--destructive))]">
+                      <AlertCircle className="w-3 h-3" />
+                      {c.alert}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono text-muted-foreground">SLA · ok</span>
+                  )}
+                </div>
               </motion.article>
             ))}
           </div>
