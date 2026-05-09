@@ -10,7 +10,7 @@ import {
   Search, ArrowUpRight, ArrowDownRight, Wallet, 
   AlertCircle, CheckCircle2, MoreHorizontal, Filter,
   Calendar, FileText, ChevronRight, LayoutGrid, ArrowLeft,
-  SearchIcon, Calculator, ArrowUpCircle, ArrowDownCircle
+  SearchIcon, Calculator, ArrowUpCircle, ArrowDownCircle, Briefcase
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
