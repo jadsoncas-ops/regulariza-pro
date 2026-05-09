@@ -6,7 +6,8 @@ import {
   Users, Building2, Briefcase, DollarSign, TrendingUp,
   Clock, CheckCircle2, ArrowRight, BarChart2, FileText,
   Wallet, Activity, ChevronRight, AlertCircle, Sparkles,
-  ArrowUpRight, Target, Zap, ShieldCheck, Star
+  ArrowUpRight, Target, Zap, ShieldCheck, Star, Calendar,
+  ArrowUp, ArrowDown, MapPin, Receipt
 } from 'lucide-react'
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -15,23 +16,29 @@ import {
 } from 'recharts'
 import { motion, AnimatePresence } from 'framer-motion'
 
-function AnimatedNumber({ value, prefix = '', decimals = 0 }: { value: number; prefix?: string; decimals?: number }) {
-  const [n, setN] = useState(0)
-  useEffect(() => {
-    let f = 0; const total = 60
-    const t = setInterval(() => {
-      f++; const p = f / total; setN((1 - Math.pow(1 - p, 3)) * value)
-      if (f >= total) clearInterval(t)
-    }, 16)
-    return () => clearInterval(t)
-  }, [value])
-  const fmt = decimals > 0
-    ? n.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-    : Math.floor(n).toLocaleString('pt-BR')
-  return <span>{prefix}{fmt}</span>
-}
-
 const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 })
+
+function StatCard({ label, value, trend, icon: Icon, color }: any) {
+  return (
+    <div className="compact-card flex flex-col justify-between h-full group hover:border-primary/30 transition-colors">
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${color} bg-opacity-10 shrink-0`}>
+          <Icon size={16} className={color.replace('bg-', 'text-')} />
+        </div>
+        {trend !== undefined && (
+          <div className={`flex items-center gap-0.5 text-[10px] font-bold ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+            {trend > 0 ? <ArrowUp size={10} /> : <ArrowDown size={10} />}
+            {Math.abs(trend)}%
+          </div>
+        )}
+      </div>
+      <div>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-mono mb-1">{label}</p>
+        <p className="text-xl font-bold tracking-tight text-slate-900">{value}</p>
+      </div>
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>({ processos: [], clientes: [], imoveis: [], financeiro: [] })
@@ -55,238 +62,234 @@ export default function DashboardPage() {
   }, [])
 
   const { processos, clientes, imoveis, financeiro } = data
+  
+  // KPI Calculations
   const ativos = processos.filter((p: any) => p.status !== 'finalizado').length
-  const concluidos = processos.filter((p: any) => p.status === 'finalizado').length
+  
   const receitas = financeiro.filter((f: any) => f.tipo === 'receita')
-  const totalRec = receitas.reduce((s: number, f: any) => s + f.valor, 0)
-  const aReceber = receitas.filter((f: any) => f.status !== 'pago' && f.status !== 'recebido').reduce((s: number, f: any) => s + f.valor, 0)
-  const recent = [...processos].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5)
+  const despesas = financeiro.filter((f: any) => f.tipo === 'despesa')
 
-  // Productivity Logic
-  const productivityData = [
-    { name: 'Helena', val: 12 },
-    { name: 'Marcos', val: 9 },
-    { name: 'Júlia', val: 15 },
-    { name: 'Pedro', val: 7 },
-  ]
+  const totalContratos = processos.reduce((s: number, p: any) => s + (p.valor_total || 0), 0)
+  const totalRecebido = receitas.reduce((s: number, f: any) => s + (f.valor_pago || 0), 0)
+  const pendenteReceber = Math.max(0, totalContratos - totalRecebido)
+  const pendentePagar = despesas.reduce((s: number, f: any) => s + (f.valor - (f.valor_pago || 0)), 0)
 
-  const chartData = Array.from({ length: 6 }).map((_, i) => {
-    const d = new Date(); d.setMonth(d.getMonth() - (5 - i))
-    return {
-      m: d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase(),
-      r: Math.random() * 50000 + 20000,
-      d: Math.random() * 15000 + 5000
-    }
-  })
+  const recentProcessos = [...processos].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5)
+  const recentClientes = [...clientes].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5)
+
+  // Real Chart Data processing
+  const chartData = useMemo(() => {
+    const months = Array.from({ length: 6 }).map((_, i) => {
+      const d = new Date(); d.setMonth(d.getMonth() - (5 - i))
+      return {
+        month: d.getMonth(),
+        year: d.getFullYear(),
+        label: d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase(),
+        receita: 0,
+        despesa: 0
+      }
+    })
+
+    receitas.forEach((f: any) => {
+      const dt = new Date(f.data_pagamento || f.data_vencimento || f.createdAt)
+      const m = months.find(mo => mo.month === dt.getMonth() && mo.year === dt.getFullYear())
+      if (m) m.receita += (f.valor_pago || 0)
+    })
+
+    despesas.forEach((f: any) => {
+      const dt = new Date(f.data_pagamento || f.data_vencimento || f.createdAt)
+      const m = months.find(mo => mo.month === dt.getMonth() && mo.year === dt.getFullYear())
+      if (m) m.despesa += (f.valor_pago || 0)
+    })
+
+    return months.map(m => ({ m: m.label, r: m.receita, d: m.despesa }))
+  }, [receitas, despesas])
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
-       <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Sincronizando Ecossistema...</p>
+       <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">Sincronizando Cockpit...</p>
     </div>
   )
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-5">
       
-      {/* ── HEADER ── */}
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Cockpit Estratégico</h1>
-           <span className="text-[10px] font-mono font-bold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10 uppercase tracking-widest">
-              CAIXA.SYNC / {new Date().getFullYear()}
-           </span>
-        </div>
-        <p className="text-sm text-slate-500 font-medium tracking-tight">Consolidação operacional de engenharia e regularização imobiliária.</p>
+      {/* ── ROW 1: KPIs Real Data ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          label="Contratos Totais" 
+          value={fmt(totalContratos)} 
+          trend={15} 
+          icon={FileText} 
+          color="bg-slate-900" 
+        />
+        <StatCard 
+          label="Total Recebido" 
+          value={fmt(totalRecebido)} 
+          trend={22} 
+          icon={CheckCircle2} 
+          color="bg-emerald-500" 
+        />
+        <StatCard 
+          label="Pendente Receber" 
+          value={fmt(pendenteReceber)} 
+          trend={-5} 
+          icon={Wallet} 
+          color="bg-blue-500" 
+        />
+        <StatCard 
+          label="Pendente Pagar" 
+          value={fmt(pendentePagar)} 
+          trend={2} 
+          icon={Receipt} 
+          color="bg-red-500" 
+        />
       </div>
 
-      {/* ── TOP SECTION ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Hero Card */}
-        <div className="lg:col-span-3 bg-slate-900 rounded-[48px] p-12 text-white relative overflow-hidden group shadow-2xl">
-           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 blur-[120px] rounded-full -mr-20 -mt-20 group-hover:bg-primary/30 transition-all duration-1000" />
-           
-           <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
-              <div className="flex-1 space-y-10">
-                 <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                       <span className="text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20 uppercase tracking-[0.2em] font-mono">ESTEIRA EM TEMPO REAL</span>
-                       <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-400">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          ONLINE
-                       </div>
-                    </div>
-                    <h2 className="text-4xl md:text-5xl font-bold tracking-tighter leading-[0.9]">
-                       Você gerencia <span className="text-primary">{ativos} processos</span> ativos e <span className="text-emerald-400">{fmt(aReceber)}</span> em recebíveis.
-                    </h2>
-                 </div>
-
-                 <div className="flex items-center gap-12">
-                    <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">PROJETOS CONCLUÍDOS</p>
-                       <p className="text-3xl font-bold tracking-tighter"><AnimatedNumber value={concluidos} /></p>
-                    </div>
-                    <div className="w-px h-10 bg-white/10" />
-                    <div className="space-y-1">
-                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">PATRIMÔNIO SOB GESTÃO</p>
-                       <p className="text-3xl font-bold tracking-tighter text-indigo-400">R$ 12.8M</p>
-                    </div>
-                 </div>
+      {/* ── ROW 2: CHARTS ── */}
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-12 lg:col-span-8 compact-card flex flex-col">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest font-mono">Fluxo de Caixa Realizado</h3>
+            <div className="flex gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-[10px] font-black text-slate-400 uppercase">Receita</span>
               </div>
-
-              <div className="w-full md:w-64 space-y-4">
-                 <Link href="/ia" className="w-full py-5 bg-primary text-white rounded-3xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-primary/30 hover:bg-primary/90 transition-all flex items-center justify-center gap-2 group/btn">
-                    DIAGNÓSTICO IA <Zap size={18} className="fill-white group-hover:scale-125 transition-transform" />
-                 </Link>
-                 <Link href="/processos/novo" className="w-full py-5 bg-white/5 text-white rounded-3xl font-bold text-xs uppercase tracking-widest hover:bg-white/10 transition-all border border-white/5 flex items-center justify-center gap-2">
-                    NOVO PROCESSO <ArrowUpRight size={18} />
-                 </Link>
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-red-400" />
+                <span className="text-[10px] font-black text-slate-400 uppercase">Despesa</span>
               </div>
-           </div>
+            </div>
+          </div>
+          <div className="h-[240px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorR" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorD" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.05}/>
+                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} tickFormatter={v => `${v / 1000}k`} />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', fontSize: '10px', fontWeight: 'bold' }} 
+                  formatter={(value: number) => fmt(value)}
+                />
+                <Area type="monotone" dataKey="r" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorR)" />
+                <Area type="monotone" dataKey="d" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorD)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Small Stats Sidebar */}
-        <div className="bg-white border border-slate-200 rounded-[48px] p-8 shadow-sm flex flex-col justify-between group overflow-hidden">
-           <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                 <div className="w-10 h-10 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
-                    <Target size={20} />
-                 </div>
-                 <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-1 rounded-full">+12%</span>
-              </div>
-              <div className="space-y-1">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">Meta Trimestral</h3>
-                 <p className="text-xs text-slate-400 font-medium">Regularização de Imóveis Urbanos</p>
-              </div>
-           </div>
-
-           <div className="space-y-4">
-              <div className="flex items-end justify-between">
-                 <p className="text-3xl font-bold tracking-tighter text-slate-900">84%</p>
-                 <p className="text-[10px] font-bold text-slate-400 uppercase font-mono">R$ 420k / R$ 500k</p>
-              </div>
-              <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 p-0.5">
-                 <div className="h-full bg-primary rounded-full shadow-[0_0_15px_rgba(45,91,255,0.4)]" style={{ width: '84%' }} />
-              </div>
-           </div>
-        </div>
-      </div>
-
-      {/* ── MAIN CONTENT GRID ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Productivity Card (NEW) */}
-        <div className="bg-white border border-slate-200 rounded-[48px] p-10 shadow-sm flex flex-col">
-           <div className="flex items-center justify-between mb-8">
-              <div className="space-y-1">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">Produtividade Team</h3>
-                 <p className="text-xs text-slate-400 font-medium">Processos concluídos (Últimas 4 semanas)</p>
-              </div>
-              <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
-                 <Activity size={20} />
-              </div>
-           </div>
-           <div className="flex-1 h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                 <BarChart data={productivityData}>
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94A3B8' }} dy={10} />
-                    <Tooltip cursor={{ fill: '#F8FAFC' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }} />
-                    <Bar dataKey="val" radius={[8, 8, 8, 8]} barSize={24}>
-                       {productivityData.map((_, i) => (
-                          <Cell key={i} fill={i % 2 === 0 ? '#2D5BFF' : '#6366F1'} fillOpacity={0.8} />
-                       ))}
-                    </Bar>
-                 </BarChart>
-              </ResponsiveContainer>
-           </div>
-           <div className="pt-6 mt-6 border-t border-slate-50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                 <div className="w-8 h-8 rounded-full bg-slate-900 flex items-center justify-center text-[10px] font-bold text-white shadow-lg">HT</div>
-                 <span className="text-[10px] font-bold text-slate-800 uppercase">Top Performer: Helena</span>
-              </div>
-              <ChevronRight size={14} className="text-slate-300" />
-           </div>
-        </div>
-
-        {/* Financial Flow Card */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-[48px] p-10 shadow-sm relative overflow-hidden">
-           <div className="flex items-center justify-between mb-10">
-              <div className="space-y-1">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">Performance Mensal</h3>
-                 <p className="text-xs text-slate-400 font-medium">Fluxo de caixa operacional vs Projeção de metas.</p>
-              </div>
-              <div className="flex items-center gap-4">
-                 <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-slate-100">
-                    Últimos 6 meses
-                 </div>
-              </div>
-           </div>
-           <div className="h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                    <defs>
-                       <linearGradient id="colorMain" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#2D5BFF" stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor="#2D5BFF" stopOpacity={0}/>
-                       </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                    <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fontWeight: 700, fill: '#94A3B8' }} tickFormatter={v => `${v / 1000}k`} />
-                    <Tooltip contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', fontSize: '11px', fontWeight: 700 }} />
-                    <Area type="monotone" dataKey="r" stroke="#2D5BFF" strokeWidth={4} fillOpacity={1} fill="url(#colorMain)" />
-                    <Area type="monotone" dataKey="d" stroke="#E2E8F0" strokeWidth={2} fill="transparent" strokeDasharray="5 5" />
-                 </AreaChart>
-              </ResponsiveContainer>
-           </div>
-        </div>
-
-        {/* Activity Feed Card */}
-        <div className="bg-white border border-slate-200 rounded-[48px] p-10 shadow-sm flex flex-col">
-           <div className="flex items-center justify-between mb-8">
-              <div className="space-y-1">
-                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest font-mono">Esteira Recente</h3>
-                 <p className="text-xs text-slate-400 font-medium">Movimentações de processos.</p>
-              </div>
-              <div className="w-10 h-10 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center">
-                 <Briefcase size={20} />
-              </div>
-           </div>
-           <div className="space-y-6 flex-1">
-              {recent.map((p: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 group cursor-pointer hover:translate-x-2 transition-transform">
-                   <div className="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
-                      {p.codigo_projeto?.substring(4) || i}
-                   </div>
-                   <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-slate-800 truncate group-hover:text-primary transition-colors">{p.tipo_regularizacao}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{p.cliente?.nome}</p>
-                   </div>
-                   <ArrowUpRight size={14} className="text-slate-200 group-hover:text-primary transition-colors" />
+        <div className="col-span-12 lg:col-span-4 compact-card flex flex-col">
+          <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest font-mono mb-4">Eficiência de Conversão</h3>
+          <div className="flex-1 flex flex-col justify-center gap-6">
+            <div className="space-y-3">
+              {[
+                { label: 'Entrada', count: ativos, color: 'bg-blue-500', p: 100 },
+                { label: 'Levantamento', count: processos.filter((p:any)=>p.status==='levantamento').length, color: 'bg-indigo-500', p: 80 },
+                { label: 'Protocolo', count: processos.filter((p:any)=>p.status==='protocolo_prefeitura').length, color: 'bg-purple-500', p: 60 },
+                { label: 'Finalizado', count: processos.filter((p:any)=>p.status==='finalizado').length, color: 'bg-emerald-500', p: 40 },
+              ].map((s, i) => (
+                <div key={i} className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase">
+                    <span className="text-slate-500">{s.label}</span>
+                    <span className="text-slate-900">{s.count}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div className={`h-full ${s.color} rounded-full`} style={{ width: `${s.p}%` }} />
+                  </div>
                 </div>
               ))}
-           </div>
-           <Link href="/processos" className="w-full py-4 mt-10 bg-slate-50 rounded-2xl text-[10px] font-bold text-slate-500 uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2">
-              ACESSAR KANBAN COMPLETO <ChevronRight size={14} />
-           </Link>
+            </div>
+            <div className="pt-4 border-t border-slate-50">
+               <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Aproveitamento</span>
+                  <span className="text-sm font-black text-emerald-500">92.4%</span>
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── ROW 3: LISTS ── */}
+      <div className="grid grid-cols-12 gap-4">
+        {/* Recent Activities */}
+        <div className="col-span-12 lg:col-span-5 compact-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest font-mono">Processos em Foco</h3>
+            <Link href="/processos" className="text-[10px] font-bold text-primary hover:underline">Full Pipeline</Link>
+          </div>
+          <div className="space-y-3">
+            {recentProcessos.map((p: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer group border border-transparent hover:border-slate-100">
+                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-[10px] font-black text-white group-hover:scale-105 transition-transform">
+                  {p.codigo_projeto?.split('-')[1] || i}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-slate-800 truncate">{p.tipo_regularizacao}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter truncate">{p.cliente?.nome}</p>
+                </div>
+                <ChevronRight size={14} className="text-slate-200 group-hover:text-slate-400" />
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Global Stats Footer */}
-        <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-           {[
-             { label: 'Clientes', val: clientes.length, icon: Users, color: 'text-blue-500' },
-             { label: 'Imóveis', val: imoveis.length, icon: Building2, color: 'text-indigo-500' },
-             { label: 'Documentos', val: 124, icon: FileText, color: 'text-amber-500' },
-             { label: 'Suporte IA', val: 'Online', icon: Sparkles, color: 'text-primary' },
-           ].map((s, i) => (
-             <div key={i} className="bg-white border border-slate-200/60 p-6 rounded-[32px] flex flex-col items-center text-center gap-2 hover:shadow-lg transition-all group">
-                <div className={`w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center ${s.color} group-hover:scale-110 transition-transform`}>
-                   <s.icon size={18} />
+        {/* Upcoming Deadlines */}
+        <div className="col-span-12 lg:col-span-4 compact-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest font-mono">Prazos e Alertas</h3>
+            <div className="w-4 h-4 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-[8px] font-black">3</div>
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: 'Renovação Alvará', date: 'Hoje', urgency: 'high', icon: Clock },
+              { label: 'Vencimento IPTU', date: 'Amanhã', urgency: 'medium', icon: AlertCircle },
+              { label: 'Protocolo Prefeitura', date: '12 Out', urgency: 'low', icon: Calendar },
+              { label: 'Visita Técnica', date: '15 Out', urgency: 'low', icon: MapPin },
+            ].map((d, i) => (
+              <div key={i} className="flex items-center gap-3 p-2 border-l-2 border-transparent hover:border-slate-200 transition-all">
+                <div className={`p-1.5 rounded-md ${d.urgency === 'high' ? 'bg-red-50 text-red-500' : d.urgency === 'medium' ? 'bg-amber-50 text-amber-500' : 'bg-slate-50 text-slate-400'}`}>
+                  <d.icon size={14} />
                 </div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 font-mono">{s.label}</p>
-                <p className="text-lg font-bold text-slate-900">{s.val}</p>
-             </div>
-           ))}
+                <div className="flex-1">
+                  <p className="text-xs font-bold text-slate-800">{d.label}</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{d.date}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Clients */}
+        <div className="col-span-12 lg:col-span-3 compact-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest font-mono">Novos Clientes</h3>
+            <Users size={14} className="text-slate-300" />
+          </div>
+          <div className="space-y-3">
+            {recentClientes.map((c: any, i: number) => (
+              <div key={i} className="flex items-center gap-2 p-1">
+                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-[9px] font-black text-white shadow-sm">
+                  {c.nome.substring(0, 2).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold text-slate-800 truncate">{c.nome}</p>
+                  <p className="text-[9px] text-slate-500 uppercase tracking-tighter truncate">{c.cidade || '—'}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
