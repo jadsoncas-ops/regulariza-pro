@@ -19,6 +19,7 @@ import { DeleteConfirmModal } from '@/components/DeleteConfirmModal'
 import { FinanceiroModal } from '@/components/FinanceiroModal'
 import { TaskModal } from '@/components/TaskModal'
 import { ProtocoloModal } from '@/components/ProtocoloModal'
+import { GerarDocumentoModal } from '@/components/GerarDocumentoModal'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getProcessHealth } from '@/lib/health'
 
@@ -54,6 +55,7 @@ export default function ProcessoDetailPage() {
   const [selectedDocumentos, setSelectedDocumentos] = useState<string[]>([])
   const [isDocumentoModalOpen, setIsDocumentoModalOpen] = useState(false)
   const [documentoToEdit, setDocumentoToEdit] = useState<any>(null)
+  const [isGerarDocModalOpen, setIsGerarDocModalOpen] = useState(false)
   const [selectedFinanceiro, setSelectedFinanceiro] = useState<string[]>([])
   
   const stats = useMemo(() => {
@@ -497,7 +499,15 @@ export default function ProcessoDetailPage() {
                 <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 uppercase tracking-widest font-mono">
                   <FileText size={14} className="text-slate-500" /> Repositório (Docs)
                 </div>
-                <button onClick={() => { setDocumentoToEdit(null); setIsDocumentoModalOpen(true) }} className="p-1 hover:bg-slate-100 rounded text-slate-400 transition-colors"><Plus size={14}/></button>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => setIsGerarDocModalOpen(true)} 
+                    className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-blue-100 transition-all border border-blue-100"
+                  >
+                     <Sparkles size={12}/> Gerar
+                  </button>
+                  <button onClick={() => { setDocumentoToEdit(null); setIsDocumentoModalOpen(true) }} className="p-1 hover:bg-slate-100 rounded text-slate-400 transition-colors"><Plus size={14}/></button>
+                </div>
              </div>
              <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
                 {processo.documentos?.map((d: any) => (
@@ -579,6 +589,13 @@ export default function ProcessoDetailPage() {
         onClose={() => { setIsDocumentoModalOpen(false); setDocumentoToEdit(null) }}
         processoId={params.id as string}
         onSuccess={fetchProcesso}
+      />
+
+      <GerarDocumentoModal
+        isOpen={isGerarDocModalOpen}
+        onClose={() => setIsGerarDocModalOpen(false)}
+        processoId={params.id as string}
+        processoCode={processo?.codigo_projeto || 'REG'}
       />
 
     </div>
