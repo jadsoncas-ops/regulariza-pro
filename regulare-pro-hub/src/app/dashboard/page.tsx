@@ -169,7 +169,7 @@ export default function DashboardCockpit() {
                           paddingAngle={5}
                           dataKey="value"
                         >
-                          {s.healthData.map((entry, index) => (
+                          {s.healthData.map((entry: any, index: number) => (
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
@@ -178,7 +178,7 @@ export default function DashboardCockpit() {
                     </ResponsiveContainer>
                   </div>
                   <div className="grid grid-cols-3 gap-2 w-full mt-2">
-                    {s.healthData.map(h => (
+                    {s.healthData.map((h: any) => (
                       <div key={h.name} className="flex flex-col items-center">
                         <span className="text-[8px] font-black uppercase text-slate-500 tracking-tighter">{h.name}</span>
                         <span className="text-[14px] font-black text-white" style={{ color: h.color }}>{h.value}</span>
