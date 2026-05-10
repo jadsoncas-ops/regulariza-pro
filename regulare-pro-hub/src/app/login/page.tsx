@@ -28,7 +28,7 @@ export default function AdminLoginPage() {
         throw new Error(data.error || 'Falha na autenticação')
       }
 
-      router.push('/dashboard')
+      window.location.href = '/dashboard'
     } catch (err: any) {
       setError(err.message)
     } finally {
