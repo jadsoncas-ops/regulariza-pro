@@ -91,10 +91,10 @@ export default function DashboardCockpit() {
   if (!s) return null
 
   return (
-    <div className="h-screen flex flex-col bg-[#0F1115] text-slate-300 overflow-hidden" style={{ margin: '-20px' }}>
+    <div className="h-screen flex flex-col bg-[#08090D] text-slate-300 overflow-hidden">
       
       {/* ── HEADER ── */}
-      <header className="h-[52px] border-b border-white/5 bg-slate-900/40 flex items-center justify-between px-6 shrink-0">
+      <header className="h-[52px] border-b border-white/5 bg-slate-900/40 flex items-center justify-between px-6 shrink-0 relative z-20">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
             <LayoutDashboard size={18} />
@@ -117,10 +117,10 @@ export default function DashboardCockpit() {
       </header>
 
       {/* ── MAIN COCKPIT ── */}
-      <main className="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0 overflow-hidden">
+      <main className="flex-1 p-4 grid grid-cols-12 grid-rows-[auto_1fr] gap-4 min-h-0 overflow-hidden">
         
         {/* ROW 1: KPIs (Top 4 Cards) */}
-          <div className="col-span-12 lg:col-span-8 grid grid-cols-4 gap-4">
+        <div className="col-span-12 lg:col-span-12 grid grid-cols-4 gap-4 shrink-0">
             <KPICard 
               label="Processos Ativos" 
               value={s.activeCount} 
@@ -152,20 +152,20 @@ export default function DashboardCockpit() {
            />
         </div>
 
-        {/* ROW 2: CORE ANALYTICS (Middle Row) */}
-        <div className="col-span-12 grid grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
+        {/* ROW 2: CORE ANALYTICS (Filling remaining height) */}
+        <div className="col-span-12 grid grid-cols-12 gap-4 min-h-0 overflow-hidden">
           
-          {/* Health Distribution & Financial Forecast */}
-          <div className="col-span-4 flex flex-col gap-4">
+          {/* Left: Health & Financials */}
+          <div className="col-span-3 flex flex-col gap-4 min-h-0 overflow-hidden">
             <Card title="Saúde da Operação" icon={Activity} className="flex-1 min-h-0">
                <div className="h-full flex flex-col items-center justify-center p-4">
-                  <div className="w-full h-40">
+                  <div className="w-full h-full min-h-[140px] max-h-[180px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <RePieChart>
                         <Pie
                           data={s.healthData}
-                          innerRadius={50}
-                          outerRadius={70}
+                          innerRadius={45}
+                          outerRadius={65}
                           paddingAngle={5}
                           dataKey="value"
                         >
@@ -181,71 +181,75 @@ export default function DashboardCockpit() {
                     {s.healthData.map((h: any) => (
                       <div key={h.name} className="flex flex-col items-center">
                         <span className="text-[8px] font-black uppercase text-slate-500 tracking-tighter">{h.name}</span>
-                        <span className="text-[14px] font-black text-white" style={{ color: h.color }}>{h.value}</span>
+                        <span className="text-[14px] font-black text-white leading-none" style={{ color: h.color }}>{h.value}</span>
                       </div>
                     ))}
                   </div>
                </div>
             </Card>
 
-            <Card title="Forecast Financeiro" icon={Wallet} className="h-[200px]">
-               <div className="space-y-3 p-2">
-                  <FinancialItem label="Contratado Total" value={s.financials.totalContracted} color="text-slate-200" />
-                  <FinancialItem label="Recebido Realizado" value={s.financials.totalReceived} color="text-emerald-500" />
-                  <FinancialItem label="Receita Pendente" value={s.financials.pending} color="text-blue-500" highlight />
-                  <div className="pt-2 border-t border-white/5">
-                     <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
-                        <span>Margem Bruta</span>
-                        <span className="text-white">82%</span>
-                     </div>
+            <Card title="Forecast Financeiro" icon={Wallet} className="shrink-0">
+               <div className="space-y-2 p-3">
+                  <FinancialItem label="Contratado" value={s.financials.totalContracted} color="text-slate-200" />
+                  <FinancialItem label="Recebido" value={s.financials.totalReceived} color="text-emerald-500" />
+                  <FinancialItem label="Pendente" value={s.financials.pending} color="text-blue-500" highlight />
+                  <div className="pt-2 border-t border-white/5 flex justify-between items-center">
+                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Performance</span>
+                     <span className="text-white text-[10px] font-black">94.2%</span>
                   </div>
                </div>
             </Card>
           </div>
 
-          {/* Workflow Performance & Bottlenecks */}
-          <div className="col-span-4 flex flex-col gap-4">
+          {/* Middle: Bottlenecks */}
+          <div className="col-span-5 flex flex-col min-h-0 overflow-hidden">
             <Card title="Gargalos por Etapa" icon={Zap} className="flex-1 min-h-0">
-               <div className="h-full p-4 flex flex-col">
+               <div className="h-full p-6 flex flex-col min-h-0">
                   <div className="flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={s.bottlenecks} layout="vertical">
+                      <BarChart data={s.bottlenecks} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
                         <XAxis type="number" hide />
                         <YAxis 
                           dataKey="name" 
                           type="category" 
-                          width={80} 
+                          width={90} 
                           tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 700 }} 
+                          axisLine={false}
+                          tickLine={false}
                         />
                         <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} content={<CustomTooltip />} />
-                        <Bar dataKey="value" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={12} />
+                        <Bar dataKey="value" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={14}>
+                           {s.bottlenecks.map((_:any, index:number) => (
+                             <Cell key={`cell-${index}`} fill={index === 0 ? '#3B82F6' : 'rgba(59, 130, 246, 0.4)'} />
+                           ))}
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest text-center mt-2">Volume de processos por estágio ativo</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center mt-4 border-t border-white/5 pt-4">Volume de processos por estágio ativo</p>
                </div>
             </Card>
           </div>
 
-          {/* Activity Feed (Right Column) */}
-          <div className="col-span-4">
-            <Card title="Activity Stream" icon={Activity} className="h-full min-h-0 flex flex-col">
-               <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar-dark p-2">
+          {/* Right: Activity Stream */}
+          <div className="col-span-4 flex flex-col min-h-0 overflow-hidden">
+            <Card title="Activity Stream" icon={Activity} className="flex-1 min-h-0">
+               <div className="h-full overflow-y-auto pr-1 space-y-4 custom-scrollbar-dark p-3">
                   {s.events.map((log: any, i: number) => (
-                    <Link key={i} href={`/processos/${log.processoId}`} className="flex gap-3 relative group hover:bg-white/5 p-2 rounded-xl transition-all">
-                      <div className="w-2 h-2 rounded-full bg-blue-500/30 border border-blue-500/50 mt-1 shrink-0 group-hover:bg-blue-500 transition-colors" />
-                      <div>
-                        <p className="text-[10px] font-black text-white uppercase leading-none tracking-tight">{log.titulo || log.acao}</p>
-                        <p className="text-[9px] text-slate-500 font-medium mt-1 leading-relaxed line-clamp-2">{log.descricao || log.detalhe}</p>
-                        <span className="text-[8px] font-mono text-slate-600 uppercase mt-1 block">
+                    <Link key={i} href={`/processos/${log.processoId}`} className="flex gap-3 relative group hover:bg-white/[0.03] p-2 rounded-xl transition-all border border-transparent hover:border-white/5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500/20 border border-blue-500/50 mt-1.5 shrink-0 group-hover:bg-blue-500 transition-colors" />
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black text-white uppercase leading-none tracking-tight truncate">{log.titulo || log.acao}</p>
+                        <p className="text-[9px] text-slate-500 font-medium mt-1.5 leading-relaxed line-clamp-1">{log.descricao || log.detalhe}</p>
+                        <span className="text-[8px] font-mono text-slate-600 uppercase mt-1.5 block">
                           {new Date(log.createdAt).toLocaleDateString('pt-BR')} · {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </Link>
                   ))}
                   {s.events.length === 0 && (
-                    <div className="h-40 flex items-center justify-center opacity-30">
-                      <Activity size={32} />
+                    <div className="h-full flex items-center justify-center opacity-10">
+                      <Activity size={48} />
                     </div>
                   )}
                </div>
@@ -257,12 +261,13 @@ export default function DashboardCockpit() {
       </main>
 
       {/* ── FOOTER BAR ── */}
-      <footer className="h-8 border-t border-white/5 bg-slate-900/60 px-6 flex items-center justify-between shrink-0">
+      <footer className="h-8 border-t border-white/5 bg-slate-900/60 px-6 flex items-center justify-between shrink-0 relative z-20">
          <div className="flex gap-4">
             <FooterStat label="Latência API" value="24ms" />
             <FooterStat label="Database" value="Neon PostgreSQL" />
+            <FooterStat label="Region" value="SA-East-1" />
          </div>
-         <p className="text-[9px] font-mono text-slate-600 tracking-widest">REGULARIZA PRO OS v2.0.0</p>
+         <p className="text-[8px] font-mono font-bold text-slate-600 tracking-[0.3em] uppercase">Regulariza Pro · Command Center v2.2</p>
       </footer>
 
       <style jsx global>{`
