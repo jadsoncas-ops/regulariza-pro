@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { getProcessHealth } from '@/lib/health'
+import { getTenantId } from '@/lib/tenant'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,35 +13,40 @@ export async function GET() {
     const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
     const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
 
-    const [
-      processosCount,
-      processosAtivos,
-      financeiroStats,
-      recentEvents,
-      processosFinalizados
-    ] = await Promise.all([
-      prisma.processo.count(),
+    const empresaId = await getTenantId()
+
+    const results = await Promise.all([
+      prisma.processo.count({ where: { empresaId } }),
       prisma.processo.findMany({
-        where: { NOT: { status: 'finalizado' } },
+        where: { empresaId, NOT: { status: 'finalizado' } },
         select: { id: true, status: true, updatedAt: true, createdAt: true, etapa_atual: true, valor_total: true }
       }),
       prisma.financeiro.groupBy({
         by: ['tipo', 'status'],
+        where: { empresaId },
         _sum: { valor: true, valor_pago: true }
       }),
       prisma.evento.findMany({
+        where: { processo: { empresaId } }, // Only events for processes of this empresa
         take: 10,
         orderBy: { createdAt: 'desc' }
       }),
       prisma.processo.findMany({
-        where: { status: 'finalizado' },
+        where: { empresaId, status: 'finalizado' },
         select: { createdAt: true, updatedAt: true }
+      }),
+      prisma.tarefa.findMany({
+        where: { empresaId },
+        select: { status: true, data: true, assignedId: true }
       })
     ])
+
+    const [processosCount, processosAtivos, financeiroStats, recentEvents, processosFinalizados, allTasks] = results
 
     // Calculate MRR (Current vs Prev)
     const currentMonthRevenue = await prisma.financeiro.aggregate({
       where: {
+        empresaId,
         tipo: 'receita',
         status: 'pago',
         data_pagamento: {
@@ -53,6 +59,7 @@ export async function GET() {
 
     const prevMonthRevenue = await prisma.financeiro.aggregate({
       where: {
+        empresaId,
         tipo: 'receita',
         status: 'pago',
         data_pagamento: {
@@ -92,6 +99,13 @@ export async function GET() {
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
 
+    // Task Stats
+    const taskStats = {
+      pending: allTasks.filter(t => t.status !== 'concluido').length,
+      overdue: allTasks.filter(t => t.status !== 'concluido' && new Date(t.data) < now).length,
+      completed: allTasks.filter(t => t.status === 'concluido').length
+    }
+
     return NextResponse.json({
       activeCount: processosAtivos.length,
       totalCount: processosCount,
@@ -106,6 +120,7 @@ export async function GET() {
         pending: totalContracted - totalReceived
       },
       bottlenecks,
+      taskStats,
       events: recentEvents
     })
 

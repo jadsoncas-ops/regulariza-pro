@@ -1,17 +1,22 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { logAction } from '@/lib/logger'
-import { processWorkflowTransition } from '@/lib/workflow-engine'
+import { getTenantId } from '@/lib/tenant'
+import { onStageChange } from '@/lib/workflowAutomation'
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const empresaId = await getTenantId()
     const processo = await prisma.processo.findUnique({
-      where: { id: (await params).id },
+      where: { id: (await params).id, empresaId },
       include: { 
         cliente: true,
         imovel: true,
         financeiro: { orderBy: { createdAt: 'desc' } },
-        tarefas: { orderBy: { createdAt: 'desc' } },
+        tarefas: { 
+          include: { assignedTo: true },
+          orderBy: { createdAt: 'desc' } 
+        },
         documentos: { orderBy: { createdAt: 'desc' } },
         checklists: { orderBy: { createdAt: 'asc' } },
         eventos: { orderBy: { createdAt: 'desc' } },
@@ -28,13 +33,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const empresaId = await getTenantId()
     const id = (await params).id
     const data = await req.json()
     
     // 1. Primeiro, buscamos o processo para saber se ele já tem um imovelId
     const processoAtual = await prisma.processo.findUnique({
-      where: { id },
-      select: { imovelId: true, clienteId: true, status: true }
+      where: { id, empresaId },
+      select: { imovelId: true, clienteId: true, status: true, etapa_atual: true }
     })
 
     if (!processoAtual) {
@@ -71,6 +77,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         // Cria um novo imóvel e obtém o ID
         const novoImovel = await prisma.imovel.create({
           data: {
+            empresaId,
             clienteId: processoAtual.clienteId, // Vincula ao mesmo cliente
             endereco: data.imovel.endereco,
             numero: data.imovel.numero,
@@ -108,14 +115,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     })
 
 
+    const stageChanged = data.etapa_atual && data.etapa_atual !== processoAtual.etapa_atual
+
     // LOGAR MUDANÇA DE STATUS SE HOUVER
     if (statusChanged) {
       await logAction({
         processoId: id,
+        empresaId,
         acao: `Alteração de Status`,
         modulo: 'PROCESSO',
         detalhe: `De: ${processoAtual.status} → Para: ${data.status}`
       })
+    }
+
+    if (stageChanged) {
+      await onStageChange(
+        id, 
+        processoAtual.etapa_atual || 'INICIAL', 
+        data.etapa_atual, 
+        'USUÁRIO', // In real app, get from session
+        empresaId
+      )
     }
 
     return NextResponse.json(processoAtualizado)
@@ -127,11 +147,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const empresaId = await getTenantId()
     const id = (await params).id
     
     // Buscar processo para pegar clienteId e imovelId
     const processo = await prisma.processo.findUnique({
-      where: { id },
+      where: { id, empresaId },
       select: { clienteId: true, imovelId: true }
     })
 

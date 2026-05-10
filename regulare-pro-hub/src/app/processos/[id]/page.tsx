@@ -327,7 +327,7 @@ export default function ProcessoDetailPage() {
           <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex-1 min-h-[250px] flex flex-col">
              <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-2 shrink-0">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                  <Activity size={14} /> Activity Timeline
+                  <History size={14} className="text-slate-500" /> Timeline do Processo (Audit)
                 </div>
              </div>
              <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar pl-2">
@@ -383,55 +383,83 @@ export default function ProcessoDetailPage() {
 
            <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-sm flex-1 flex flex-col min-h-[400px]">
              <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3 shrink-0">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-amber-500 uppercase tracking-widest font-mono">
-                  <Zap size={14} className="text-amber-500" /> Autonomous Workflow
+                <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase tracking-widest font-mono">
+                  <ListTodo size={14} className="text-blue-500" /> Tarefas & Esteira Operacional
                 </div>
                 <div className="flex gap-1">
-                   <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="btn-secondary py-1 px-2 text-[8px] uppercase tracking-widest"><Plus size={10} className="mr-1"/> Tarefa</button>
-                   <button onClick={() => { setProtocoloToEdit(null); setIsProtocoloModalOpen(true) }} className="btn-secondary py-1 px-2 text-[8px] uppercase tracking-widest"><Plus size={10} className="mr-1"/> Órgão</button>
-                </div>
-             </div>
-             
-             <div className="flex-1 overflow-y-auto pr-2 relative">
-                <div className="absolute left-[15px] top-4 bottom-4 w-px bg-slate-100 z-0" />
-                <div className="space-y-4 relative z-10 pt-2">
-                  {[
-                    ...(processo.tarefas || []).map((t: any) => ({ ...t, type: 'task' })),
-                    ...(processo.protocolos || []).map((p: any) => ({ ...p, type: 'protocol' }))
-                  ]
-                  .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
-                  .map((item, idx) => (
-                    <div key={idx} className="relative pl-10 group">
-                      <div className={`absolute left-1 top-2 w-6 h-6 rounded-full shadow-sm flex items-center justify-center ${
-                        item.status === 'concluido' ? 'bg-emerald-500 text-white' : 'bg-white border border-slate-200 text-slate-400 group-hover:border-primary group-hover:text-primary transition-colors'
-                      }`}>
-                         {item.type === 'task' ? <ListTodo size={10} /> : <Building2 size={10} />}
-                      </div>
-                      
-                      <div className="bg-white border border-slate-200/60 rounded-xl p-4 shadow-sm group-hover:border-primary/20 group-hover:shadow-md transition-all flex items-start gap-3">
-                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                               <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
-                                 item.type === 'task' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600'
-                               }`}>
-                                 {item.type === 'task' ? 'TAREFA' : 'PROTOCOLO'}
-                               </span>
-                               <span className="text-[8px] font-bold text-slate-400 font-mono">{new Date(item.data).toLocaleDateString('pt-BR')}</span>
-                               <span className={`ml-auto text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${item.status === 'concluido' ? 'text-emerald-600 bg-emerald-50' : 'text-amber-600 bg-amber-50'}`}>{item.status}</span>
-                            </div>
-                            <h4 className={`text-[11px] font-bold ${item.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
-                               {item.type === 'task' ? item.titulo : `${item.orgao} - #${item.numero_protocolo}`}
-                            </h4>
-                         </div>
-                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => item.type==='task' ? (setTarefaToEdit(item), setIsTaskModalOpen(true)) : (setProtocoloToEdit(item), setIsProtocoloModalOpen(true))} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"><Edit size={12}/></button>
-                            <button onClick={() => item.type==='task' ? handleDeleteTarefa(item.id, item.titulo) : handleDeleteProtocolo(item.id, item.orgao)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 size={12}/></button>
-                         </div>
-                      </div>
+                    <div className="mr-4 px-3 py-1 bg-slate-50 rounded-lg flex items-center gap-2 border border-slate-100">
+                       <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-blue-500 transition-all" 
+                            style={{ width: `${(processo.tarefas?.filter((t:any)=>t.status==='concluido').length / (processo.tarefas?.length || 1)) * 100}%` }}
+                          />
+                       </div>
+                       <span className="text-[9px] font-bold text-slate-500 font-mono">
+                          {processo.tarefas?.filter((t:any)=>t.status==='concluido').length}/{processo.tarefas?.length || 0}
+                       </span>
                     </div>
-                  ))}
-                </div>
-             </div>
+                    <button onClick={() => { setTarefaToEdit(null); setIsTaskModalOpen(true) }} className="btn-secondary py-1 px-2 text-[8px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all"><Plus size={10} className="mr-1"/> Tarefa</button>
+                    <button onClick={() => { setProtocoloToEdit(null); setIsProtocoloModalOpen(true) }} className="btn-secondary py-1 px-2 text-[8px] uppercase tracking-widest hover:bg-slate-900 hover:text-white transition-all"><Plus size={10} className="mr-1"/> Órgão</button>
+                 </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto pr-2 relative">
+                 <div className="absolute left-[15px] top-4 bottom-4 w-px bg-slate-100 z-0" />
+                 <div className="space-y-4 relative z-10 pt-2 pb-10">
+                   {[
+                     ...(processo.tarefas || []).map((t: any) => ({ ...t, type: 'task' })),
+                     ...(processo.protocolos || []).map((p: any) => ({ ...p, type: 'protocol' }))
+                   ]
+                   .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+                   .map((item, idx) => (
+                     <div key={idx} className="relative pl-10 group">
+                       <div className={`absolute left-1 top-2 w-6 h-6 rounded-full shadow-sm flex items-center justify-center transition-all ${
+                         item.status === 'concluido' ? 'bg-emerald-500 text-white' : 
+                         item.status === 'in_progress' ? 'bg-blue-600 text-white animate-pulse' :
+                         'bg-white border border-slate-200 text-slate-400 group-hover:border-primary group-hover:text-primary'
+                       }`}>
+                         {item.type === 'task' ? <ListTodo size={10} /> : <Building2 size={10} />}
+                       </div>
+                       
+                       <div className="bg-white border border-slate-200/60 rounded-xl p-4 shadow-sm group-hover:border-primary/20 group-hover:shadow-md transition-all flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2 mb-1">
+                                <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                                  item.type === 'task' ? 'bg-slate-100 text-slate-500' : 'bg-blue-50 text-blue-600'
+                                }`}>
+                                  {item.type === 'task' ? 'TAREFA' : 'PROTOCOLO'}
+                                </span>
+                                <span className="text-[8px] font-bold text-slate-400 font-mono">{new Date(item.data).toLocaleDateString('pt-BR')}</span>
+                                <span className={`ml-auto text-[8px] font-bold uppercase px-1.5 py-0.5 rounded ${
+                                  item.status === 'concluido' ? 'text-emerald-600 bg-emerald-50' : 
+                                  item.status === 'in_progress' ? 'text-blue-600 bg-blue-50' :
+                                  'text-amber-600 bg-amber-50'
+                                }`}>{item.status === 'in_progress' ? 'Em Andamento' : item.status}</span>
+                             </div>
+                             <h4 className={`text-[11px] font-bold ${item.status === 'concluido' ? 'text-slate-400 line-through' : 'text-slate-800'}`}>
+                                {item.type === 'task' ? item.titulo : `${item.orgao} - #${item.numero_protocolo}`}
+                             </h4>
+                             <div className="flex items-center gap-3 mt-1.5">
+                                {item.assignedTo && (
+                                   <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                                      <User size={10} className="text-slate-400" />
+                                      <span className="text-[9px] font-bold text-slate-500 uppercase">{item.assignedTo.name}</span>
+                                   </div>
+                                )}
+                                {item.descricao && (
+                                   <p className="text-[9px] text-slate-500 truncate italic">“{item.descricao}”</p>
+                                )}
+                             </div>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button onClick={() => item.type==='task' ? (setTarefaToEdit(item), setIsTaskModalOpen(true)) : (setProtocoloToEdit(item), setIsProtocoloModalOpen(true))} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-400"><Edit size={12}/></button>
+                             <button onClick={() => item.type==='task' ? handleDeleteTarefa(item.id, item.titulo) : handleDeleteProtocolo(item.id, item.orgao)} className="p-1.5 hover:bg-red-50 rounded-lg text-red-400"><Trash2 size={12}/></button>
+                          </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+              </div>
            </div>
 
         </div>

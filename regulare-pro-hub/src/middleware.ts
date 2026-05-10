@@ -63,7 +63,18 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      await jwtVerify(adminSession, SECRET);
+      const { payload } = await jwtVerify(adminSession, SECRET);
+      const role = payload.role as string;
+
+      // RBAC - Path Protection
+      if (pathname.startsWith('/bi') && !['admin', 'manager'].includes(role)) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+
+      if ((pathname.startsWith('/usuarios') || pathname.startsWith('/api/usuarios')) && role !== 'admin') {
+        return NextResponse.json({ error: 'Acesso restrito a administradores' }, { status: 403 });
+      }
+
       return NextResponse.next();
     } catch (e) {
       if (pathname.startsWith('/api/')) {

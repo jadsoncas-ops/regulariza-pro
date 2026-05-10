@@ -44,12 +44,12 @@ export async function generateDOCXBuffer(title: string, data: any) {
         }),
         new Paragraph({
           text: `O presente documento refere-se ao processo de regularização técnica ${data.process_code}, para o imóvel localizado em ${data.property_address}, bairro ${data.property_neighborhood}, na cidade de ${data.property_city}.`,
-          alignment: AlignmentType.JUSTIFY,
+          alignment: AlignmentType.JUSTIFIED,
           spacing: { after: 200 },
         }),
         new Paragraph({
           text: `O imóvel possui área de terreno de ${data.property_area_land} m² e área construída de ${data.property_area_built} m², estando devidamente registrado sob a matrícula nº ${data.property_registration}.`,
-          alignment: AlignmentType.JUSTIFY,
+          alignment: AlignmentType.JUSTIFIED,
           spacing: { after: 400 },
         }),
         new Paragraph({

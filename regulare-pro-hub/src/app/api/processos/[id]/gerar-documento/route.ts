@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { mapDocumentData } from '@/lib/docMapper';
 import { generateDOCXBuffer, generatePDFBuffer } from '@/lib/docGenerator';
 import { logAction } from '@/lib/logger';
+import { getTenantId } from '@/lib/tenant';
 
 export async function POST(
   req: Request,
@@ -12,8 +13,10 @@ export async function POST(
     const { id } = await params;
     const { templateId, format } = await req.json();
 
+    const empresaId = await getTenantId();
+
     const processo = await prisma.processo.findUnique({
-      where: { id },
+      where: { id, empresaId },
       include: {
         cliente: true,
         imovel: true
@@ -21,10 +24,12 @@ export async function POST(
     });
 
     if (!processo) {
-      return NextResponse.json({ error: 'Processo não encontrado' }, { status: 404 });
+      return NextResponse.json({ error: 'Processo não encontrado ou sem permissão' }, { status: 404 });
     }
 
-    const empresa = await prisma.empresaConfig.findFirst();
+    const empresa = await prisma.empresa.findUnique({
+      where: { id: empresaId }
+    });
 
     const mappedData = mapDocumentData(processo, empresa);
     let buffer: Buffer;
@@ -46,12 +51,13 @@ export async function POST(
     // Log the generation
     await logAction({
       processoId: id,
+      empresaId,
       acao: 'Documento Gerado Automático',
       modulo: 'DOCUMENTOS',
       detalhe: `Tipo: ${templateId} | Formato: ${format.toUpperCase()}`
     });
 
-    return new Response(buffer, {
+    return new Response(buffer as any, {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${fileName}"`,

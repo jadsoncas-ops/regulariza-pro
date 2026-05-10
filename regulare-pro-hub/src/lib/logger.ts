@@ -1,23 +1,30 @@
 import { prisma } from './prisma'
 
-export async function logAction({
-  processoId,
-  usuario = 'JADSON CASTRO SANTANA',
-  acao,
-  modulo,
-  detalhe
-}: {
-  processoId: string
+export interface LogPayload {
+  processoId?: string
+  clienteId?: string
+  empresaId?: string
   usuario?: string
   acao: string
   modulo: string
   detalhe?: string
-}) {
+}
+
+export async function logAction({
+  processoId,
+  clienteId,
+  empresaId,
+  usuario = 'SISTEMA',
+  acao,
+  modulo,
+  detalhe
+}: LogPayload) {
   try {
-    // 1. Criar Log de Auditoria
+    // 1. Audit log - always created
     await prisma.log.create({
       data: {
-        processoId,
+        processoId: processoId || null,
+        empresaId: empresaId || null,
         usuario,
         acao,
         modulo,
@@ -25,20 +32,22 @@ export async function logAction({
       }
     })
 
-    // 2. Criar Evento na Timeline (se relevante para a visão operacional)
-    // Nem todo log precisa ser um evento de timeline, mas na visão do usuário sim.
-    await prisma.evento.create({
-      data: {
-        processoId,
-        titulo: acao,
-        descricao: detalhe,
-        tipo: modulo.toLowerCase(),
-        data_inicio: new Date(),
-        responsavel: usuario,
-        status: 'concluido'
-      }
-    })
+    // 2. Timeline event (only if linked to a processo)
+    if (processoId) {
+      await prisma.evento.create({
+        data: {
+          processoId,
+          titulo: acao,
+          descricao: detalhe,
+          tipo: modulo.toLowerCase(),
+          data_inicio: new Date(),
+          responsavel: usuario,
+          status: 'concluido'
+        }
+      })
+    }
   } catch (error) {
+    // Log failures should never crash the main request
     console.error('Falha ao registrar log/evento:', error)
   }
 }

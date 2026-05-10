@@ -14,7 +14,12 @@ export async function encryptAdmin(payload: any) {
 
 export async function loginAdmin(user: any) {
   const expires = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
-  const session = await encryptAdmin({ id: user.id, role: 'admin', name: user.name });
+  const session = await encryptAdmin({ 
+    id: user.id, 
+    role: user.role || 'admin', 
+    name: user.name,
+    empresaId: user.empresaId 
+  });
 
   const cookieStore = await cookies();
   cookieStore.set('admin_session', session, { 

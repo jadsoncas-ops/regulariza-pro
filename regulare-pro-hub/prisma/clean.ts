@@ -7,6 +7,8 @@ async function main() {
   
   try {
     // Delete in correct order to avoid foreign key constraints
+    await prisma.log.deleteMany()
+    await prisma.protocolo.deleteMany()
     await prisma.evento.deleteMany()
     await prisma.checklist.deleteMany()
     await prisma.documento.deleteMany()
@@ -16,8 +18,8 @@ async function main() {
     await prisma.processo.deleteMany()
     await prisma.imovel.deleteMany()
     await prisma.cliente.deleteMany()
-    await prisma.empresaConfig.deleteMany()
     await prisma.user.deleteMany()
+    await prisma.empresa.deleteMany()
 
     console.log('✅ Banco de dados zerado com sucesso.')
     console.log('O sistema iniciará limpo para testes reais.')

@@ -13,7 +13,9 @@ import {
   TrendingUp,
   Settings,
   PlusCircle,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  Activity
 } from "lucide-react";
 
 const NAV = [
@@ -43,12 +45,14 @@ const NAV = [
     items: [
       { name: "Financeiro", href: "/financeiro", icon: DollarSign },
       { name: "Inteligência BI", href: "/bi", icon: TrendingUp },
+      { name: "Performance", href: "/performance", icon: Activity },
       { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
     ]
   },
   {
     section: "Sistema",
     items: [
+      { name: "Usuários", href: "/usuarios", icon: ShieldCheck },
       { name: "Configurações", href: "/configuracoes", icon: Settings },
     ]
   }

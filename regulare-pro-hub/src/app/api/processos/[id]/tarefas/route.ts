@@ -1,21 +1,25 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { logAction } from '@/lib/logger'
-import { processWorkflowTriggers } from '@/lib/workflowEngine'
+import { getTenantId } from '@/lib/tenant'
+import { onTaskComplete } from '@/lib/workflowAutomation'
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const empresaId = await getTenantId()
     const processoId = (await params).id
-    const { titulo, descricao, data, responsavel, prioridade, tipo, agendar } = await req.json()
+    const { titulo, descricao, data, responsavel, prioridade, tipo, agendar, assignedId } = await req.json()
 
     // 1. Criar a Tarefa
     const tarefa = await prisma.tarefa.create({
       data: {
+        empresaId,
         processoId,
         titulo,
         descricao,
         data: new Date(data),
         responsavel,
+        assignedId,
         prioridade,
         status: 'pendente'
       }
@@ -38,6 +42,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     await logAction({
       processoId,
+      empresaId,
       acao: `Tarefa Criada`,
       modulo: 'TAREFAS',
       detalhe: `${titulo} ${agendar ? '(Agendada)' : ''}`
@@ -52,40 +57,34 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
 export async function PATCH(req: Request) {
   try {
+    const empresaId = await getTenantId()
     const data = await req.json()
-    const { id, status, titulo, prioridade, data: taskDate, responsavel, processoId } = data
+    const { id, status, titulo, prioridade, data: taskDate, responsavel, processoId, assignedId, descricao } = data
     
     const updateData: any = {}
-    if (status !== undefined) updateData.status = status
+    if (status !== undefined) {
+      updateData.status = status
+      if (status === 'in_progress') updateData.startedAt = new Date()
+      if (status === 'concluido') updateData.finishedAt = new Date()
+    }
     if (titulo !== undefined) updateData.titulo = titulo
+    if (descricao !== undefined) updateData.descricao = descricao
     if (prioridade !== undefined) updateData.prioridade = prioridade
     if (taskDate !== undefined) updateData.data = new Date(taskDate)
     if (responsavel !== undefined) updateData.responsavel = responsavel
+    if (assignedId !== undefined) updateData.assignedId = assignedId
 
     const tarefa = await prisma.tarefa.update({
-      where: { id },
+      where: { id, empresaId },
       data: updateData
     })
 
     if (status === 'concluido') {
-      try {
-        await processWorkflowTriggers(processoId, id, 'tarefa')
-        await logAction({
-          processoId,
-          acao: `Tarefa Concluída`,
-          modulo: 'TAREFAS',
-          detalhe: tarefa.titulo
-        })
-      } catch (err: any) {
-        if (err.message === 'DOCUMENTOS_PENDENTES') {
-          // Revert status update since it's blocked
-          await prisma.tarefa.update({ where: { id }, data: { status: 'pendente' } })
-          return NextResponse.json({ error: 'Existem documentos pendentes obrigatórios no processo. Faça o upload antes de concluir a etapa.' }, { status: 400 })
-        }
-      }
-    } else if (titulo || prioridade || taskDate || responsavel) {
+      await onTaskComplete(processoId, id, 'USUÁRIO', empresaId)
+    } else if (titulo || prioridade || taskDate || responsavel || assignedId) {
       await logAction({
         processoId,
+        empresaId,
         acao: `Tarefa Editada`,
         modulo: 'TAREFAS',
         detalhe: tarefa.titulo
@@ -100,24 +99,27 @@ export async function PATCH(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const empresaId = await getTenantId()
     const { id, ids, processoId, titulo } = await req.json()
     
     if (ids && Array.isArray(ids)) {
       await prisma.tarefa.deleteMany({
-        where: { id: { in: ids } }
+        where: { id: { in: ids }, empresaId }
       })
       await logAction({
         processoId,
+        empresaId,
         acao: `Tarefas Excluídas (Lote)`,
         modulo: 'TAREFAS',
         detalhe: `${ids.length} tarefas removidas`
       })
     } else {
       await prisma.tarefa.delete({
-        where: { id }
+        where: { id, empresaId }
       })
       await logAction({
         processoId,
+        empresaId,
         acao: `Tarefa Excluída`,
         modulo: 'TAREFAS',
         detalhe: titulo

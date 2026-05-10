@@ -7,12 +7,49 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Empresa {
+  id           String   @id @default(cuid())
+  nomeFantasia String
+  razaoSocial  String?
+  cnpj         String?
+  email        String?
+  telefone     String?
+  endereco     String?
+  cidade       String?
+  estado       String?
+  crea         String?
+  logoUrl      String?
+  
+  // Relations
+  users        User[]
+  clientes     Cliente[]
+  imoveis      Imovel[]
+  processos    Processo[]
+  financeiro   Financeiro[]
+  tarefas      Tarefa[]
+  documentos   Documento[]
+  logs         Log[]
+  alertas      Alerta[]
+  taskTemplates TaskTemplate[]
+  stageHistory  StageHistory[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model User {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
   password  String
-  role      String   @default("user")
+  role      String   @default("operator")
+  status    String   @default("ativo")
+  
+  empresaId String?
+  empresa   Empresa? @relation(fields: [empresaId], references: [id])
+  
+  tarefasAtribuidas Tarefa[] @relation("AssignedTasks")
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -33,7 +70,11 @@ model Cliente {
   status      String       @default("ativo")
   observacoes String?
   password    String?
-  accessCode  String?      // Simple 6-digit access code for easy login
+  accessCode  String?
+  
+  empresaId   String?
+  empresa     Empresa?     @relation(fields: [empresaId], references: [id])
+  
   processos   Processo[]
   imoveis     Imovel[]
   financeiro  Financeiro[]
@@ -45,10 +86,14 @@ model Imovel {
   id                    String      @id @default(cuid())
   clienteId             String
   cliente               Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  
+  empresaId             String?
+  empresa               Empresa?    @relation(fields: [empresaId], references: [id])
+  
   endereco              String
   numero                String?
   complemento           String?
-  tipo                  String?     // Residencial, Comercial, Não Informado...
+  tipo                  String?
   bairro                String?
   cidade                String?
   estado                String?
@@ -66,6 +111,7 @@ model Imovel {
   proprietario_doc      String?
   proprietario_tel      String?
   proprietario_email    String?
+  
   processos             Processo[]
   documentos            Documento[]
   createdAt             DateTime    @default(now())
@@ -79,10 +125,14 @@ model Processo {
   cliente            Cliente      @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   imovelId           String?
   imovel             Imovel?      @relation(fields: [imovelId], references: [id])
+  
+  empresaId          String?
+  empresa            Empresa?     @relation(fields: [empresaId], references: [id])
+  
   tipo_regularizacao String
   etapa_atual        String?
   status             String       @default("em_analise")
-  tags               String?      @default("[]") // JSON array de tags ex: ["#habite-se","#prefeitura"]
+  tags               String?      @default("[]")
   data_inicio        DateTime     @default(now())
   data_previsao      DateTime?
   responsavel        String?
@@ -92,6 +142,7 @@ model Processo {
   prioridade         String       @default("normal")
   data_deadline      DateTime?
   categoria          String?
+  
   financeiro         Financeiro[]
   tarefas            Tarefa[]
   documentos         Documento[]
@@ -99,8 +150,26 @@ model Processo {
   eventos            Evento[]
   protocolos         Protocolo[]
   logs               Log[]
+  stageHistory       StageHistory[]
+  
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
+}
+
+model StageHistory {
+  id         String   @id @default(cuid())
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  
+  empresaId  String?
+  empresa    Empresa? @relation(fields: [empresaId], references: [id])
+  
+  etapa      String
+  entrada    DateTime @default(now())
+  saida      DateTime?
+  duracao    Int?     // Duração em minutos
+  
+  createdAt  DateTime @default(now())
 }
 
 model Financeiro {
@@ -109,11 +178,15 @@ model Financeiro {
   processo        Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
   clienteId       String?
   cliente         Cliente?  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  
+  empresaId       String?
+  empresa         Empresa?  @relation(fields: [empresaId], references: [id])
+  
   descricao       String
-  categoria       String?   // ex: Elaboração de Projeto, Comissão...
+  categoria       String?
   valor           Float
   valor_pago      Float     @default(0)
-  tipo            String    @default("receita") // receita, despesa
+  tipo            String    @default("receita")
   is_repasse      Boolean   @default(false)
   data_vencimento DateTime?
   data_pagamento  DateTime?
@@ -129,11 +202,44 @@ model Tarefa {
   descricao   String?
   processoId  String?
   processo    Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  
+  empresaId   String?
+  empresa     Empresa?  @relation(fields: [empresaId], references: [id])
+  
   data        DateTime
   hora        String?
-  responsavel String?
-  prioridade  String    @default("normal") // baixa, normal, alta, urgente
-  status      String    @default("pendente")
+  responsavel String? // Legado
+  
+  assignedId  String?
+  assignedTo  User?     @relation("AssignedTasks", fields: [assignedId], references: [id])
+  
+  prioridade  String    @default("normal")
+  status      String    @default("pendente") // pending, in_progress, completed
+  
+  obrigatoria Boolean   @default(false)
+  etapa       String?   // Etapa em que a tarefa foi criada
+  
+  startedAt   DateTime? // Quando mudou para 'in_progress'
+  finishedAt  DateTime? // Quando mudou para 'completed'
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model TaskTemplate {
+  id          String    @id @default(cuid())
+  etapa       String
+  titulo      String
+  descricao   String?
+  prioridade  String    @default("normal")
+  
+  prazo_dias  Int       @default(3)
+  obrigatoria Boolean   @default(true)
+  papel_responsavel String?
+  
+  empresaId   String?
+  empresa     Empresa?  @relation(fields: [empresaId], references: [id])
+  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -157,10 +263,14 @@ model Log {
   id         String    @id @default(cuid())
   processoId String?
   processo   Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  
+  empresaId  String?
+  empresa    Empresa?  @relation(fields: [empresaId], references: [id])
+  
   usuario    String
   acao       String
   modulo     String
-  detalhe    String?   // De: X -> Para: Y
+  detalhe    String?
   createdAt  DateTime  @default(now())
 }
 
@@ -170,12 +280,16 @@ model Documento {
   processo    Processo? @relation(fields: [processoId], references: [id], onDelete: Cascade)
   imovelId    String?
   imovel      Imovel?   @relation(fields: [imovelId], references: [id])
+  
+  empresaId   String?
+  empresa     Empresa?  @relation(fields: [empresaId], references: [id])
+  
   nome        String
   tipo        String
   url         String
   tamanho     Int?
-  status      String    @default("pendente") // pendente, verificado, recusado
-  categoria   String?   // certidoes, art, projeto, alvara, habite_se
+  status      String    @default("pendente")
+  categoria   String?
   responsavel String?
   observacoes String?
   createdAt   DateTime  @default(now())
@@ -205,7 +319,7 @@ model Evento {
   responsavel String?
   status      String    @default("agendado")
   createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  updatedAt   DateTime @updatedAt
 }
 
 model Alerta {
@@ -216,24 +330,12 @@ model Alerta {
   lido        Boolean  @default(false)
   processoId  String?
   clienteId   String?
+  
+  empresaId   String?
+  empresa     Empresa? @relation(fields: [empresaId], references: [id])
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-model EmpresaConfig {
-  id           String   @id @default(cuid())
-  nomeFantasia String
-  razaoSocial  String?
-  cnpj         String?
-  email        String?
-  telefone     String?
-  endereco     String?
-  cidade       String?
-  estado       String?
-  crea         String?
-  logoUrl      String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
 }
 
 model ServicoPadrao {

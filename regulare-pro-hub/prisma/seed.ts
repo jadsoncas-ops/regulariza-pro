@@ -4,27 +4,28 @@ const prisma = new PrismaClient()
 
 async function main() {
   // Clear existing data in correct order due to foreign keys
+  await prisma.log.deleteMany()
+  await prisma.protocolo.deleteMany()
   await prisma.evento.deleteMany()
   await prisma.checklist.deleteMany()
   await prisma.documento.deleteMany()
   await prisma.tarefa.deleteMany()
   await prisma.financeiro.deleteMany()
+  await prisma.alerta.deleteMany()
   await prisma.processo.deleteMany()
   await prisma.imovel.deleteMany()
   await prisma.cliente.deleteMany()
-  await prisma.alerta.deleteMany()
-  await prisma.empresaConfig.deleteMany()
   await prisma.user.deleteMany()
+  await prisma.empresa.deleteMany()
 
-  // 1. Configurações da Empresa
-  await prisma.empresaConfig.create({
+  // 1. Empresa (Tenant Principal)
+  const empresa = await prisma.empresa.create({
     data: {
-      nomeFantasia: 'Regulariza Pro Engenharia',
-      razaoSocial: 'Regulariza Pro Engenharia e Arquitetura LTDA',
+      nomeFantasia: 'HBS Engenharia',
+      razaoSocial: 'HBS Soluções em Engenharia LTDA',
       cnpj: '12.345.678/0001-90',
-      email: 'contato@regularizapro.com',
+      email: 'contato@hbsengenharia.com.br',
       telefone: '(11) 98765-4321',
-      endereco: 'Av. Paulista, 1000, Conj 501',
       cidade: 'São Paulo',
       estado: 'SP',
       crea: '123456789-0',
@@ -34,16 +35,18 @@ async function main() {
   // 2. Usuário Admin
   await prisma.user.create({
     data: {
-      name: 'Admin Regulariza Pro',
-      email: 'admin@regularizapro.com',
-      password: 'hashed_password_here', // In a real app, hash this!
-      role: 'admin'
+      name: 'Admin HBS Engenharia',
+      email: 'admin@regulapro.com.br',
+      password: 'admin123_change_me',
+      role: 'admin',
+      empresaId: empresa.id
     }
   })
 
   // 3. Clientes
   const cliente1 = await prisma.cliente.create({
     data: {
+      empresaId: empresa.id,
       nome: 'João da Silva Santos',
       cpf_cnpj: '123.456.789-00',
       telefone: '(11) 99999-1111',
@@ -58,6 +61,7 @@ async function main() {
 
   const cliente2 = await prisma.cliente.create({
     data: {
+      empresaId: empresa.id,
       nome: 'Construtora Horizonte LTDA',
       cpf_cnpj: '98.765.432/0001-10',
       telefone: '(11) 3333-2222',
@@ -73,6 +77,7 @@ async function main() {
   // 4. Imóveis
   const imovel1 = await prisma.imovel.create({
     data: {
+      empresaId: empresa.id,
       clienteId: cliente1.id,
       endereco: 'Rua das Acácias, 45',
       bairro: 'Jardim Primavera',
@@ -90,6 +95,7 @@ async function main() {
 
   const imovel2 = await prisma.imovel.create({
     data: {
+      empresaId: empresa.id,
       clienteId: cliente2.id,
       endereco: 'Av. das Nações, Lote 10',
       bairro: 'Centro Industrial',
@@ -108,6 +114,7 @@ async function main() {
   // 5. Processos
   const processo1 = await prisma.processo.create({
     data: {
+      empresaId: empresa.id,
       clienteId: cliente1.id,
       imovelId: imovel1.id,
       tipo_regularizacao: 'Habite-se',
@@ -121,6 +128,7 @@ async function main() {
 
   const processo2 = await prisma.processo.create({
     data: {
+      empresaId: empresa.id,
       clienteId: cliente2.id,
       imovelId: imovel2.id,
       tipo_regularizacao: 'Desmembramento',

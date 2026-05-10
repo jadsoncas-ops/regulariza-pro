@@ -22,7 +22,7 @@ export default async function PortalProcessoPage({ params }: { params: Promise<{
     etapa: p.etapa,
     status: p.status,
     documentosPendentes: p.documentos.filter(d => d.isPending).length,
-    codigo: p.codigo
+    codigo: p.codigo || 'S/N'
   });
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });

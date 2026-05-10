@@ -14,10 +14,12 @@ import {
   Mail,
   MoreVertical,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  ListTodo
 } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { TaskTemplatesManager } from '@/components/TaskTemplatesManager'
 
 export default function ConfiguracoesPage() {
   const [isMigrating, setIsMigrating] = useState(false)
@@ -151,6 +153,9 @@ export default function ConfiguracoesPage() {
                 </table>
               </div>
             </section>
+            
+            {/* TASK TEMPLATES */}
+            <TaskTemplatesManager />
           </div>
 
           {/* COLUNA DIREITA - FERRAMENTAS E PLANO */}
