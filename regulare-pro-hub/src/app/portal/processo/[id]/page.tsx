@@ -4,9 +4,10 @@ import { redirect } from 'next/navigation';
 import { 
   ArrowLeft, Building2, FileText, Download, 
   CheckCircle2, Clock, ShieldCheck, MapPin, 
-  ChevronRight, Calendar, Wallet, Info, AlertCircle 
+  ChevronRight, Calendar, Wallet, Info, AlertCircle, Sparkles, Zap
 } from 'lucide-react';
 import Link from 'next/link';
+import { generateAISummary } from '@/lib/aiSummary';
 
 export default async function PortalProcessoPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getPortalSession();
@@ -15,6 +16,14 @@ export default async function PortalProcessoPage({ params }: { params: Promise<{
   const { id } = await params;
   const p = await getClientProcessoDetail(session.id, id);
   if (!p) redirect('/portal');
+
+  const aiSummary = generateAISummary({
+    tipo: p.tipo,
+    etapa: p.etapa,
+    status: p.status,
+    documentosPendentes: p.documentos.filter(d => d.isPending).length,
+    codigo: p.codigo
+  });
 
   const fmt = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -48,6 +57,24 @@ export default async function PortalProcessoPage({ params }: { params: Promise<{
         {/* ── LEFT: WORKFLOW & PROGRESS (Col 8) ── */}
         <div className="col-span-12 lg:col-span-8 space-y-8">
            
+           {/* AI EXECUTIVE SUMMARY */}
+           <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-110 transition-transform text-blue-600">
+                 <Sparkles size={100} />
+              </div>
+              <div className="relative z-10">
+                 <div className="flex items-center gap-2 mb-6">
+                    <span className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[9px] font-black uppercase tracking-widest border border-blue-100">
+                       <Zap size={10} /> IA Resumo do Processo
+                    </span>
+                 </div>
+                 <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">{aiSummary.title}</h2>
+                 <p className="text-sm text-slate-600 leading-relaxed font-medium whitespace-pre-line">
+                    {aiSummary.content}
+                 </p>
+              </div>
+           </div>
+
            {/* PROGRESS SUMMARY */}
            <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
