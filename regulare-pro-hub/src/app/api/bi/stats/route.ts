@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { getPredictiveIntelligence } from '@/lib/predictiveEngine';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +65,9 @@ export async function GET(req: Request) {
       _count: { id: true }
     });
 
+    // 6. PREDICTIVE INTELLIGENCE
+    const predictions = await getPredictiveIntelligence();
+
     return NextResponse.json({
       revenueByMonth,
       pipeline: pipeline.map(p => ({
@@ -80,7 +84,8 @@ export async function GET(req: Request) {
         type: r.tipo_regularizacao,
         total: r._sum.valor_total || 0,
         count: r._count.id
-      }))
+      })),
+      predictions
     });
 
   } catch (error) {

@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { 
   TrendingUp, Wallet, Clock, Briefcase, 
   BarChart3, PieChart, ArrowUpRight, ArrowDownRight,
-  Filter, Calendar, Download, RefreshCcw, Sparkles
+  Filter, Calendar, Download, RefreshCcw, Sparkles, AlertTriangle, 
+  Zap, ChevronRight, Activity, ZapIcon
 } from 'lucide-react'
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -71,6 +72,26 @@ export default function BIPage() {
       {/* DASHBOARD CONTENT */}
       <div className="flex-1 overflow-y-auto scroll-container p-8 space-y-8">
         
+        {/* SYSTEM RECOMMENDATIONS (AI READY) */}
+        {data.predictions?.recommendations?.length > 0 && (
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {data.predictions.recommendations.map((rec: string, i: number) => (
+                 <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="p-4 bg-blue-600 rounded-[24px] text-white flex items-center gap-4 shadow-lg shadow-blue-600/20"
+                 >
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                       <Zap size={20} />
+                    </div>
+                    <p className="text-[11px] font-black leading-tight uppercase tracking-tight">{rec}</p>
+                 </motion.div>
+              ))}
+           </div>
+        )}
+
         {/* KPI GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
            <KPICard 
@@ -109,6 +130,43 @@ export default function BIPage() {
 
         <div className="grid grid-cols-12 gap-8">
            
+           {/* BOTTLENECK ANALYSIS */}
+           <div className="col-span-12 lg:col-span-12 bg-slate-900 p-8 rounded-[40px] border border-slate-800 shadow-2xl space-y-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-12 opacity-5">
+                 <Activity size={200} className="text-blue-500" />
+              </div>
+              <div className="relative z-10">
+                 <div className="flex items-center justify-between mb-8">
+                    <div>
+                       <h3 className="text-sm font-black text-white uppercase tracking-widest">Análise de Gargalos (Bottlenecks)</h3>
+                       <p className="text-[10px] font-bold text-slate-500 uppercase mt-1">Identificação automática de lentidão no workflow</p>
+                    </div>
+                    <div className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                       Predição Baseada em Histórico
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {data.predictions.bottlenecks.slice(0, 4).map((b: any, i: number) => (
+                       <div key={b.stage} className="space-y-4">
+                          <div className="flex items-center justify-between">
+                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{b.stage}</span>
+                             <span className="text-lg font-black text-white">{b.percentageOfTotal}%</span>
+                          </div>
+                          <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                             <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${b.percentageOfTotal}%` }}
+                                className={`h-full ${i === 0 ? 'bg-red-500' : 'bg-blue-500'}`}
+                             />
+                          </div>
+                          <p className="text-[9px] font-bold text-slate-500 uppercase">Média de {b.avgDays} dias nesta etapa</p>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+
            {/* REVENUE OVER TIME */}
            <div className="col-span-12 lg:col-span-8 bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm space-y-8">
               <div className="flex items-center justify-between">
