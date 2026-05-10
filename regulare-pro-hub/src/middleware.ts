@@ -13,6 +13,8 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === '/' ||
     pathname === '/portal/login' ||
+    pathname === '/login' ||
+    pathname.startsWith('/api/auth/login') ||
     pathname.startsWith('/api/portal/auth/login') ||
     pathname.startsWith('/_next') ||
     pathname.includes('.') // static files
