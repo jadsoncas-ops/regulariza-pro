@@ -43,27 +43,29 @@ export async function processWorkflowTriggers(processoId: string, currentStageId
 
     // 3. Notify Financial Module if reaching specific stages
     const titleUpper = nextStage.titulo.toUpperCase()
-    if (titleUpper.includes('CARTÓRIO') || titleUpper.includes('HABITE-SE') || titleUpper.includes('PREFEITURA')) {
+    const isFinancialStage = titleUpper.includes('CARTÓRIO') || titleUpper.includes('HABITE-SE') || titleUpper.includes('PREFEITURA') || titleUpper.includes('REGISTRO')
+    
+    if (isFinancialStage) {
       await prisma.financeiro.create({
         data: {
           processoId,
           clienteId: proc.clienteId,
-          descricao: `ALERTA AUTOMÁTICO: Previsão de Taxa/Emolumento (${nextStage.titulo})`,
+          descricao: `[WORKFLOW] Provisionamento: ${nextStage.titulo}`,
           valor: 0,
           valor_pago: 0,
           tipo: 'despesa',
           status: 'pendente',
-          data_vencimento: nextStage.data
+          data_vencimento: nextStage.data || new Date()
         }
       })
       await logAction({
         processoId,
-        acao: 'Alerta Financeiro Gerado',
+        acao: 'Provisionamento Financeiro',
         modulo: 'FINANCEIRO',
-        detalhe: `Notificação de taxas gerada pelo Workflow Engine`
+        detalhe: `Geração de registro para controle de taxas da etapa ${nextStage.titulo}`
       })
     }
-  } else if (currentIndex === allStages.length - 1) {
+  } else if (currentIndex !== -1 && currentIndex === allStages.length - 1) {
     // Process is completed
     await prisma.processo.update({
       where: { id: processoId },

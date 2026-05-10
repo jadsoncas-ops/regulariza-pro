@@ -45,103 +45,41 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 }
 
 export default function DashboardCockpit() {
-  const [data, setData] = useState<any>({ processos: [], clientes: [], financeiro: [], logs: [] })
+  const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/processos').then(r => r.json()).catch(() => []),
-      fetch('/api/clientes').then(r => r.json()).catch(() => []),
-      fetch('/api/financeiro').then(r => r.json()).catch(() => []),
-      fetch('/api/eventos').then(r => r.json()).catch(() => []), // Logs/Events
-    ]).then(([processos, clientes, financeData, logs]) => {
-      setData({
-        processos: Array.isArray(processos) ? processos : [],
-        clientes: Array.isArray(clientes) ? clientes : [],
-        financeiro: Array.isArray(financeData?.financeiro) ? financeData.financeiro : [],
-        logs: Array.isArray(logs) ? logs : []
+    fetch('/api/stats/dashboard')
+      .then(r => r.json())
+      .then(d => {
+        setStats(d)
+        setLoading(false)
       })
-      setLoading(false)
-    })
+      .catch(() => setLoading(false))
   }, [])
 
-  const stats = useMemo(() => {
-    if (loading) return null
-    const { processos, financeiro, logs } = data
+  const s = useMemo(() => {
+    if (!stats) return null
     
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1
-    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear
-
-    const ativos = processos.filter((p: any) => p.status !== 'finalizado')
-    const totalContratos = processos.reduce((s: number, p: any) => s + (p.valor_total || 0), 0)
-    
-    const receitas = financeiro.filter((f: any) => f.tipo === 'receita')
-    const despesas = financeiro.filter((f: any) => f.tipo === 'despesa' || f.is_repasse)
-
-    const monthlyRevenue = receitas.filter((f: any) => {
-      const dt = new Date(f.data_pagamento || f.createdAt)
-      return f.status === 'pago' && dt.getMonth() === currentMonth && dt.getFullYear() === currentYear
-    }).reduce((s: number, f: any) => s + f.valor, 0)
-
-    const prevMonthlyRevenue = receitas.filter((f: any) => {
-      const dt = new Date(f.data_pagamento || f.createdAt)
-      return f.status === 'pago' && dt.getMonth() === prevMonth && dt.getFullYear() === prevYear
-    }).reduce((s: number, f: any) => s + f.valor, 0)
-
-    const avgTicket = processos.length ? totalContratos / processos.length : 0
-    
-    const finishedProcs = processos.filter((p: any) => p.status === 'finalizado')
-    const avgCompTime = finishedProcs.length 
-      ? finishedProcs.reduce((s: number, p: any) => s + (new Date(p.updatedAt).getTime() - new Date(p.createdAt).getTime()), 0) / finishedProcs.length / 86400000 
+    const revenueTrend = stats.prevMonthlyRevenue 
+      ? ((stats.monthlyRevenue - stats.prevMonthlyRevenue) / stats.prevMonthlyRevenue) * 100 
       : 0
 
-    // Health Distribution
-    const healthCounts = { on_track: 0, attention: 0, delayed: 0 }
-    ativos.forEach((p: any) => {
-      const health = getProcessHealth(p).status
-      healthCounts[health as keyof typeof healthCounts]++
-    })
-
     const healthData = [
-      { name: 'No Prazo', value: healthCounts.on_track, color: HEALTH_COLORS.on_track },
-      { name: 'Atenção', value: healthCounts.attention, color: HEALTH_COLORS.attention },
-      { name: 'Atrasado', value: healthCounts.delayed, color: HEALTH_COLORS.delayed },
+      { name: 'No Prazo', value: stats.health.on_track, color: HEALTH_COLORS.on_track },
+      { name: 'Atenção', value: stats.health.attention, color: HEALTH_COLORS.attention },
+      { name: 'Atrasado', value: stats.health.delayed, color: HEALTH_COLORS.delayed },
     ]
 
-    // Financial Forecast
-    const totalRecebido = receitas.filter((f: any) => f.status === 'pago').reduce((s: number, f: any) => s + f.valor, 0)
-    const pendingRevenue = totalContratos - totalRecebido
-    
-    // Workflow Bottlenecks
-    const stagesCount: Record<string, number> = {}
-    ativos.forEach((p: any) => {
-      const etapa = p.etapa_atual || 'CADASTRO'
-      stagesCount[etapa] = (stagesCount[etapa] || 0) + 1
-    })
-    const bottlenecks = Object.entries(stagesCount)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-
     return {
-      ativosCount: ativos.length,
-      monthlyRevenue,
-      revenueTrend: prevMonthlyRevenue ? ((monthlyRevenue - prevMonthlyRevenue) / prevMonthlyRevenue) * 100 : 0,
-      avgTicket,
-      avgCompTime,
-      healthData,
-      totalContratos,
-      totalRecebido,
-      pendingRevenue,
-      bottlenecks,
-      recentLogs: logs.slice(0, 10)
+      ...stats,
+      revenueTrend,
+      healthData
     }
-  }, [data, loading])
+  }, [stats])
 
   if (loading) return (
+
     <div className="h-screen flex items-center justify-center bg-slate-950">
       <div className="flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -150,7 +88,7 @@ export default function DashboardCockpit() {
     </div>
   )
 
-  const s = stats!
+  if (!s) return null
 
   return (
     <div className="h-screen flex flex-col bg-[#0F1115] text-slate-300 overflow-hidden" style={{ margin: '-20px' }}>
@@ -182,22 +120,22 @@ export default function DashboardCockpit() {
       <main className="flex-1 grid grid-cols-12 gap-4 p-4 min-h-0 overflow-hidden">
         
         {/* ROW 1: KPIs (Top 4 Cards) */}
-        <div className="col-span-12 grid grid-cols-4 gap-4 shrink-0 h-[110px]">
-           <KPICard 
-             label="Processos Ativos" 
-             value={s.ativosCount} 
-             sub={`Total de ${data.processos.length}`} 
-             icon={Layers} 
-             color="text-blue-500" 
-           />
-           <KPICard 
-             label="Faturamento Mensal" 
-             value={fmtK(s.monthlyRevenue)} 
-             sub={`${s.revenueTrend >= 0 ? '+' : ''}${s.revenueTrend.toFixed(1)}% vs mês ant.`} 
-             icon={Landmark} 
-             color="text-emerald-500" 
-             trend={s.revenueTrend}
-           />
+          <div className="col-span-12 lg:col-span-8 grid grid-cols-4 gap-4">
+            <KPICard 
+              label="Processos Ativos" 
+              value={s.activeCount} 
+              sub="Em tramitação" 
+              icon={FolderKanban} 
+              color="text-blue-500" 
+            />
+            <KPICard 
+              label="Faturamento Mes" 
+              value={fmt(s.monthlyRevenue)} 
+              sub={`${s.revenueTrend > 0 ? '+' : ''}${s.revenueTrend.toFixed(1)}% vs mes ant.`} 
+              icon={TrendingUp} 
+              color="text-emerald-500" 
+              trend={s.revenueTrend}
+            />
            <KPICard 
              label="Ticket Médio" 
              value={fmtK(s.avgTicket)} 
@@ -252,9 +190,9 @@ export default function DashboardCockpit() {
 
             <Card title="Forecast Financeiro" icon={Wallet} className="h-[200px]">
                <div className="space-y-3 p-2">
-                  <FinancialItem label="Contratado Total" value={s.totalContratos} color="text-slate-200" />
-                  <FinancialItem label="Recebido Realizado" value={s.totalRecebido} color="text-emerald-500" />
-                  <FinancialItem label="Receita Pendente" value={s.pendingRevenue} color="text-blue-500" highlight />
+                  <FinancialItem label="Contratado Total" value={s.financials.totalContracted} color="text-slate-200" />
+                  <FinancialItem label="Recebido Realizado" value={s.financials.totalReceived} color="text-emerald-500" />
+                  <FinancialItem label="Receita Pendente" value={s.financials.pending} color="text-blue-500" highlight />
                   <div className="pt-2 border-t border-white/5">
                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
                         <span>Margem Bruta</span>
@@ -293,8 +231,8 @@ export default function DashboardCockpit() {
           <div className="col-span-4">
             <Card title="Activity Stream" icon={Activity} className="h-full min-h-0 flex flex-col">
                <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar-dark p-2">
-                  {s.recentLogs.map((log: any, i: number) => (
-                    <div key={i} className="flex gap-3 relative group">
+                  {s.events.map((log: any, i: number) => (
+                    <Link key={i} href={`/processos/${log.processoId}`} className="flex gap-3 relative group hover:bg-white/5 p-2 rounded-xl transition-all">
                       <div className="w-2 h-2 rounded-full bg-blue-500/30 border border-blue-500/50 mt-1 shrink-0 group-hover:bg-blue-500 transition-colors" />
                       <div>
                         <p className="text-[10px] font-black text-white uppercase leading-none tracking-tight">{log.titulo || log.acao}</p>
@@ -303,9 +241,9 @@ export default function DashboardCockpit() {
                           {new Date(log.createdAt).toLocaleDateString('pt-BR')} · {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
-                  {s.recentLogs.length === 0 && (
+                  {s.events.length === 0 && (
                     <div className="h-40 flex items-center justify-center opacity-30">
                       <Activity size={32} />
                     </div>

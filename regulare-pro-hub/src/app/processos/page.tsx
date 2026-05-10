@@ -222,9 +222,9 @@ export default function ProcessosPage() {
                         )
                       })}
                       {procs.length === 0 && (
-                        <div className="border-2 border-dashed border-slate-100 rounded-xl p-4 text-center">
-                          <Circle size={16} className="text-slate-200 mx-auto mb-1" />
-                          <p className="text-[10px] text-slate-300">Nenhum processo</p>
+                        <div className="border-2 border-dashed border-slate-100 rounded-2xl p-6 text-center bg-slate-50/50">
+                          <Circle size={20} className="text-slate-200 mx-auto mb-2" />
+                          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-tight">Nenhum processo<br/>nesta etapa</p>
                         </div>
                       )}
                     </div>
@@ -361,27 +361,37 @@ export default function ProcessosPage() {
 
                   {/* Quick info */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="card-flat p-3">
-                      <p className="input-label mb-1">Cliente</p>
-                      <p className="text-[12px] font-semibold text-slate-800 truncate">{selectedProcesso.cliente?.nome}</p>
+                    <div className="card-flat p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Cliente</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[13px] font-bold text-slate-800 truncate">{selectedProcesso.cliente?.nome}</p>
+                        <Link href={`/clientes/${selectedProcesso.cliente?.id}`} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-all">
+                          <ArrowUpRight size={14} />
+                        </Link>
+                      </div>
                     </div>
-                    <div className="card-flat p-3">
-                      <p className="input-label mb-1">Responsável</p>
-                      <p className="text-[12px] font-semibold text-slate-800 truncate">{selectedProcesso.responsavel || '—'}</p>
+                    <div className="card-flat p-4 bg-slate-50 border border-slate-100 rounded-2xl">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Responsável</p>
+                      <p className="text-[13px] font-bold text-slate-800 truncate">{selectedProcesso.responsavel || 'Não definido'}</p>
                     </div>
                   </div>
 
                   {/* Localização */}
                   {selectedProcesso.imovel && (
                     <div className="card p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <MapPin size={13} className="text-[hsl(231,100%,60%)]" />
-                        <h4 className="text-[11px] font-semibold text-secondary uppercase tracking-wider">Localização do Imóvel</h4>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                           <MapPin size={14} className="text-blue-600" />
+                           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Imóvel do Processo</h4>
+                        </div>
+                        <Link href={`/imoveis/${selectedProcesso.imovel.id}`} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-all">
+                          <ExternalLink size={14} />
+                        </Link>
                       </div>
-                      <p className="text-[12px] font-semibold text-slate-800">
+                      <p className="text-[13px] font-bold text-slate-900 leading-tight">
                         {selectedProcesso.imovel.endereco}{selectedProcesso.imovel.numero ? `, ${selectedProcesso.imovel.numero}` : ''}
                       </p>
-                      <p className="text-[11px] text-secondary mt-1">
+                      <p className="text-[11px] font-medium text-slate-500 mt-1">
                         {[selectedProcesso.imovel.bairro, selectedProcesso.imovel.cidade, selectedProcesso.imovel.estado].filter(Boolean).join(' · ')}
                       </p>
                       {selectedProcesso.imovel.num_matricula && (
