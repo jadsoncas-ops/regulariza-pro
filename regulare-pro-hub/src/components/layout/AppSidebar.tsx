@@ -10,6 +10,7 @@ import {
   CalendarDays,
   DollarSign,
   BarChart3,
+  TrendingUp,
   Settings,
   PlusCircle,
   ChevronRight
@@ -41,6 +42,7 @@ const NAV = [
     section: "Gestão",
     items: [
       { name: "Financeiro", href: "/financeiro", icon: DollarSign },
+      { name: "Inteligência BI", href: "/bi", icon: TrendingUp },
       { name: "Relatórios", href: "/relatorios", icon: BarChart3 },
     ]
   },
