@@ -7,7 +7,7 @@ import {
   Activity, ArrowUpRight, Zap, Target,
   FileText, CheckCircle2, Receipt, Clock,
   ChevronRight, Sparkles, Plus, Wallet,
-  BarChart3, BrainCircuit, AlertCircle, Timer,
+  BarChart3, BrainCircuit, AlertCircle, Timer, FolderKanban,
   ArrowRight, Landmark, PieChart, LayoutDashboard, MoreVertical
 } from 'lucide-react'
 import {
