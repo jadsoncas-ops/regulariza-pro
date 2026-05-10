@@ -18,6 +18,7 @@ interface Imovel {
   clienteId: string
   cliente: { id: string; nome: string; cpf_cnpj: string }
   endereco: string
+  numero: string | null
   bairro: string | null
   cidade: string | null
   estado: string | null
