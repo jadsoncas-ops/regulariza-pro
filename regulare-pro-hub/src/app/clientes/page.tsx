@@ -7,7 +7,7 @@ import {
   MapPin, ChevronRight, MoreHorizontal, Edit2, Filter, 
   X, LayoutGrid, List, User, Globe, Wallet, History,
   ArrowUpRight, Command, ChevronLeft, Trash2, SlidersHorizontal,
-  FileText, TrendingUp, ExternalLink, Sparkles
+  FileText, TrendingUp, ExternalLink, Sparkles, ShieldCheck
 } from 'lucide-react'
 import { EditClienteModal } from '@/components/EditClienteModal'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -43,6 +43,13 @@ export default function ClientesPage() {
   useEffect(() => {
     fetchData()
   }, [])
+
+  const handleGenerateAccess = async (clientId: string) => {
+    try {
+      const res = await fetch(`/api/clientes/${clientId}/portal-access`, { method: 'POST' })
+      if (res.ok) fetchData()
+    } catch (e) { console.error(e) }
+  }
 
   const filtered = useMemo(() => clientes.filter(c =>
     c.nome?.toLowerCase().includes(search.toLowerCase()) ||
@@ -248,6 +255,36 @@ export default function ClientesPage() {
                                    <p className="text-[10px] font-mono font-bold text-slate-600">{selectedCliente.cep || '—'}</p>
                                  </div>
                                </div>
+                             </div>
+                          </div>
+
+                          <div className="p-5 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-4">
+                             <div className="flex items-center justify-between border-b border-blue-100 pb-2">
+                               <h3 className="text-[10px] font-black text-blue-900 uppercase tracking-widest font-mono">Acesso ao Portal</h3>
+                               <ShieldCheck size={12} className="text-blue-600" />
+                             </div>
+                             <div className="flex items-center justify-between">
+                                <div>
+                                   <p className="text-[8px] font-bold text-blue-400 uppercase">Código de Acesso</p>
+                                   <p className="text-lg font-black text-blue-900 tracking-widest">
+                                      {selectedCliente.accessCode || '—'}
+                                   </p>
+                                </div>
+                                <button 
+                                  onClick={() => handleGenerateAccess(selectedCliente.id)}
+                                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
+                                >
+                                   {selectedCliente.accessCode ? 'Redefinir' : 'Gerar Acesso'}
+                                </button>
+                             </div>
+                             <div className="pt-2">
+                                <Link 
+                                  href="/portal/login" 
+                                  target="_blank"
+                                  className="text-[9px] font-bold text-blue-500 hover:underline flex items-center gap-1 uppercase"
+                                >
+                                   Abrir Portal <ExternalLink size={10} />
+                                </Link>
                              </div>
                           </div>
                         </div>

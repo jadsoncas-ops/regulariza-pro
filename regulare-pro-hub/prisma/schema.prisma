@@ -32,6 +32,8 @@ model Cliente {
   cep         String?
   status      String       @default("ativo")
   observacoes String?
+  password    String?
+  accessCode  String?      // Simple 6-digit access code for easy login
   processos   Processo[]
   imoveis     Imovel[]
   financeiro  Financeiro[]
