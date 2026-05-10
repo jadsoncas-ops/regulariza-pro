@@ -47,7 +47,7 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
   const [selectedImovel, setSelectedImovel] = useState<Imovel | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('list')
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   
@@ -186,8 +186,9 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
             />
           </div>
           <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-[20px] shrink-0 shadow-inner">
+             <button onClick={() => setViewMode('list')} className={`px-6 py-2.5 rounded-[15px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-white text-primary shadow-lg ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}>Lista</button>
              <button onClick={() => setViewMode('grid')} className={`px-6 py-2.5 rounded-[15px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'grid' ? 'bg-white text-primary shadow-lg ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}>Grelha</button>
-             <button onClick={() => setViewMode('map')} className={`px-6 py-2.5 rounded-[15px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'map' ? 'bg-white text-primary shadow-lg ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}>Mapa Geral</button>
+             <button onClick={() => setViewMode('map')} className={`px-6 py-2.5 rounded-[15px] text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === 'map' ? 'bg-white text-primary shadow-lg ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-700'}`}>Mapa</button>
           </div>
         </div>
         <button 
@@ -199,7 +200,70 @@ export default function ImovelList({ initialImoveis, clientes }: ImovelListProps
       </div>
 
       {/* ── CONTENT AREA ── */}
-      {viewMode === 'grid' ? (
+      {viewMode === 'list' ? (
+        <div className="bg-white border border-slate-200 rounded-[32px] overflow-hidden shadow-sm">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Endereço</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Proprietário</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cidade</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Processos</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cadastro</th>
+                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {filteredImoveis.map(i => (
+                <tr key={i.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                       <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-primary transition-colors">
+                          <MapPin size={14} />
+                       </div>
+                       <div>
+                          <p className="text-sm font-bold text-slate-800">{i.endereco}, {i.numero || 'S/N'}</p>
+                          <p className="text-[10px] text-slate-400 font-medium uppercase">{i.bairro}</p>
+                       </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-bold text-slate-700">{i.cliente.nome}</p>
+                    <p className="text-[10px] text-slate-400 font-mono">{i.cliente.cpf_cnpj}</p>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs font-bold text-slate-600 uppercase">{i.cidade}/{i.estado}</span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-tighter ${i.processos.length > 0 ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-400'}`}>
+                      {i.processos.length} VINCULADOS
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-xs font-medium text-slate-500">{(i as any).createdAt ? new Date((i as any).createdAt).toLocaleDateString('pt-BR') : '—'}</span>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                       <Link href={`/imoveis/${i.id}`} className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-primary hover:border-primary/20 rounded-xl transition-all shadow-sm">
+                          <ArrowUpRight size={14} />
+                       </Link>
+                       <button onClick={() => initModal(i)} className="p-2 bg-white border border-slate-200 text-slate-400 hover:text-slate-600 rounded-xl transition-all shadow-sm">
+                          <LayoutGrid size={14} />
+                       </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredImoveis.length === 0 && (
+            <div className="py-20 text-center">
+               <AlertCircle size={32} className="text-slate-200 mx-auto mb-4" />
+               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Nenhum imóvel localizado</p>
+            </div>
+          )}
+        </div>
+      ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {filteredImoveis.map((i, idx) => (
             <motion.div 
