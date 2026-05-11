@@ -375,6 +375,14 @@ function WizardContent() {
                   </button>
                 ))}
               </div>
+              <div className="flex justify-end pt-8">
+                <button 
+                  onClick={nextStep} 
+                  className="btn-premium px-10 py-3 text-sm"
+                >
+                  Continuar <ChevronRight size={18} />
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -406,8 +414,19 @@ function WizardContent() {
                   </button>
                 ))}
               </div>
-              <div className="flex justify-center pt-4">
-                <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600">Voltar</button>
+              </div>
+              <div className="flex justify-between items-center pt-8 border-t border-slate-100/50">
+                <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
+                  <ChevronLeft size={16} /> Voltar
+                </button>
+                {processo.natureza && (
+                  <button 
+                    onClick={() => (processo.tipo === 'parcial' || processo.tipo === 'iniciado') ? nextStep() : setStep(4)} 
+                    className="btn-premium px-10 py-3 text-sm"
+                  >
+                    Continuar <ChevronRight size={18} />
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
@@ -437,8 +456,16 @@ function WizardContent() {
                   </button>
                 ))}
               </div>
-              <div className="flex justify-center pt-4">
-                <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600">Voltar</button>
+              </div>
+              <div className="flex justify-between items-center pt-8 border-t border-slate-100/50">
+                <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
+                  <ChevronLeft size={16} /> Voltar
+                </button>
+                {processo.etapaAtual && (
+                  <button onClick={nextStep} className="btn-premium px-10 py-3 text-sm">
+                    Continuar <ChevronRight size={18} />
+                  </button>
+                )}
               </div>
             </motion.div>
           )}
@@ -487,9 +514,22 @@ function WizardContent() {
                         <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-blue-600 shadow-sm"><User size={20} /></div>
                         <div><p className="text-sm font-bold">{clienteData.nome}</p><p className="text-[10px] text-slate-500 font-bold uppercase">{clienteData.cpf_cnpj}</p></div>
                       </div>
-                      <button onClick={nextStep} className="btn-premium py-2 px-6">Continuar <ChevronRight size={14} /></button>
+                      <div className="flex items-center gap-2 text-blue-600">
+                        <Check size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Selecionado</span>
+                      </div>
                     </div>
                   )}
+                  <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-100">
+                    <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
+                      <ChevronLeft size={16} /> Voltar
+                    </button>
+                    {processo.clienteId && (
+                      <button onClick={nextStep} className="btn-premium px-10 py-3 text-sm">
+                        Continuar <ChevronRight size={18} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ) : (
                   <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -512,9 +552,11 @@ function WizardContent() {
                       <div className="md:col-span-2"><Label>Cidade</Label><Input value={clienteData.cidade} onChange={e => setClienteData(p => ({...p, cidade: e.target.value}))} /></div>
                       <div><Label>UF</Label><Input value={clienteData.estado} onChange={e => setClienteData(p => ({...p, estado: e.target.value}))} /></div>
                     </div>
-                  <div className="col-span-2 flex justify-end gap-2 pt-4 border-t border-slate-50">
-                    <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
-                    <button onClick={nextStep} className="btn-premium">Continuar <ChevronRight size={14} /></button>
+                  <div className="col-span-2 flex justify-between items-center pt-8 mt-4 border-t border-slate-100">
+                    <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
+                      <ChevronLeft size={16} /> Voltar
+                    </button>
+                    <button onClick={nextStep} className="btn-premium px-10 py-3 text-sm">Continuar <ChevronRight size={18} /></button>
                   </div>
                 </div>
               )}
@@ -625,8 +667,10 @@ function WizardContent() {
                       onChange={(lat, lng) => setImovelData((p: any) => ({ ...p, latitude: lat, longitude: lng }))}
                     />
                   </div>
-                  <div className="flex justify-end gap-2 shrink-0">
-                    <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
+                  <div className="flex justify-between items-center shrink-0 pt-4 mt-auto">
+                    <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
+                      <ChevronLeft size={16} /> Voltar
+                    </button>
                     <button 
                       onClick={() => {
                         if (imovelSelectionMode === 'novo' && !imovelData.endereco) {
@@ -639,9 +683,9 @@ function WizardContent() {
                         }
                         nextStep()
                       }} 
-                      className="btn-premium px-8"
+                      className="btn-premium px-10 py-3 text-sm"
                     >
-                      Continuar <ChevronRight size={14} />
+                      Continuar <ChevronRight size={18} />
                     </button>
                   </div>
                 </div>
@@ -738,9 +782,11 @@ function WizardContent() {
                     >
                       Salvar como Modelo
                     </button>
-                    <div className="flex gap-2">
-                      <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Voltar</button>
-                      <button onClick={nextStep} className="btn-premium py-2.5 px-8">Continuar <ChevronRight size={16} /></button>
+                    <div className="flex justify-between items-center w-full">
+                      <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
+                        <ChevronLeft size={16} /> Voltar
+                      </button>
+                      <button onClick={nextStep} className="btn-premium py-3 px-10 text-sm">Continuar <ChevronRight size={18} /></button>
                     </div>
                   </div>
                 </div>
@@ -899,9 +945,11 @@ function WizardContent() {
                   <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Despesas</p><p className="text-xl font-black text-red-400">R$ {processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0).toLocaleString('pt-BR')}</p></div>
                   <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro Previsto</p><p className="text-xl font-black text-emerald-400">R$ {(parseFloat(processo.valorTotal) - processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0)).toLocaleString('pt-BR')}</p></div>
                 </div>
-                <div className="flex gap-3">
-                  <button onClick={prevStep} className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4 hover:text-white transition-colors">Voltar</button>
-                  <button onClick={handleFinalSubmit} disabled={loading} className="btn-premium py-3 px-10">
+                <div className="flex gap-4 items-center">
+                  <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-white transition-all">
+                    <ChevronLeft size={16} /> Voltar
+                  </button>
+                  <button onClick={handleFinalSubmit} disabled={loading} className="btn-premium py-3 px-10 text-sm">
                     {loading ? <Loader2 size={18} className="animate-spin" /> : <>Concluir Cadastro <Check size={18} /></>}
                   </button>
                 </div>
