@@ -414,7 +414,6 @@ function WizardContent() {
                   </button>
                 ))}
               </div>
-              </div>
               <div className="flex justify-between items-center pt-8 border-t border-slate-100/50">
                 <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
                   <ChevronLeft size={16} /> Voltar
@@ -455,7 +454,6 @@ function WizardContent() {
                     <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{etapa}</span>
                   </button>
                 ))}
-              </div>
               </div>
               <div className="flex justify-between items-center pt-8 border-t border-slate-100/50">
                 <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-all">
