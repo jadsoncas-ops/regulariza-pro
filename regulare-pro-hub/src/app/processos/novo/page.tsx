@@ -92,8 +92,8 @@ function WizardContent() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [isSearchingCep, setIsSearchingCep] = useState(false)
-  
-  const [notification, setNotification] = useState<string | null>(null)
+  const [isGeocoding, setIsGeocoding] = useState(false)
+  const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null)
   
   // ESTADO DO PROCESSO
   const [processo, setProcesso] = useState({
@@ -231,18 +231,54 @@ function WizardContent() {
   const nextStep = () => setStep(s => s + 1)
   const prevStep = () => setStep(s => s - 1)
 
-  // GEOCODING AUTOMÁTICO
+  // GEOCODING AUTOMÁTICO COM FALLBACKS
   const fetchGeocode = async (endereco: string, numero: string, bairro: string, cidade: string, estado: string) => {
     if (!endereco || !cidade || !estado) return
+    setIsGeocoding(true)
     try {
-      const query = `${endereco}, ${numero ? numero + ', ' : ''}${bairro ? bairro + ', ' : ''}${cidade}, ${estado}, Brasil`
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-      const data = await res.json()
-      if (data && data.length > 0) {
-        setImovelData((p: any) => ({ ...p, latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) }))
+      // Tenta busca ultra-específica
+      let query = `${endereco}, ${numero ? numero + ', ' : ''}${bairro ? bairro + ', ' : ''}${cidade}, ${estado}, Brasil`
+      let res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+      let data = await res.json()
+      
+      // Fallback 1: Sem o número (muitos endereços não tem o número mapeado no OSM)
+      if (!data || data.length === 0) {
+        query = `${endereco}, ${bairro ? bairro + ', ' : ''}${cidade}, ${estado}, Brasil`
+        res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+        data = await res.json()
       }
-    } catch (e) { console.error("Geocode error", e) }
+
+      // Fallback 2: Apenas rua e cidade (mais genérico)
+      if (!data || data.length === 0) {
+        query = `${endereco}, ${cidade}, ${estado}, Brasil`
+        res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+        data = await res.json()
+      }
+
+      if (data && data.length > 0) {
+        setImovelData((p: any) => ({ 
+          ...p, 
+          latitude: parseFloat(data[0].lat), 
+          longitude: parseFloat(data[0].lon) 
+        }))
+      }
+    } catch (e) { 
+      console.error("Geocode error", e) 
+    } finally {
+      setIsGeocoding(false)
+    }
   }
+
+  // Efeito de Debounce para Geocoding Automático ao Digitar
+  useEffect(() => {
+    const isNewImovel = step === 5 && imovelSelectionMode === 'novo'
+    if (isNewImovel && imovelData.endereco && imovelData.cidade && imovelData.estado) {
+      const timer = setTimeout(() => {
+        fetchGeocode(imovelData.endereco, imovelData.numero, imovelData.bairro, imovelData.cidade, imovelData.estado)
+      }, 1500) // 1.5s de debounce
+      return () => clearTimeout(timer)
+    }
+  }, [imovelData.endereco, imovelData.numero, imovelData.bairro, imovelData.cidade, imovelData.estado, step, imovelSelectionMode])
 
   // BUSCA DE CEP
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>, target: 'cliente' | 'imovel') => {
@@ -658,7 +694,13 @@ function WizardContent() {
                 </div>
 
                 <div className="col-span-12 lg:col-span-5 flex flex-col gap-4">
-                  <div className="flex-1 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden min-h-[300px]">
+                  <div className="flex-1 bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden min-h-[300px] relative">
+                    {isGeocoding && (
+                      <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center gap-3">
+                        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest animate-pulse">Localizando no mapa...</p>
+                      </div>
+                    )}
                     <LocationPicker 
                       initialLat={imovelData.latitude}
                       initialLng={imovelData.longitude}
