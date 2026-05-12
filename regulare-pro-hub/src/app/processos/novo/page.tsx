@@ -865,7 +865,7 @@ function WizardContent() {
                             if (!name) return
                             const newItem = { id: Date.now().toString(), nome: name, categoria: cat }
                             setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, newItem] }))
-                            setNotification(`"${name}" adicionado ao fluxo!`)
+                            setNotification({ type: 'success', message: `"${name}" adicionado ao fluxo!` })
                             ;(document.getElementById('new-atv-name') as HTMLInputElement).value = ''
                           }}
                           className="bg-white text-blue-600 p-1.5 rounded-md hover:bg-blue-50 transition-colors"
@@ -900,7 +900,7 @@ function WizardContent() {
                                 key={item.id}
                                 onClick={() => {
                                   setProcesso(prev => ({ ...prev, atividades: [...prev.atividades, { ...item, id: Date.now().toString() }] }))
-                                  setNotification(`"${item.nome}" adicionado!`)
+                                  setNotification({ type: 'success', message: `"${item.nome}" adicionado!` })
                                 }}
                                 className="flex items-center justify-between p-2 rounded-lg bg-slate-50/50 border border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all text-left group"
                               >
@@ -1013,7 +1013,7 @@ function WizardContent() {
             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
               <Check size={16} />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest">{notification}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">{notification.message}</p>
           </motion.div>
         )}
       </AnimatePresence>
