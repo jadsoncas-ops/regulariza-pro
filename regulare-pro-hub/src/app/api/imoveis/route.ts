@@ -1,8 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
+import { getTenantId } from '@/lib/tenant'
 
 export async function GET() {
+  const empresaId = await getTenantId()
   const imoveis = await prisma.imovel.findMany({
+    where: { empresaId },
     include: { cliente: true, processos: true },
     orderBy: { createdAt: 'desc' }
   })
@@ -11,9 +14,11 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const empresaId = await getTenantId()
     const data = await req.json()
     const imovel = await prisma.imovel.create({
       data: {
+        empresaId,
         clienteId: data.clienteId,
         endereco: data.endereco,
         bairro: data.bairro,

@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 import { PROCESS_TEMPLATES } from '@/lib/templates'
+import { getTenantId } from '@/lib/tenant'
 
 export async function POST(request: Request) {
   try {
+    const empresaId = await getTenantId()
     const data = await request.json()
 
     // INICIAR TRANSAÇÃO ATÔMICA
@@ -27,7 +29,8 @@ export async function POST(request: Request) {
             cidade: data.cliente.cidade?.toUpperCase() || null,
             estado: data.cliente.estado?.toUpperCase() || null,
             observacoes: data.cliente.observacoes?.toUpperCase() || null,
-            status: 'ativo'
+            status: 'ativo',
+            empresaId
           }
         })
       } else {
@@ -75,6 +78,7 @@ export async function POST(request: Request) {
             proprietario_doc: data.imovel.isProprietario ? null : data.imovel.proprietario_doc,
             proprietario_tel: data.imovel.isProprietario ? null : data.imovel.proprietario_tel,
             proprietario_email: data.imovel.isProprietario ? null : data.imovel.proprietario_email?.toUpperCase(),
+            empresaId
           }
         })
         imovelId = newImovel.id
@@ -109,7 +113,8 @@ export async function POST(request: Request) {
           etapa_atual: 'CADASTRO INICIAL',
           responsavel: 'JADSON CASTRO SANTANA',
           observacoes: data.processo.observacoes?.toUpperCase() || null,
-          valor_total: parseFloat(data.financeiro.valorTotal) || 0
+          valor_total: parseFloat(data.financeiro.valorTotal) || 0,
+          empresaId
         }
       })
 
@@ -129,7 +134,8 @@ export async function POST(request: Request) {
               tipo: 'receita',
               status: rec.status,
               data_vencimento: new Date(rec.data),
-              data_pagamento: rec.status === 'pago' ? new Date(rec.data) : null
+              data_pagamento: rec.status === 'pago' ? new Date(rec.data) : null,
+              empresaId
             }
           })
         }
@@ -148,7 +154,8 @@ export async function POST(request: Request) {
               tipo: 'despesa',
               status: desp.status,
               data_vencimento: new Date(desp.data),
-              data_pagamento: desp.status === 'pago' ? new Date(desp.data) : null
+              data_pagamento: desp.status === 'pago' ? new Date(desp.data) : null,
+              empresaId
             }
           })
         }
@@ -168,7 +175,8 @@ export async function POST(request: Request) {
                 descricao: `Gerado automaticamente via template: ${template.label.toUpperCase()}`,
                 status: 'pendente',
                 prioridade: 'normal',
-                data: new Date() // data inicial, pode ser ajustada no front
+                data: new Date(), // data inicial, pode ser ajustada no front
+                empresaId
               }
             })
           } else if (stage.tipo === 'protocolo') {
@@ -193,7 +201,8 @@ export async function POST(request: Request) {
               tipo: 'pdf',
               categoria: doc.categoria.toUpperCase(),
               url: 'PENDENTE',
-              status: 'pendente'
+              status: 'pendente',
+              empresaId
             }
           })
         }
