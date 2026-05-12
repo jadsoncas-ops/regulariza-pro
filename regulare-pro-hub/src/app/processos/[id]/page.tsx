@@ -479,14 +479,18 @@ export default function ProcessoDetailPage() {
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Contrato Total</p>
                 <p className="text-xl font-black text-white leading-none mb-4">{fmt(stats?.totalContratado || 0)}</p>
                 
-                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
+                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-800">
                    <div>
                       <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Recebido</p>
-                      <p className="text-[11px] font-bold text-emerald-400">{fmt(stats?.totalRecebido || 0)}</p>
+                      <p className="text-[10px] font-bold text-emerald-400">{fmt(stats?.totalRecebido || 0)}</p>
                    </div>
                    <div>
-                      <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Custos/Repasses</p>
-                      <p className="text-[11px] font-bold text-red-400">{fmt(stats?.totalRepasses || 0)}</p>
+                      <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Custos Pagos</p>
+                      <p className="text-[10px] font-bold text-red-400">{fmt(stats?.totalRepassesPagos || 0)}</p>
+                   </div>
+                   <div className="border-l border-slate-800 pl-2">
+                      <p className="text-[8px] font-bold text-blue-400 uppercase tracking-widest">Saldo Líquido</p>
+                      <p className="text-[10px] font-bold text-white">{fmt(stats?.saldoEmContaAtual || 0)}</p>
                    </div>
                 </div>
 
