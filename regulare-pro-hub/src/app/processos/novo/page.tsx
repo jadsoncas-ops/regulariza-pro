@@ -314,33 +314,33 @@ function WizardContent() {
   // --- RENDERS DAS ETAPAS ---
 
   return (
-    <div className="h-screen flex flex-col bg-[#FDFDFD] overflow-hidden">
+    <div className="h-screen flex flex-col bg-white overflow-hidden font-sans">
       
-      {/* ── HEADER — Command Center Style ── */}
-      <header className="h-[52px] bg-slate-950 border-b border-white/10 flex items-center justify-between px-6 shrink-0 z-50">
+      {/* ── HEADER — Unified Style ── */}
+      <header className="h-[64px] bg-white border-b border-slate-200/60 flex items-center justify-between px-6 shrink-0 z-50">
         <div className="flex items-center gap-4">
-          <button onClick={handleSafeExit} className="p-2 text-slate-400 hover:text-white transition-colors">
-            <ArrowLeft size={16} />
+          <button onClick={handleSafeExit} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-400 hover:text-slate-900 border border-slate-200/50 transition-all">
+            <ArrowLeft size={18} />
           </button>
           <div className="flex flex-col">
-            <span className="text-[11px] font-black text-white uppercase tracking-tighter leading-none">Process Builder</span>
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Etapa {step} de 7</span>
+            <span className="text-[11px] font-black text-slate-900 uppercase tracking-tighter leading-none">Process Builder</span>
+            <span className="text-[9px] text-[hsl(231,100%,60%)] font-bold uppercase tracking-widest mt-1">Etapa {step} de 7</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {[1, 2, 3, 4, 5, 6, 7].map(i => (
-            <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i <= step ? 'w-8 bg-blue-500' : 'w-4 bg-white/10'}`} />
+            <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i <= step ? 'w-10 bg-[hsl(231,100%,60%)] shadow-sm' : 'w-4 bg-slate-100'}`} />
           ))}
         </div>
 
-        <button onClick={handleSafeExit} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-slate-300">
-          Cancelar
+        <button onClick={handleSafeExit} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-red-500 transition-colors">
+          Sair do Cadastro
         </button>
       </header>
 
       {/* ── WORKSPACE ── */}
-      <main className="flex-1 overflow-hidden relative flex flex-col items-center justify-center p-6 bg-slate-50/50">
+      <main className="flex-1 overflow-hidden relative flex flex-col items-center justify-center p-6 bg-slate-50/30 bg-[url('/grid.svg')] bg-repeat">
         
         <AnimatePresence mode="wait">
           
@@ -701,27 +701,27 @@ function WizardContent() {
               <div className="flex-1 flex flex-col min-w-0">
                 <div className="flex items-center justify-between mb-4 shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg"><Briefcase size={20} /></div>
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 shadow-sm"><Briefcase size={20} /></div>
                     <div>
                       <h2 className="text-base font-black text-slate-900 uppercase tracking-tighter leading-none">Fluxo Operacional</h2>
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">{processo.atividades.length} Atividades Planejadas</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="bg-slate-900 rounded-[20px] p-1.5 pl-5 flex items-center gap-4 shadow-xl shadow-slate-900/10 border border-white/5">
+                    <div className="bg-white rounded-[20px] p-1.5 pl-5 flex items-center gap-4 shadow-xl shadow-slate-200/20 border border-slate-100">
                       <div className="flex flex-col">
-                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-[0.2em] leading-none mb-1">Valor Total</span>
+                        <span className="text-[8px] font-black text-blue-600 uppercase tracking-[0.2em] leading-none mb-1">Valor Total</span>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-black text-white/40">R$</span>
+                          <span className="text-sm font-black text-slate-300">R$</span>
                           <input 
                             type="number" 
-                            className="bg-transparent text-lg font-black text-white w-28 outline-none focus:text-blue-400 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            className="bg-transparent text-lg font-black text-slate-900 w-28 outline-none focus:text-blue-600 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             value={processo.valorTotal} 
                             onChange={e => setProcesso(prev => ({...prev, valorTotal: e.target.value}))}
                           />
                         </div>
                       </div>
-                      <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                      <div className="w-10 h-10 bg-[hsl(231,100%,60%)] rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
                         <DollarSign size={20} />
                       </div>
                     </div>
@@ -796,7 +796,7 @@ function WizardContent() {
                   <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-widest font-mono">Catálogo de Atividades</h3>
                   
                   {/* Quick Add Form */}
-                  <div className="bg-blue-600 p-3 rounded-xl shadow-lg space-y-2">
+                  <div className="bg-[hsl(231,100%,60%)] p-3 rounded-xl shadow-lg space-y-2">
                     <p className="text-[9px] font-black text-white/70 uppercase tracking-widest">Nova Atividade no Catálogo</p>
                     <div className="space-y-1.5">
                       <input 
@@ -937,14 +937,14 @@ function WizardContent() {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center p-6 bg-slate-900 rounded-3xl text-white shadow-xl">
+              <div className="flex justify-between items-center p-6 bg-white border border-slate-200 rounded-3xl text-slate-900 shadow-xl">
                 <div className="flex gap-8">
                   <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Contrato</p><p className="text-xl font-black">R$ {parseFloat(processo.valorTotal).toLocaleString('pt-BR')}</p></div>
-                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Despesas</p><p className="text-xl font-black text-red-400">R$ {processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0).toLocaleString('pt-BR')}</p></div>
-                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro Previsto</p><p className="text-xl font-black text-emerald-400">R$ {(parseFloat(processo.valorTotal) - processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0)).toLocaleString('pt-BR')}</p></div>
+                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Despesas</p><p className="text-xl font-black text-red-500">R$ {processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0).toLocaleString('pt-BR')}</p></div>
+                  <div><p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Lucro Previsto</p><p className="text-xl font-black text-emerald-600">R$ {(parseFloat(processo.valorTotal) - processo.despesas.reduce((acc: number, d: any) => acc + (parseFloat(d.valor) || 0), 0)).toLocaleString('pt-BR')}</p></div>
                 </div>
                 <div className="flex gap-4 items-center">
-                  <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-white transition-all">
+                  <button onClick={prevStep} className="flex items-center gap-2 text-[11px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-900 transition-all">
                     <ChevronLeft size={16} /> Voltar
                   </button>
                   <button onClick={handleFinalSubmit} disabled={loading} className="btn-premium py-3 px-10 text-sm">

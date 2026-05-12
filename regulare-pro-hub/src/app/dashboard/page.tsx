@@ -29,15 +29,15 @@ const HEALTH_COLORS = {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-slate-900/95 backdrop-blur-md border border-white/10 p-2.5 rounded-lg shadow-2xl text-[10px] min-w-[100px]">
-      <p className="font-mono text-slate-400 mb-1.5 tracking-widest uppercase">{label}</p>
+    <div className="bg-white/95 backdrop-blur-md border border-slate-200 p-2.5 rounded-lg shadow-xl text-[10px] min-w-[100px]">
+      <p className="font-mono text-slate-500 mb-1.5 tracking-widest uppercase">{label}</p>
       {payload.map((p: any) => (
         <div key={p.dataKey} className="flex items-center justify-between gap-3 mb-0.5">
           <div className="flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
-            <span className="text-slate-300 font-medium">{p.name}</span>
+            <span className="text-slate-600 font-medium">{p.name}</span>
           </div>
-          <span className="font-bold text-white font-mono">{fmt(p.value)}</span>
+          <span className="font-bold text-slate-900 font-mono">{fmt(p.value)}</span>
         </div>
       ))}
     </div>
@@ -91,26 +91,26 @@ export default function DashboardCockpit() {
   if (!s) return null
 
   return (
-    <div className="h-screen flex flex-col bg-[#08090D] text-slate-300 overflow-hidden">
+    <div className="h-screen flex flex-col bg-slate-50/30 bg-[url('/grid.svg')] bg-repeat text-slate-600 overflow-hidden">
       
       {/* ── HEADER ── */}
-      <header className="h-[52px] border-b border-white/5 bg-slate-900/40 flex items-center justify-between px-6 shrink-0 relative z-20">
+      <header className="h-[52px] border-b border-slate-200/60 bg-white flex items-center justify-between px-6 shrink-0 relative z-20">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+          <div className="w-8 h-8 rounded-lg bg-[hsl(231,100%,60%)] flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
             <LayoutDashboard size={18} />
           </div>
           <div>
-            <h1 className="text-[13px] font-black text-white uppercase tracking-tight">Business Control Center</h1>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Real-time Operational Intelligence</p>
+            <h1 className="text-[13px] font-black text-slate-900 uppercase tracking-tight">Business Control Center</h1>
+            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Real-time Operational Intelligence</p>
           </div>
         </div>
         
         <div className="flex items-center gap-4">
-           <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/5">
+           <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200/50">
              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Live System Status</span>
+             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Live System Status</span>
            </div>
-           <Link href="/processos/novo" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2">
+           <Link href="/processos/novo" className="px-4 py-1.5 bg-[hsl(231,100%,60%)] hover:bg-blue-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2">
              <Plus size={14} /> Novo Processo
            </Link>
         </div>
@@ -190,12 +190,12 @@ export default function DashboardCockpit() {
 
             <Card title="Forecast Financeiro" icon={Wallet} className="shrink-0">
                <div className="space-y-2 p-3">
-                  <FinancialItem label="Contratado" value={s.financials.totalContracted} color="text-slate-200" />
-                  <FinancialItem label="Recebido" value={s.financials.totalReceived} color="text-emerald-500" />
-                  <FinancialItem label="Pendente" value={s.financials.pending} color="text-blue-500" highlight />
-                  <div className="pt-2 border-t border-white/5 flex justify-between items-center">
-                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Performance</span>
-                     <span className="text-white text-[10px] font-black">94.2%</span>
+                  <FinancialItem label="Contratado" value={s.financials.totalContracted} color="text-slate-600" />
+                  <FinancialItem label="Recebido" value={s.financials.totalReceived} color="text-emerald-600" />
+                  <FinancialItem label="Pendente" value={s.financials.pending} color="text-blue-600" highlight />
+                  <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                     <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Performance</span>
+                     <span className="text-slate-900 text-[10px] font-black">94.2%</span>
                   </div>
                </div>
             </Card>
@@ -213,20 +213,20 @@ export default function DashboardCockpit() {
                           dataKey="name" 
                           type="category" 
                           width={90} 
-                          tick={{ fill: '#94a3b8', fontSize: 8, fontWeight: 700 }} 
+                          tick={{ fill: '#64748b', fontSize: 8, fontWeight: 700 }} 
                           axisLine={false}
                           tickLine={false}
                         />
-                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} content={<CustomTooltip />} />
+                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} content={<CustomTooltip />} />
                         <Bar dataKey="value" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={14}>
                            {s.bottlenecks.map((_:any, index:number) => (
-                             <Cell key={`cell-${index}`} fill={index === 0 ? '#3B82F6' : 'rgba(59, 130, 246, 0.4)'} />
+                             <Cell key={`cell-${index}`} fill={index === 0 ? 'hsl(231,100%,60%)' : '#E2E8F0'} />
                            ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] text-center mt-4 border-t border-white/5 pt-4">Volume de processos por estágio ativo</p>
+                  <p className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center mt-4 border-t border-slate-100 pt-4">Volume de processos por estágio ativo</p>
                </div>
             </Card>
           </div>
@@ -234,14 +234,14 @@ export default function DashboardCockpit() {
           {/* Right: Activity Stream */}
           <div className="col-span-4 flex flex-col min-h-0 overflow-hidden">
             <Card title="Activity Stream" icon={Activity} className="flex-1 min-h-0">
-               <div className="h-full overflow-y-auto pr-1 space-y-4 custom-scrollbar-dark p-3">
+                <div className="h-full overflow-y-auto pr-1 space-y-4 custom-scrollbar-light p-3">
                   {s.events.map((log: any, i: number) => (
-                    <Link key={i} href={`/processos/${log.processoId}`} className="flex gap-3 relative group hover:bg-white/[0.03] p-2 rounded-xl transition-all border border-transparent hover:border-white/5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-500/20 border border-blue-500/50 mt-1.5 shrink-0 group-hover:bg-blue-500 transition-colors" />
+                    <Link key={i} href={`/processos/${log.processoId}`} className="flex gap-3 relative group hover:bg-slate-50 p-2 rounded-xl transition-all border border-transparent hover:border-slate-100">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-100 border border-blue-200 mt-1.5 shrink-0 group-hover:bg-blue-600 transition-colors" />
                       <div className="min-w-0">
-                        <p className="text-[10px] font-black text-white uppercase leading-none tracking-tight truncate">{log.titulo || log.acao}</p>
+                        <p className="text-[10px] font-black text-slate-900 uppercase leading-none tracking-tight truncate">{log.titulo || log.acao}</p>
                         <p className="text-[9px] text-slate-500 font-medium mt-1.5 leading-relaxed line-clamp-1">{log.descricao || log.detalhe}</p>
-                        <span className="text-[8px] font-mono text-slate-600 uppercase mt-1.5 block">
+                        <span className="text-[8px] font-mono text-slate-400 uppercase mt-1.5 block">
                           {new Date(log.createdAt).toLocaleDateString('pt-BR')} · {new Date(log.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -261,20 +261,20 @@ export default function DashboardCockpit() {
       </main>
 
       {/* ── FOOTER BAR ── */}
-      <footer className="h-8 border-t border-white/5 bg-slate-900/60 px-6 flex items-center justify-between shrink-0 relative z-20">
+      <footer className="h-8 border-t border-slate-200/60 bg-white px-6 flex items-center justify-between shrink-0 relative z-20">
          <div className="flex gap-4">
             <FooterStat label="Latência API" value="24ms" />
             <FooterStat label="Database" value="Neon PostgreSQL" />
             <FooterStat label="Region" value="SA-East-1" />
          </div>
-         <p className="text-[8px] font-mono font-bold text-slate-600 tracking-[0.3em] uppercase">Regulariza Pro · Command Center v2.2</p>
+         <p className="text-[8px] font-mono font-bold text-slate-400 tracking-[0.3em] uppercase">Regulariza Pro · Command Center v2.2</p>
       </footer>
 
       <style jsx global>{`
-        .custom-scrollbar-dark::-webkit-scrollbar { width: 3px; }
-        .custom-scrollbar-dark::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-        .custom-scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
-        .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.1); }
+        .custom-scrollbar-light::-webkit-scrollbar { width: 3px; }
+        .custom-scrollbar-light::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); }
+        .custom-scrollbar-light::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        .custom-scrollbar-light::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.1); }
       `}</style>
     </div>
   )
@@ -284,17 +284,17 @@ function KPICard({ label, value, sub, icon: Icon, color, trend }: any) {
   return (
     <motion.div 
       initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      className="bg-slate-900/40 border border-white/5 rounded-2xl p-4 flex flex-col justify-between hover:border-white/10 transition-all group relative overflow-hidden"
+      className="bg-white border border-slate-200/60 rounded-2xl p-4 flex flex-col justify-between hover:border-blue-500/20 hover:shadow-xl hover:shadow-blue-500/5 transition-all group relative overflow-hidden"
     >
       <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/5 blur-[40px] -mr-10 -mt-10 group-hover:bg-blue-500/10 transition-colors" />
       <div className="flex items-center justify-between relative z-10">
-        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
-        <div className={`p-1.5 rounded-lg bg-slate-800/50 ${color}`}>
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{label}</span>
+        <div className={`p-1.5 rounded-lg bg-slate-50 ${color}`}>
           <Icon size={14} />
         </div>
       </div>
       <div className="relative z-10 mt-1">
-        <h3 className="text-2xl font-black text-white tracking-tighter leading-none">{value}</h3>
+        <h3 className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{value}</h3>
         <div className="flex items-center gap-1.5 mt-1">
           {trend !== undefined && (
             trend >= 0 ? <TrendingUp size={10} className="text-emerald-500" /> : <TrendingDown size={10} className="text-red-500" />
@@ -308,13 +308,13 @@ function KPICard({ label, value, sub, icon: Icon, color, trend }: any) {
 
 function Card({ title, icon: Icon, children, className = "" }: any) {
   return (
-    <div className={`bg-slate-900/40 border border-white/5 rounded-2xl flex flex-col overflow-hidden ${className}`}>
-      <div className="px-4 py-2.5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+    <div className={`bg-white border border-slate-200/60 rounded-2xl flex flex-col overflow-hidden shadow-sm ${className}`}>
+      <div className="px-4 py-2.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
         <div className="flex items-center gap-2">
-          <Icon size={12} className="text-slate-500" />
-          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{title}</span>
+          <Icon size={12} className="text-slate-400" />
+          <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{title}</span>
         </div>
-        <button className="text-slate-600 hover:text-white transition-colors">
+        <button className="text-slate-400 hover:text-slate-900 transition-colors">
           <MoreHorizontal size={14} />
         </button>
       </div>
@@ -331,8 +331,8 @@ function MoreHorizontal(props: any) {
 
 function FinancialItem({ label, value, color, highlight }: any) {
   return (
-    <div className={`flex items-center justify-between p-2 rounded-lg ${highlight ? 'bg-blue-500/5 border border-blue-500/10' : 'bg-white/2'}`}>
-      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter">{label}</span>
+    <div className={`flex items-center justify-between p-2 rounded-lg ${highlight ? 'bg-blue-50 border border-blue-100' : 'bg-slate-50/50'}`}>
+      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{label}</span>
       <span className={`text-[12px] font-black ${color}`}>{fmt(value)}</span>
     </div>
   )
